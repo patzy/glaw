@@ -1,0 +1,7 @@
+The goal of GLAW is to provide a collection of basic functionalities to help developping games.
+
+Basic ideas are: 
+ - core depends only on cl-opengl
+ - do *not* force the user to a specific game genre
+ - independent of windowing API (e.g. not tied to sdl or glut)
+ 
