@@ -1,8 +1,5 @@
 (in-package #:glaw)
 
-(defun 2+ (value)
-  (+ value 2))
-
 (defun nearest-power-of-two (size)
   (let ((next-size 1))
     ;; compute next power of two

@@ -152,7 +152,11 @@
 (defun set-color (col)
   (gl:color (color-r col) (color-g col) (color-b col) (color-a col)))
 
-(defun create-color (r g b a)
+(declaim (inline set-color/rgb))
+(defun set-color/rgb (r g b &optional (a 1.0))
+  (gl:color r g b a))
+
+(defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
 
 (defstruct color-gradient
@@ -269,6 +273,9 @@
     (format t "Texture data: ~S~%" (resource-data image))
     tex))
 
+(defun create-texture-from-file (filename &rest args)
+  (apply 'create-texture (create-resource filename :image) args))
+
 (defun destroy-texture (tex)
   (remove-texture-object tex)
   (unless (texture-object-exists (texture-image tex))
@@ -294,7 +301,7 @@
   ;; XXX: assume 16x16 character bitmap
   ;; TODO: use font-width and font-height when creating display lists
   (let ((fnt (make-font :width font-width :height font-height)))
-    (setf (font-texture fnt) (create-texture image :env-mode :replace))
+    (setf (font-texture fnt) (create-texture image :env-mode :modulate))
     (setf (font-base fnt) (gl:gen-lists 256))
     (select-texture (font-texture fnt))
     (loop for i from 0 to 256
@@ -347,8 +354,7 @@
   tex-coords ;; u,v
   indices
   x-min y-min z-min
-  x-max y-max z-max
-)
+  x-max y-max z-max)
 
 (defun render-shape (shape)
   (gl:begin (shape-primitive shape))
@@ -357,14 +363,14 @@
        for i = (aref (shape-indices shape) index)
        when (shape-colors shape)
        do (gl:color  (aref (shape-colors shape) (* i 3))
-                     (aref (shape-colors shape) (1+ (* i 3)))
-                     (aref (shape-colors shape) (2+ (* i 3))))
+                     (aref (shape-colors shape) (+ 1 (* i 3)))
+                     (aref (shape-colors shape) (+ 2 (* i 3))))
        when (shape-tex-coords shape)
        do (gl:tex-coord  (aref (shape-tex-coords shape) (* i 2))
-                         (aref (shape-tex-coords shape) (1+ (* i 2))))
+                         (aref (shape-tex-coords shape) (+ 1 (* i 2))))
        do (gl:vertex (aref (shape-vertices shape) (* i 3))
-                     (aref (shape-vertices shape) (1+ (* i 3)))
-                     (aref (shape-vertices shape) (2+ (* i 3)))))
+                     (aref (shape-vertices shape) (+ 1 (* i 3)))
+                     (aref (shape-vertices shape) (+ 2 (* i 3)))))
   (gl:end))
 
 (defun render-bbox (shape)
@@ -537,48 +543,19 @@
 
 ;;; Sprites management
 (defstruct sprite
-  (r 1.0)
-  (g 1.0)
-  (b 1.0)
-  (a 1.0)
+  (shape (create-shape 4 4 :color t :texture t :primitive :quads))
   (blend-mode '(:src-alpha :one-minus-src-alpha))
-  (x 0.0)
-  (y 0.0)
-  (width 30.0)
-  (height 30.0)
   (texture nil)
-  (flip nil);; :vertical, :horizontal or :both
-)
+  (flip nil))      ;; :vertical, :horizontal or :both
+
 
 (defun render-sprite (sp)
   (gl:blend-func (first (sprite-blend-mode sp))
                  (second (sprite-blend-mode sp)))
-  (gl:with-pushed-matrix
-      (gl:translate (sprite-x sp)
-                    (sprite-y sp)
-                    0)
-    (gl:scale (sprite-width sp) (sprite-height sp) 1)
-    (if (sprite-texture sp)
+  (if (sprite-texture sp)
       (progn (gl:enable :texture-2d)
              (select-texture (sprite-texture sp)))
       (gl:disable :texture-2d))
-    (gl:color (sprite-r sp)
-              (sprite-g sp)
-              (sprite-b sp)
-              (sprite-a sp))
-    (gl:with-primitive :quads
-    (gl:tex-coord 0 1)
-    (gl:vertex  (- 0.5)
-                (- 0.5))
-    (gl:tex-coord 0 0)
-    (gl:vertex  (- 0.5)
-                (+ 0.5))
-    (gl:tex-coord 1 0)
-    (gl:vertex  (+ 0.5)
-                (+ 0.5))
-    (gl:tex-coord 1 1)
-    (gl:vertex  (+ 0.5)
-                (- 0.5))))
   (gl:blend-func :src-alpha :one-minus-src-alpha))
 
 

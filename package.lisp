@@ -7,8 +7,10 @@
    #:image-resource #:sound-resource
    #:make-image-resource #:make-sound-resource
    ;; graphics
+   #:create-texture #:create-texture-from-file
    #:create-color #:mix-colors #:create-color-gradient
-   #:set-color #:set-color-from-gradient #:get-color-from-gradient
+   #:set-color #:set-color/rgb
+   #:set-color-from-gradient #:get-color-from-gradient
    #:get-rgb-from-gradient
    #:create-texture #:destroy-texture #:select-texture
    #:create-font #:destroy-font
@@ -33,6 +35,7 @@
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui
    #:create-widget
+   #:text
    ;; gui widgets
    #:gui-label #:gui-dynamic-label #:gui-window #:gui-text-input #:gui-button
    #:gui-multiline-text #:gui-slider #:gui-slider-step-up #:gui-slider-step-down
