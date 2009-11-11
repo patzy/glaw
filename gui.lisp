@@ -84,10 +84,16 @@
     (when widget
       (gui-widget-mouse-up widget))))
 
-(defmethod on-motion ((it gui) (device (eql :mouse)) dx dy)
-  (let ((widget (gui-widget-at it *mouse-x* *mouse-y*)))
-    (when widget
-      (gui-widget-mouse-move widget dx dy))))
+(let ((entered-widget nil))
+  (defmethod on-motion ((it gui) (device (eql :mouse)) dx dy)
+    (let ((widget (gui-widget-at it *mouse-x* *mouse-y*)))
+      (when widget
+        (unless (eq entered-widget widget)
+          (when entered-widget
+            (gui-widget-mouse-leave entered-widget))
+          (gui-widget-mouse-enter widget)
+          (setf entered-widget widget))
+        (gui-widget-mouse-move widget dx dy)))))
 
 (defclass gui-widget ()
    ((x :accessor pos-x :initform 0 :initarg :x)  ;; screen coordinates
@@ -110,6 +116,8 @@
 (defmethod gui-widget-mouse-up (gui-widget)
   (format t "Widget mouse up: ~S~%" gui-widget))
 (defmethod gui-widget-mouse-move (gui-widget dx dy))
+(defmethod gui-widget-mouse-enter (gui-widget))
+(defmethod gui-widget-mouse-leave (gui-widget))
 
 ;; Find the lowest widget in the tree at (x;y)
 ;; (x;y) are relative to the provided widget
@@ -236,6 +244,9 @@
     (incf (pos-x it) dx)
     (incf (pos-y it) dy)))
 
+(defmethod gui-widget-mouse-leave ((it gui-window))
+  (setf (gui-window-moving it) nil))
+
 (defmethod render-widget ((w gui-window))
   (call-next-method)
   (set-color/rgb 1 1 1)
@@ -274,13 +285,15 @@
 
 (defclass gui-text-input (gui-widget)
   ((input :accessor input :initform '() :initarg :input)
-   (action :accessor action :initform nil :initarg :action)
-   (prefix :accessor prefix :initform "" :initarg :prefix))
+   (action :accessor action :initform nil :initarg :action))
   (:default-initargs))
 
+(defmethod text ((it gui-widget))
+  (coerce (reverse (input it)) 'string))
+
 (defmethod initialize-instance :after ((w gui-text-input) &key)
-  (setf (height w) (string-height (prefix w) (gui-font *gui*)))
-  (setf (width w) (string-width (prefix (gui-font *gui*)))))
+  (setf (height w) (string-height (text w) (gui-font *gui*)))
+  (setf (width w) (string-width (text w) (gui-font *gui*))))
 
 ;; setup keymap
 (key-handler gui-text-input (#\Return :press)
@@ -302,18 +315,15 @@
   (remove-input-handler w)
   (call-next-method))
 
-(defun clear-text-input (w)
+(defmethod clear ((w gui-text-input))
   (setf (input w) '())
-  (setf (height w) (string-height (prefix w)))
-  (setf (width w) (string-width (prefix w))))
-
-(defun string-text-input (w)
-  (coerce (reverse (input w)) 'string))
+  (setf (height w) 1)
+  (setf (width w) 1))
 
 (defmethod render-widget ((w gui-text-input))
   (gl:color 1 1 1 1)
-  (render-bitmap-string (pos-x w) (- (gl-y w) (height w))
-       (concatenate 'string (prefix w) (coerce (reverse (input w)) 'string))))
+  (render-bitmap-string (pos-x w) (- (gl-y w) (height w)) (text w)
+                        (gui-font *gui*)))
 
 (defclass gui-button (gui-widget)
   ((text :accessor text :initform '() :initarg :text)
@@ -330,9 +340,9 @@
   (setf (height w) (string-height (text w) (gui-font *gui*)))
   (setf (width w) (string-width (text w) (gui-font *gui*))))
 
-(key-handler gui-button (#\Return :press)
-    (when (action it)
-      (funcall (action it) it)))
+;; (key-handler gui-button (#\Return :press)
+;;     (when (action it)
+;;       (funcall (action it) it)))
 
 (defmethod gui-widget-mouse-down ((it gui-button))
   (setf (gui-button-pressed it) t))
@@ -355,41 +365,38 @@
   (render-bitmap-string (pos-x w) (- (gl-y w) (height w))
                         (text w) (gui-font *gui*)))
 
-(defclass gui-multiline-text (gui-label)
-  ((nb-lines :accessor nb-lines :initform 10 :initarg :nb-lines)
-   (expandable :accessor expandable :initform t :initarg :expandable))
-   (:default-initargs :text '()))
+;; (defclass gui-multiline-text (gui-label)
+;;   ((nb-lines :accessor nb-lines :initform 10 :initarg :nb-lines)
+;;    (expandable :accessor expandable :initform t :initarg :expandable))
+;;    (:default-initargs :text '()))
 
-(defmethod update-dimensions ((w gui-multiline-text))
-  (setf (height w) (* (length (text w)) (string-height "")))
-  (setf (width w)
-        (loop for l in (text w)
-             maximize (string-width l))))
+;; (defmethod update-dimensions ((w gui-multiline-text))
+;;   (setf (height w) (* (length (text w)) (string-height "" (gui-font *gui*))))
+;;   (setf (width w)
+;;         (loop for l in (text w)
+;;              maximize (string-width l (gui-font *gui*)))))
 
-(defmethod add-line ((w gui-multiline-text) (line string))
-  (push line (text w))
-  (unless (expandable w)
-    (when (> (length (text w)) (nb-lines w))
-      (setf (text w) (butlast (text w)))))
-  (update-dimensions w))
+;; (defmethod add-line ((w gui-multiline-text) (line string))
+;;   (push line (text w))
+;;   (unless (expandable w)
+;;     (when (> (length (text w)) (nb-lines w))
+;;       (setf (text w) (butlast (text w)))))
+;;   (update-dimensions w))
 
-(defmethod render-widget ((w gui-multiline-text))
-  (gl:color (first (color w))
-            (second (color w))
-            (third (color w))
-            (fourth (color w)))
-  (let ((x (pos-x w))
-        (y (- (gl-y w) (string-height ""))))
-  (dolist (txt (reverse (text w)))
-    (render-bitmap-string x y txt)
-    (decf y (string-height "")))))
+;; (defmethod render-widget ((w gui-multiline-text))
+;;   (let ((x (gl-x w))
+;;         (y (- (gl-y w) (string-height "" (gui-font *gui*)))))
+;;   (dolist (txt (reverse (text w)))
+;;     (render-bitmap-string x y txt)
+;;     (decf y (string-height "" (gui-font *gui*))))))
 
 
 (defclass gui-slider (gui-widget)
   ((min :accessor gui-slider-min :initform 0 :initarg :min)
    (max :accessor gui-slider-max :initform 100 :initarg :max)
    (step :accessor gui-slider-step :initform 1 :initarg :step)
-   (value :accessor gui-slider-value :initform 50 :initarg :value)))
+   (value :accessor gui-slider-value :initform 50 :initarg :value)
+   (sliding :accessor gui-slider-sliding :initform nil)))
 
 (defmethod gui-slider-step-up ((w gui-slider))
   (when (> (incf (gui-slider-value w) (gui-slider-step w)) (gui-slider-max w))
@@ -400,16 +407,38 @@
     (setf (gui-slider-value w) (gui-slider-min w))))
 
 
+(defmethod gui-slider-incf ((w gui-slider) value)
+  (when (> (incf (gui-slider-value w) value) (gui-slider-max w))
+    (setf (gui-slider-value w) (gui-slider-max w))))
+
+(defmethod gui-slider-decf ((w gui-slider) value)
+  (when (< (decf (gui-slider-value w) value) (gui-slider-min w))
+    (setf (gui-slider-value w) (gui-slider-min w))))
+
+
 (defmethod render-widget ((w gui-slider))
-  (gl:color 1 1 1 1)
-  (gl:begin :lines)
-  (gl:vertex (pos-x w)
-             (- (gl-y w) (/ (height w) 2.0)))
-  (gl:vertex (+ (pos-x w) (width w))
-             (- (gl-y w) (/ (height w) 2.0)))
-  (let ((slider-scale (/ (width w) (- (gui-slider-max w) (gui-slider-min w)))))
-    (gl:vertex (+ (pos-x w) (* slider-scale (gui-slider-value w)))
-               (gl-y w))
-    (gl:vertex (+ (pos-x w) (* slider-scale (gui-slider-value w)))
-               (- (gl-y w) (height w))))
-  (gl:end))
+  (gl:with-primitive :lines
+    (gl:vertex (gl-x w)
+               (- (gl-y w) (/ (height w) 2.0)))
+    (gl:vertex (+ (gl-x w) (width w))
+               (- (gl-y w) (/ (height w) 2.0)))
+    (let ((slider-scale (/ (width w) (- (gui-slider-max w)
+                                        (gui-slider-min w)))))
+      (gl:vertex (+ (gl-x w) (* slider-scale (gui-slider-value w)))
+                 (gl-y w))
+      (gl:vertex (+ (gl-x w) (* slider-scale (gui-slider-value w)))
+                 (- (gl-y w) (height w))))))
+
+(defmethod gui-widget-mouse-down ((it gui-slider))
+  (setf (gui-slider-sliding it) t))
+
+(defmethod gui-widget-mouse-up ((it gui-slider))
+  (setf (gui-slider-sliding it) nil))
+
+(defmethod gui-widget-mouse-move ((it gui-slider) dx dy)
+  (declare (ignore dy))
+  (when (gui-slider-sliding it)
+    (gui-slider-incf it dx)))
+
+(defmethod gui-widget-mouse-leave ((it gui-slider))
+  (setf (gui-slider-sliding it) nil))

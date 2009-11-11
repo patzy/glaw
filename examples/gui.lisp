@@ -36,10 +36,16 @@
                                                               "Clics: ~d"
                                                               nb-clicks))))
                                     :text "Click me !")
+    (glaw:create-widget 'glaw:gui-label window2
+                                    :x 0 :y 50
+                                    :width 50 :height 10
+                                    :text "Input:")
+    (glaw:create-widget 'glaw:gui-slider window2
+                                    :x 10 :y 150
+                                    :width 100 :height 10)
     (glaw:create-widget 'glaw:gui-text-input window2
-                        :x 50 :y 50
-                        :width 50 :height 10
-                        :prefix "Input:")))
+                        :x 80 :y 50
+                        :width 50 :height 10)))
 
 
 (defun shutdown ()
