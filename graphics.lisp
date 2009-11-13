@@ -75,7 +75,7 @@
   (- (2d-view-top view) (2d-view-bottom view)))
 
 (defmethod (setf 2d-view-height) (value (view 2d-view))
-  (setf (2d-view-height view) (+ (2d-view-bottom view)
+  (setf (2d-view-top view) (+ (2d-view-bottom view)
                                  value)))
 
 (defun zoom-2d-view (view dfactor)
@@ -88,10 +88,10 @@
     (incf (2d-view-zoom view) dfactor)))
 
 (defun move-2d-view (view dx dy)
-  (decf (2d-view-left view) dx)
-  (decf (2d-view-right view) dx)
-  (decf (2d-view-bottom view) dy)
-  (decf (2d-view-top view) dy))
+  (incf (2d-view-left view) dx)
+  (incf (2d-view-right view) dx)
+  (incf (2d-view-bottom view) dy)
+  (incf (2d-view-top view) dy))
 
 (defun update-2d-view (view x y width height)
   (setf (2d-view-left view) x)
