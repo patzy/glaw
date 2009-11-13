@@ -159,10 +159,6 @@
 (defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
 
-(defstruct color-gradient
-  (start (make-color :r 0.0 :g 0.0 :b 0.0 :a 1.0))
-  (end (make-color :r 1.0 :g 1.0 :b 1.0 :a 1.0)))
-
 (defun mix-colors (color-1 color-2 value)
   (let ((r (+ (color-r color-1)
               (* (- (color-r color-2)
@@ -201,26 +197,30 @@
                  value))))
     (values r g b a)))
 
-
-(defun get-color-from-gradient (gradient value)
-  (mix-colors (color-gradient-start gradient)
-              (color-gradient-end gradient)
-              value))
-
-(defun get-rgb-from-gradient (gradient value)
-  (mix-colors/rgb (color-gradient-start gradient)
-                  (color-gradient-end gradient)
-                  value))
-
-(defun set-color-from-gradient (gradient value)
-  (multiple-value-bind (r g b a) (get-rgb-from-gradient gradient value)
-    (gl:color r g b a)))
+(defstruct color-gradient
+  (start (make-color :r 0.0 :g 0.0 :b 0.0 :a 1.0))
+  (end (make-color :r 1.0 :g 1.0 :b 1.0 :a 1.0)))
 
 (defun create-color-gradient (start-r start-g start-b start-a
                               end-r end-g end-b end-a)
   (make-color-gradient
    :start (make-color :r start-r :g start-g :b start-b :a start-a)
    :end (make-color :r end-r :g end-g :b end-b :a end-a)))
+
+(defun get-color-from-gradient (gradient value)
+  (mix-colors (color-gradient-start gradient)
+              (color-gradient-end gradient)
+              value))
+
+(defun get-color-from-gradient/rgb (gradient value)
+  (mix-colors/rgb (color-gradient-start gradient)
+                  (color-gradient-end gradient)
+                  value))
+
+(defun set-color-from-gradient (gradient value)
+  (multiple-value-bind (r g b a) (get-color-from-gradient/rgb gradient value)
+    (gl:color r g b a)))
+
 
 ;;; Texture management
 (defvar *textures* (make-hash-table :test 'equal)
