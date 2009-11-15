@@ -34,9 +34,11 @@
    #:*mouse-x* #:*mouse-y* #:update-mouse-position
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui
+   #:gui-focus #:gui-focus-next #:gui-focus-prev
    #:create-widget
    #:text
    ;; gui widgets
+   #:gui-widget
    #:gui-label #:gui-dynamic-label #:gui-window #:gui-text-input #:gui-button
    #:gui-multiline-text #:gui-slider #:gui-slider-step-up #:gui-slider-step-down
 ))
