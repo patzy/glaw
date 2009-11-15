@@ -11,7 +11,7 @@
    #:create-color #:mix-colors #:create-color-gradient
    #:set-color #:set-color/rgb
    #:set-color-from-gradient #:get-color-from-gradient
-   #:get-rgb-from-gradient
+   #:get-color-from-gradient/rgb
    #:create-texture #:destroy-texture #:select-texture
    #:create-font #:destroy-font
    #:render-bitmap-string #:string-width #:string-height
