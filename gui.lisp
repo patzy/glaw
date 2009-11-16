@@ -173,7 +173,10 @@
 ;; (x;y) are relative to the provided widget
 (defun gui-widget-child-at (w x y)
   (dolist (c (children w))
-    (let ((found (gui-widget-child-at c (- x (pos-x w)) (- y (pos-y w)))))
+    (let ((found (gui-widget-child-at
+                  c
+                  (- x (pos-x w) (gui-widget-x-off w))
+                  (- y (pos-y w) (gui-widget-y-off w)))))
       (when found
         (return-from gui-widget-child-at found))))
   (when (and (> x (pos-x w)) (< x (+ (pos-x w) (width w)))
@@ -200,13 +203,12 @@
   (unless (eq (gui-widget-layout it) :absolute)
     (let ((origin 0))
       (dolist (c (children it))
-        (format t "Widget dimensions: ~S; ~S~%" (width c) (height c))
         (case (gui-widget-layout it)
           (:horizontal (progn (setf (pos-x c) origin)
-                              ;;(setf (pos-y) align)
+                              ;;(setf (pos-y c) align)
                               (incf origin (width c))))
           (:vertical (progn (setf (pos-y c) origin)
-                            ;;(setf (pos-x) align)
+                            ;;(setf (pos-x c) align)
                             (incf origin (height c))))
           (otherwise (error "Invalid layout specification: ~S~%"
                             (gui-widget-layout it))))))))
