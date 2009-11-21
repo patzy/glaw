@@ -3,7 +3,6 @@
 (defvar *font* nil)
 
 (glaw:key-handler :global (#\Esc :press)
-   (shutdown)
    (sdl:push-quit-event))
 
 (defun init ()
@@ -44,7 +43,7 @@
                                      :color (glaw:create-color 0 0 1)
                                      :layout :horizontal))
          (label (glaw:create-widget 'glaw:gui-label window
-                                    :x 50 :y 100
+                                    :x 50 :y 200
                                     :width 50 :height 10
                                     :text "Some text label !")))
     (glaw:create-widget 'glaw:gui-button window
@@ -117,10 +116,7 @@
     (glaw:reshape 800 600)
     (init)
     (sdl:with-events (:poll)
-      (:quit-event () (prog1 t
-                        (shutdown)
-                        ;; free remaining resources
-                        (glaw:free-all-resources)))
+      (:quit-event () (shutdown))
       (:key-down-event (:key key :unicode code)
           (glaw:dispatch-key-event (glaw-sdl:translate-key key code)
                                    :press))

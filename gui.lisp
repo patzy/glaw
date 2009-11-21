@@ -69,7 +69,7 @@
     (focus (gui-focus it))))
 
 ;; input handling
-(key-handler gui (#\Tab :press)
+(key-handler (it gui) (#\Tab :press)
      (when (gui-focus it)
        (gui-focus-next it)))
 
@@ -247,7 +247,7 @@
 (defmethod add-child-widget ((e gui-widget) (c gui-widget))
   (setf (parent-widget c) e)
   (setf (children e) (append (children e) (list c)))
-  (format t "Added ~S into ~S~%" e c)
+  (format t "Added ~S into ~S~%" c e)
   (apply-layout e))
 
 (defgeneric render-widget (gui-widget)
@@ -375,14 +375,14 @@
   (setf (width w) (string-width (text w) (gui-font *gui*))))
 
 ;; setup keymap
-(key-handler gui-text-input (#\Return :press)
+(key-handler (it gui-text-input) (#\Return :press)
     (when (action it)
       (funcall (action it) it)))
-(key-handler gui-text-input (#\Backspace :press)
+(key-handler (it gui-text-input) (#\Backspace :press)
     (when (input it)
       (decf (width it) (font-width (gui-font *gui*)))
       (pop (input it))))
-(key-handler gui-text-input (nil :press)
+(key-handler (it gui-text-input) (nil :press)
     (incf (width it) (font-width (gui-font *gui*)))
     (push key (input it)))
 
