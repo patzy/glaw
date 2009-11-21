@@ -459,15 +459,16 @@
 
 
 (defun create-grid-shape (width height step-x step-y
-                          &key (altitude 0.0) color texture)
+                          &key (start-x 0) (start-y 0)
+                               (altitude 0.0) color texture)
   (incf width) (incf height)
   (let ((shape (create-shape (* width height)
                              (* width height 2 3)
                              :color color
                              :texture texture
                              :primitive :triangles)))
-    (loop for y from 0 below (* height step-y) by step-y
-       do (loop for x from 0 below (* width step-x) by step-x
+    (loop for y from start-y below (+ start-y (* height step-y)) by step-y
+       do (loop for x from start-x below (+ start-x (* width step-x)) by step-x
              for z = (if (functionp altitude)
                                  (apply altitude x y)
                                  altitude)
