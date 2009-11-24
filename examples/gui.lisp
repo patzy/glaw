@@ -3,6 +3,7 @@
 (defvar *font* nil)
 
 (glaw:key-handler :global (#\Esc :press)
+   (shutdown)
    (sdl:push-quit-event))
 
 (defun init ()
@@ -116,7 +117,7 @@
     (glaw:reshape 800 600)
     (init)
     (sdl:with-events (:poll)
-      (:quit-event () (shutdown))
+      (:quit-event () t)
       (:key-down-event (:key key :unicode code)
           (glaw:dispatch-key-event (glaw-sdl:translate-key key code)
                                    :press))

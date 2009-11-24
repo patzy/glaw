@@ -215,11 +215,9 @@
         (case (gui-widget-layout it)
           (:horizontal (progn (setf (pos-x c) origin)
                               ;;(setf (pos-y c) align)
-                              (format t "Origin (horiz): ~S~%" origin)
                               (incf origin (width c))))
           (:vertical (progn (setf (pos-y c) origin)
                             ;;(setf (pos-x c) align)
-                            (format t "Origin (vert): ~S~%" origin)
                             (incf origin (height c))))
           (otherwise (error "Invalid layout specification: ~S~%"
                             (gui-widget-layout it))))))))
