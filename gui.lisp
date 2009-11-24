@@ -37,7 +37,10 @@
 
 (defun update-gui (&optional (width *display-width*)
                              (height *display-height*))
-  (update-2d-view *gui-view* 0 0 width height))
+  (update-2d-view *gui-view* 0 0 width height)
+  (dolist (w (gui-widgets *gui*))
+    (format t "Updatin layout of ~S~%" w)
+    (apply-layout w)))
 
 (defun create-widget (widget-type parent-widget &rest initargs)
   (let ((created-widget (apply 'make-instance widget-type initargs)))
@@ -199,16 +202,24 @@
   (apply-layout it))
 
 (defmethod apply-layout ((it gui-widget))
-  ;; apply layout to children
+  ;; apply layout of children
+  (dolist (c (children it))
+    (when (children c)
+      (apply-layout c)))
+  ;; layout our own children
   (unless (eq (gui-widget-layout it) :absolute)
     (let ((origin 0))
       (dolist (c (children it))
+        (when (children c)
+          (apply-layout c))
         (case (gui-widget-layout it)
           (:horizontal (progn (setf (pos-x c) origin)
                               ;;(setf (pos-y c) align)
+                              (format t "Origin (horiz): ~S~%" origin)
                               (incf origin (width c))))
           (:vertical (progn (setf (pos-y c) origin)
                             ;;(setf (pos-x c) align)
+                            (format t "Origin (vert): ~S~%" origin)
                             (incf origin (height c))))
           (otherwise (error "Invalid layout specification: ~S~%"
                             (gui-widget-layout it))))))))
@@ -407,7 +418,9 @@
 (defclass gui-button (gui-widget)
   ((text :accessor text :initform '() :initarg :text)
    (action :accessor action :initform nil :initarg :action)
-   (pressed :accessor gui-button-pressed :initform nil))
+   (pressed :accessor gui-button-pressed :initform nil)
+   (pressed-texture :accessor gui-button-pressed-texture :initform nil
+                    :initarg :pressed-texture))
   (:default-initargs
     :color (create-color 1 1 1)
     :texture (create-texture-from-file "button.png"
@@ -418,12 +431,20 @@
 ;;       (funcall (action it) it)))
 
 (defmethod gui-widget-mouse-down ((it gui-button))
-  (setf (gui-button-pressed it) t))
+  (setf (gui-button-pressed it) t)
+  (when (gui-button-pressed-texture it)
+    (let ((tex (gui-widget-texture it)))
+      (setf (gui-widget-texture it) (gui-button-pressed-texture it))
+      (setf (gui-button-pressed-texture it) tex))))
 
 (defmethod gui-widget-mouse-up ((it gui-button))
   (when (and (gui-button-pressed it) (action it))
     (funcall (action it) it))
-  (setf (gui-button-pressed it) nil))
+  (setf (gui-button-pressed it) nil)
+  (when (gui-button-pressed-texture it)
+    (let ((tex (gui-widget-texture it)))
+      (setf (gui-widget-texture it) (gui-button-pressed-texture it))
+      (setf (gui-button-pressed-texture it) tex))))
 
 (defmethod show ((w gui-button))
   (add-input-handler w)
