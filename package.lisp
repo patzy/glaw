@@ -21,7 +21,9 @@
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view
    #:update-2d-view #:screen-to-view
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
+   ;; shapes
    #:create-shape #:render-shape #:render-bbox
+   #:translate-shape
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
    #:shape-add-color #:shape-add-color/rgb
    #:shape-add-tex-vertex

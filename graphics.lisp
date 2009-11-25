@@ -356,6 +356,18 @@
   x-min y-min z-min
   x-max y-max z-max)
 
+(defun translate-shape (shape dx dy &optional (dz 0.0))
+  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+       (incf (aref (shape-vertices shape) i) dx)
+       (incf (aref (shape-vertices shape) (+ i 1)) dy)
+       (incf (aref (shape-vertices shape) (+ i 2)) dz))
+  (incf (shape-x-min shape) dx)
+  (incf (shape-x-max shape) dx)
+  (incf (shape-y-min shape) dy)
+  (incf (shape-y-max shape) dy)
+  (incf (shape-z-min shape) dz)
+  (incf (shape-z-max shape) dz))
+
 (defun render-shape (shape)
   (gl:begin (shape-primitive shape))
   (loop with dim = (fill-pointer (shape-indices shape))
