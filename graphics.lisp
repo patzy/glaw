@@ -394,6 +394,16 @@
   (gl:vertex (shape-x-min shape) (shape-y-max shape))
   (gl:end))
 
+(defun coords-overlap-p (a b c d)
+  (or (< c a d b) (< a c b d)
+      (< a c d b) (< c a b d)))
+
+(defun shape-intersect-p (shape-1 shape-2)
+  (and (coords-overlap-p (shape-x-min shape-1) (shape-x-max shape-1)
+                         (shape-x-min shape-2) (shape-x-max shape-2))
+       (coords-overlap-p (shape-y-min shape-1) (shape-y-max shape-1)
+                         (shape-y-min shape-2) (shape-y-max shape-2))))
+
 (defun create-shape (nb-vertices nb-indices &key color texture
                                              (primitive :triangles))
   (make-shape :primitive primitive
@@ -532,11 +542,11 @@
     (shape-add-vertex/index shape x (+ y size))
     shape))
 
-(defun create-rectangle-shape (top left bottom right)
+(defun create-rectangle-shape (top left bottom right &key (filledp t))
   (let ((shape (create-shape 4 5
                              :color nil
                              :texture nil
-                             :primitive :line-strip)))
+                             :primitive (if filledp :quads :line-strip))))
   (shape-add-vertex/index shape left top)
   (shape-add-vertex/index shape right top)
   (shape-add-vertex/index shape right bottom)

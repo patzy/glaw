@@ -23,6 +23,9 @@
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
    #:create-shape #:render-shape #:render-bbox
+   #:shape-x-min #:shape-x-max #:shape-y-min #:shape-y-max
+   #:coords-overlap-p
+   #:shape-intersect-p
    #:translate-shape
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
    #:shape-add-color #:shape-add-color/rgb
@@ -43,6 +46,7 @@
    #:gui-widget
    #:gui-label #:gui-dynamic-label #:gui-window #:gui-text-input #:gui-button
    #:gui-multiline-text #:gui-slider #:gui-slider-step-up #:gui-slider-step-down
+   #:gui-gauge
 ))
 
 (in-package #:glaw)
