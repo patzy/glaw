@@ -14,6 +14,9 @@
 (defun remove-input-handler (handler)
   (setf *input-handlers* (remove handler *input-handlers*)))
 
+(defun clear-input-handlers ()
+  (setf *input-handlers* '(:global)))
+
 (defun update-mouse-position (x y)
   (setf *mouse-x* x
         *mouse-y* y))
