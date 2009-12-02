@@ -15,6 +15,7 @@
 
 (defun shutdown-gui ()
   (remove-input-handler *gui*)
+  (destroy-font (gui-font *gui*))
   (setf *gui* nil))
 
 (defun render-gui ()
@@ -420,9 +421,7 @@
    (pressed-texture :accessor gui-button-pressed-texture :initform nil
                     :initarg :pressed-texture))
   (:default-initargs
-    :color (create-color 1 1 1)
-    :texture (create-texture-from-file "button.png"
-                                       :env-mode :replace)))
+    :color (create-color 1 1 1)))
 
 ;; (key-handler gui-button (#\Return :press)
 ;;     (when (action it)
@@ -539,3 +538,20 @@
 
 (defmethod gui-widget-mouse-leave ((it gui-slider))
   (setf (gui-slider-sliding it) nil))
+
+
+(defclass gui-gauge (gui-widget)
+  ((value :accessor gui-gauge-value :initform 0.5 :initarg :value)
+   (fill-color :accessor gui-gauge-fill-color
+               :initform (create-color 1.0 1.0 1.0 0.75) :initarg :fill-color)))
+
+(defmethod render-widget ((w gui-gauge))
+  (call-next-method)
+  (set-color (gui-gauge-fill-color w))
+  (gl:with-primitive :quads
+    (gl:vertex (gl-x w) (gl-y w))
+    (gl:vertex (+ (* (gui-gauge-value w) (width w)) (gl-x w))
+               (gl-y w))
+    (gl:vertex (+ (* (gui-gauge-value w) (width w)) (gl-x w))
+               (- (gl-y w) (height w)))
+    (gl:vertex (gl-x w) (- (gl-y w) (height w)))))
