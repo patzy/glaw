@@ -2,12 +2,9 @@
 
 (defsystem glaw-examples
   :depends-on (glaw glaw-sdl)
+  :serial t
   :components
-  ((:module "examples"
-            :components ((:file "gui")))))
-
-(defpackage :glaw-examples
-  (:use #:cl)
-  (:export #:run-gui))
-
-(in-package #:glaw-examples)
+  ((:file "glaw-examples")
+   (:module "examples"
+            :components ((:file "gui")
+                         (:file "sprites")))))
