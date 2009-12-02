@@ -57,12 +57,10 @@
    and requires RES to be specified. FINALIZER is optional but if provided should be a function
    taking the resource to finalize as its only argument."
   `(let ((holder (get-resource-holder %resource-manager% ,id)))
-     (format t "Found holder: ~S~%" holder)
      (if holder
          (progn (incf (resource-holder-users holder))
                 (resource-holder-data holder))
-         (progn (format t "Creating a new resource with id: ~S~%" ,id)
-                (add-resource %resource-manager% ,id ,res ,finalizer)))))
+         (add-resource %resource-manager% ,id ,res ,finalizer))))
 
 (defun drop-resource (id)
   "Stop using the designated resource."
