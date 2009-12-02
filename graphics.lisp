@@ -1,8 +1,10 @@
 (in-package :glaw)
 
 ;; Framerate utils
+;; TODO: add min/avg/max
 (defstruct frame-counter
   (nb-frames 0 :type fixnum)
+  (sample-size 100)
   (rate 0.0)
   (last-render-time (get-internal-real-time)))
 
@@ -12,17 +14,16 @@
 (defun update-fps ()
   "Updates framerate informations."
   (incf (frame-counter-nb-frames *frame-counter*))
-    (when (> (frame-counter-nb-frames *frame-counter*) 100)
-      (let ((elapsed-time (- (get-internal-real-time)
-                             (frame-counter-last-render-time *frame-counter*))))
-        (setf (frame-counter-rate *frame-counter*)
-              (* (/ (frame-counter-nb-frames *frame-counter*)
-                    (/ elapsed-time internal-time-units-per-second))
-                 1.0))
-        (format t "FPS: ~D~%" (current-fps))
-        (setf (frame-counter-last-render-time *frame-counter*)
-              (get-internal-real-time))
-        (setf (frame-counter-nb-frames *frame-counter*) 0))))
+  (when (> (frame-counter-nb-frames *frame-counter*) (frame-counter-sample-size *frame-counter*))
+    (let* ((elapsed-time (- (get-internal-real-time)
+                            (frame-counter-last-render-time *frame-counter*)))
+           (fps (* (/ (frame-counter-nb-frames *frame-counter*)
+                      (/ elapsed-time internal-time-units-per-second)) 1.0)))
+      (setf (frame-counter-rate *frame-counter*) fps)
+      (format t "FPS: ~D~%" (frame-counter-rate *frame-counter*))
+      (setf (frame-counter-last-render-time *frame-counter*)
+            (get-internal-real-time))
+      (setf (frame-counter-nb-frames *frame-counter*) 0))))
 
 (defun current-fps ()
   (frame-counter-rate *frame-counter*))
@@ -118,29 +119,6 @@
                  (* (- *display-height* y) height-factor))))))
 
 
-;; (defun set-view-2d (view-x view-y view-width view-height &optional (zoom 1.0))
-;;   (gl:matrix-mode :projection)
-;;   (gl:load-identity)
-;;   (let ((zoomed-width (* zoom view-width))
-;;         (zoomed-height (* zoom view-height)))
-;;     (glu:ortho-2d (- view-x (- zoomed-width view-width))
-;;                   (+ view-x (- zoomed-width view-width)
-;;                      view-width)
-;;                   (- view-y (- zoomed-height view-height))
-;;                   (+ view-y (- zoomed-height view-height)
-;;                      view-height)))
-;;   (gl:matrix-mode :modelview)
-;;   (gl:load-identity))
-
-;; (defun screen-to-view (x y view-x view-y view-width view-height)
-;;   (unless (or (zerop view-width) (zerop view-height)
-;;               (zerop *display-width*) (zerop *display-height*))
-;;     (let ((width-factor (/ view-width *display-width*))
-;;           (height-factor (/ view-height *display-height*)))
-;;       (values (+ view-x (* x width-factor))
-;;               (+ view-y (* (- *display-height* y) height-factor))))))
-
-
 ;;; Colors helpers
 (defstruct color
   (r 1.0)
@@ -221,75 +199,65 @@
   (multiple-value-bind (r g b a) (get-color-from-gradient/rgb gradient value)
     (gl:color r g b a)))
 
+;;; Image
+(defstruct image
+  width height bpp data)
 
-;;; Texture management
-(defvar *textures* (make-hash-table :test 'equal)
-  "All loaded images and their associated texture objects")
-
-(defun add-texture-object (tex)
-  (push tex (gethash (texture-image tex) *textures*)))
-
-(defun remove-texture-object (tex)
-  (setf (gethash (texture-image tex) *textures*)
-        (remove tex
-                (gethash (texture-image tex) *textures*))))
-
-(defun texture-object-exists (image)
-  (when (not (null (gethash image *textures*)))
-    (texture-index (first (gethash image *textures*)))))
-
+;;; 2D Texture
 (defstruct texture
-  (image nil)
-  (index nil)
-  (env-mode :modulate))
+  width height bpp
+  index ;; GL texture index
+  ;; GL texture parameters
+  (min-filter :linear)
+  (mag-filter :linear)
+  ;; min-lod max-lod
+  ;; base-level max-level
+  ;; wrap-s wrap-t wrap-r
+  priority)
 
-(defun create-texture (image &key (env-mode :modulate) (shared t))
-  "Creates an OpenGL texture based on the provided IMAGE resource.
-   If :SHARED is NIL, the creation of a new texture object is forced.
-   Otherwise, if a texture object already exists for the specified image
-   it is reused."
-  (let ((tex-index (when shared (texture-object-exists image)))
-        (tex (make-texture :image image :env-mode env-mode)))
-    (unless tex-index
-      (setf tex-index (first (gl:gen-textures 1)))
-      (gl:bind-texture :texture-2d tex-index)
-      (gl:tex-image-2d :texture-2d 0
-                       :rgba
-                       (image-resource-width image)
-                       (image-resource-height image)
-                       0
-                       (ecase (image-resource-bpp image)
-                         (1 :luminance)
-                         (2 :luminance-alpha)
-                         (3 :rgb)
-                         (4 :rgba))
-                       :unsigned-byte
-                       (resource-data image)))
-    (setf (texture-index tex) tex-index)
-    (add-texture-object tex)
+(defun create-texture (width height bpp data &rest args)
+  (let ((tex (apply 'make-texture :index (first (gl:gen-textures 1))
+                                  :width width :height height
+                                  :bpp bpp
+                                  args)))
     (gl:bind-texture :texture-2d (texture-index tex))
-    (gl:tex-parameter :texture-2d :texture-min-filter :linear)
-    (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
-    (format t "Texture data: ~S~%" (resource-data image))
+    (gl:tex-image-2d :texture-2d 0 :rgba width height 0
+                     (ecase bpp
+                       (1 :luminance)
+                       (2 :luminance-alpha)
+                       (3 :rgb)
+                       (4 :rgba))
+                     :unsigned-byte
+                     data)
+    (gl:bind-texture :texture-2d (texture-index tex))
+    (gl:tex-parameter :texture-2d :texture-min-filter (texture-min-filter tex))
+    (gl:tex-parameter :texture-2d :texture-mag-filter (texture-mag-filter tex))
+    ;; (gl:tex-parameter :texture-2d :texture-min-lod (texture-min-lod tex))
+    ;; (gl:tex-parameter :texture-2d :texture-max-lod (texture-max-lod tex))
+    ;; (gl:tex-parameter :texture-2d :texture-base-level (texture-base-level tex))
+    ;; (gl:tex-parameter :texture-2d :texture-max-level (texture-max-level tex))
+    ;; (gl:tex-parameter :texture-2d :texture-wrap-s (texture-wrap-s tex))
+    ;; (gl:tex-parameter :texture-2d :texture-wrap-t (texture-wrap-t tex))
+    ;; (gl:tex-parameter :texture-2d :texture-wrap-r (texture-wrap-r tex))
     tex))
 
-(defun create-texture-from-file (filename &rest args)
-  (apply 'create-texture (create-resource filename :image) args))
+(defun create-texture-from-image (image &rest args)
+  (apply 'create-texture
+         (image-width image) (image-height image) (image-bpp image) (image-data image)
+         args))
 
 (defun destroy-texture (tex)
-  (remove-texture-object tex)
-  (unless (texture-object-exists (texture-image tex))
-    (gl:delete-textures (list (texture-index tex)))))
+  (gl:delete-textures (list (texture-index tex))))
 
 (defvar *selected-texture-index* -1
-  "Currently texture in GL context.")
+  "Current texture in GL context.")
 
-(defun select-texture (tex)
-  "Set the provided texture TEX as the current one if necessary."
+(defun select-texture (tex &key (env-mode :replace))
+  "Set TEX as the current gl texture if necessary."
   (unless (= (texture-index tex) *selected-texture-index*)
     (gl:bind-texture :texture-2d (texture-index tex))
     (gl:tex-env :texture-env
-                :texture-env-mode (texture-env-mode tex))
+                :texture-env-mode env-mode)
     (setf *selected-texture-index* (texture-index tex))))
 
 
@@ -297,13 +265,13 @@
 (defstruct font
   texture base width height)
 
-(defmethod create-font (image font-width font-height)
+(defmethod create-bitmap-font (texture char-width char-height)
   ;; XXX: assume 16x16 character bitmap
-  ;; TODO: use font-width and font-height when creating display lists
-  (let ((fnt (make-font :width font-width :height font-height)))
-    (setf (font-texture fnt) (create-texture image :env-mode :modulate))
+  ;; TODO: use char-width and font-height when creating display lists
+  (let ((fnt (make-font :width char-width :height char-height)))
+    (setf (font-texture fnt) texture)
     (setf (font-base fnt) (gl:gen-lists 256))
-    (select-texture (font-texture fnt))
+    (select-texture (font-texture fnt) :env-mode :modulate)
     (loop for i from 0 to 256
        do (let ((cx (/ (mod i 16.0) 16.0))
                 (cy (/ (truncate (/ i 16)) 16.0)))
@@ -327,7 +295,7 @@
 
 (defun render-bitmap-string (x y text fnt)
   (gl:enable :texture-2d)
-  (select-texture (font-texture fnt))
+  (select-texture (font-texture fnt) :env-mode :modulate)
   (gl:with-pushed-matrix
     (gl:translate x y 0)
     (gl:list-base (font-base fnt))
@@ -346,6 +314,7 @@
 (defmacro format-at (x y fnt fmt &rest values)
   `(render-bitmap-string ,x ,y (format nil ,fmt ,@values) ,fnt))
 
+
 ;;; Shapes management
 (defstruct shape
   (primitive :triangle-strip)
@@ -355,6 +324,19 @@
   indices
   x-min y-min z-min
   x-max y-max z-max)
+
+(defmacro with-shape-vertices (v-sym shape &body body)
+  `(let ((,v-sym (shape-vertices ,shape)))
+     ,@body))
+
+(defmacro with-shape-colors (c-sym shape &body body)
+  `(let ((,c-sym (shape-colors ,shape)))
+     ,@body))
+
+(defmacro with-shape-tex-coords (t-sym shape &body body)
+  `(let ((,t-sym (shape-tex-coords ,shape)))
+     ,@body))
+
 
 (defun translate-shape (shape dx dy &optional (dz 0.0))
   (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
@@ -542,15 +524,19 @@
     (shape-add-vertex/index shape x (+ y size))
     shape))
 
-(defun create-rectangle-shape (top left bottom right &key (filledp t))
+(defun create-rectangle-shape (left bottom right top &key (filledp t))
   (let ((shape (create-shape 4 5
                              :color nil
-                             :texture nil
+                             :texture t
                              :primitive (if filledp :quads :line-strip))))
-  (shape-add-vertex/index shape left top)
-  (shape-add-vertex/index shape right top)
-  (shape-add-vertex/index shape right bottom)
   (shape-add-vertex/index shape left bottom)
+  (shape-add-tex-vertex shape 0 1)
+  (shape-add-vertex/index shape right bottom)
+  (shape-add-tex-vertex shape 1 1)
+  (shape-add-vertex/index shape right top)
+  (shape-add-tex-vertex shape 1 0)
+  (shape-add-vertex/index shape left top)
+  (shape-add-tex-vertex shape 0 0)
   (shape-add-indices shape 0)
   shape))
 
@@ -566,11 +552,14 @@
 
 ;;; Sprites management
 (defstruct sprite
-  (shape (create-shape 4 4 :color t :texture t :primitive :quads))
+  shape
   (blend-mode '(:src-alpha :one-minus-src-alpha))
   (texture nil)
   (flip nil))      ;; :vertical, :horizontal or :both
 
+(defun create-sprite (x y width height texture)
+  (make-sprite :texture texture
+               :shape (create-rectangle-shape x y (+ x width) (+ y height))))
 
 (defun render-sprite (sp)
   (gl:blend-func (first (sprite-blend-mode sp))
@@ -579,7 +568,8 @@
       (progn (gl:enable :texture-2d)
              (select-texture (sprite-texture sp)))
       (gl:disable :texture-2d))
-  (gl:blend-func :src-alpha :one-minus-src-alpha))
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
+  (render-shape (sprite-shape sp)))
 
 
 ;;; Tilemap

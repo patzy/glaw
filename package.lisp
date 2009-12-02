@@ -2,21 +2,26 @@
   (:use #:cl)
   (:export
    ;; resources
-   #:create-resource #:destroy-resource #:free-all-resources
-   #:load-resource #:free-resource
-   #:image-resource #:sound-resource
-   #:make-image-resource #:make-sound-resource
-   ;; graphics
-   #:create-texture #:create-texture-from-file
+   #:create-resource #:use-resource #:get-resource #:drop-resource #:destroy-resource
+   #:create-resource-manager #:destroy-resource-manager
+   #:width-resource-manager #:with-resource
+   ;; assets
+   #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
+   ;; colors
    #:create-color #:mix-colors #:create-color-gradient
    #:set-color #:set-color/rgb
    #:set-color-from-gradient #:get-color-from-gradient
    #:get-color-from-gradient/rgb
-   #:create-texture #:destroy-texture #:select-texture
-   #:create-font #:destroy-font
+   ;; images
+   #:create-image-from-file #:destroy-image #:make-image
+   ;; textures
+   #:create-texture #:create-texture-from-image #:create-texture-from-file
+   #:destroy-texture #:select-texture
+   #:create-bitmap-font #:destroy-font
    #:render-bitmap-string #:string-width #:string-height
    #:format-at
    #:fps-counter #:update-fps #:current-fps
+   ;; view
    #:*display-width* #:*display-height* #:set-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view
    #:update-2d-view #:screen-to-view
@@ -32,6 +37,8 @@
    #:shape-add-tex-vertex
    #:create-grid-shape #:create-cross-shape #:create-rectangle-shape
    #:create-line-shape #:create-circle-shape #:create-triangle-shape
+   ;; sprites
+   #:create-sprite #:render-sprite
    ;; input management
    #:add-input-handler #:remove-input-handler
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event

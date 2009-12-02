@@ -1,5 +1,5 @@
 (defpackage :glaw-sdl
-  (:use #:cl)
+  (:use #:cl #:glaw)
   (:export
      #:translate-key
      #:translate-mouse-button))
@@ -28,17 +28,27 @@
     (4 :wheel-up)
     (5 :wheel-down)))
 
-;; image-resource
-(defmethod glaw:load-resource ((type (eql :image)) filename)
-  ;; FIXME: missing resize to next power of two
-  (let ((image (sdl-image:load-image filename)))
-    (sdl-base::with-pixel (pix (sdl:fp image))
-      (glaw:make-image-resource :identifier filename
-                                :data (sdl-base::pixel-data pix)
-                                :bpp (sdl-base::pixel-bpp pix)
-                                :width (sdl:width image)
-                                :height (sdl:height image)))))
+;; image asset
+(defasset :image
+  ;; load
+  (lambda (filename)
+    (let ((img-surf (sdl-image:load-image filename)))
+      (sdl-base::with-pixel (pix (sdl:fp img-surf))
+        (make-image :data (sdl-base::pixel-data pix)
+                    :bpp (sdl-base::pixel-bpp pix)
+                    :width (sdl:width img-surf)
+                    :height (sdl:height img-surf)))))
+  ;; unload
+  'sdl::free-surface)
 
-(defmethod glaw:free-resource ((resource glaw:image-resource))
-  ;; TODO: free resource
-  nil)
+
+;; texture asset
+(defasset :texture
+  ;; load
+  (lambda (filename)
+    (let ((img-surf (sdl-image:load-image filename)))
+      (sdl-base::with-pixel (pix (sdl:fp img-surf))
+        (create-texture (sdl:width img-surf) (sdl:height img-surf)
+                        (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))))
+  ;; unload
+  'glaw:destroy-texture)

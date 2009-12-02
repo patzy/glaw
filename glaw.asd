@@ -10,6 +10,7 @@
    (:file "input")
    (:file "graphics")
    (:file "gui")
+   (:file "assets")
    ;;(:file "console")
    (:file "glaw")))
 
