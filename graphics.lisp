@@ -137,8 +137,11 @@
 (defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
 
-(defun copy-color (color)
-  (copy-structure color))
+(defun copy-color (src dest)
+  (setf (color-r dest) (color-r src)
+        (color-g dest) (color-g src)
+        (color-b dest) (color-b src)
+        (color-a dest) (color-a src)))
 
 (defun mix-colors (color-1 color-2 value)
   (let ((r (+ (color-r color-1)

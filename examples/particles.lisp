@@ -19,6 +19,7 @@
                                :rate 10.0
                                :vx '(-10.0 10.0)
                                :vy '(0.0 100.0)
+                               :lifetime 100.0
                                :color (glaw:create-color 0.3 0.6 1.0 1.0)
                                :width 10.0
                                :height 10.0

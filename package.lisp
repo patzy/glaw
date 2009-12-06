@@ -9,6 +9,7 @@
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
    ;; colors
    #:create-color #:mix-colors #:create-color-gradient
+   #:copy-color
    #:set-color #:set-color/rgb
    #:set-color-from-gradient #:get-color-from-gradient
    #:get-color-from-gradient/rgb

@@ -50,7 +50,7 @@
                          sdl:sdl-doublebuf)
                 :title-caption "GLAW - Examples"
                 :icon-caption "GLAW - Examples")
-    (setf (sdl:frame-rate) 1000)
+    (setf (sdl:frame-rate) 120)
     (sdl:enable-unicode)
     (sdl:enable-key-repeat nil nil)
     (glaw:setup-gl-defaults)
