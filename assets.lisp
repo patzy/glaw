@@ -14,14 +14,13 @@
 
 (defvar *asset-loaders* (make-hash-table))
 
-(defun load-asset (filename type &optional (auto-use nil))
+(defun load-asset (filename type)
   (format t "Loading asset of type ~S from ~S~%" type filename)
   (with-resource-manager *content-manager*
     (let ((loader (gethash type *asset-loaders* nil))
           (pathname (merge-pathnames *content-directory* filename)))
       (if loader
-          (use-resource filename
-                        (funcall (first loader) pathname) (second loader))
+          (use-resource filename (funcall (first loader) pathname) (second loader))
           (error "No asset loader defined for ~S~%" type)))))
 
 (defun dispose-asset (filename)
