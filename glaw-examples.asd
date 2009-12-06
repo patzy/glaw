@@ -7,4 +7,5 @@
   ((:file "glaw-examples")
    (:module "examples"
             :components ((:file "gui")
-                         (:file "sprites")))))
+                         (:file "sprites")
+                         (:file "particles")))))

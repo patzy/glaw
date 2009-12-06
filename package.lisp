@@ -39,6 +39,8 @@
    #:create-line-shape #:create-circle-shape #:create-triangle-shape
    ;; sprites
    #:create-sprite #:render-sprite
+   ;; particles
+   #:create-particle-system #:update-particles #:render-particles
    ;; input management
    #:add-input-handler #:remove-input-handler
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event

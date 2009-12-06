@@ -4,6 +4,8 @@
 
 (in-package #:glaw-examples)
 
+(defvar *current-example* nil)
+
 (defgeneric init-example (example))
 (defgeneric shutdown-example (example))
 (defgeneric render-example (example))
@@ -11,14 +13,8 @@
 (defgeneric reshape-example (example w h))
 
 (glaw:key-handler :global (#\Esc :press)
-                  ;;(glaw:free-all-resources)
+  (shutdown-example *current-example*)
   (sdl:push-quit-event))
-
-(glaw:key-handler :global (#\n :press)
-  (next-example)
-  (sdl:push-quit-event))
-
-(defvar *current-example* nil)
 
 (defun start-example (expl)
   (let ((old-example *current-example*))
@@ -26,11 +22,6 @@
       (shutdown-example old-example))
     (setf *current-example* (make-instance expl))
     (init-example *current-example*)))
-
-(defun next-example ()
-  (let ((expl-pos (position (class-name (class-of *current-example*)) *all-examples*)))
-    (format t "Current example pos: ~S~%" expl-pos)
-    (run-example (elt *all-examples* (mod (1+ expl-pos) (length *all-examples*))))))
 
 (defun draw ()
   (glaw:begin-draw)
@@ -49,7 +40,9 @@
       (setf last-update-time (get-internal-real-time)))))
 
 (defun run-example (example-name)
-  (sdl:with-init (sdl:sdl-init-video)
+  (sdl:with-init ()
+    ;; how to get extensions
+    (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl-cffi::sdl-gl-get-proc-address)
     (sdl:window 1024 768
                 :bpp 32
                 :flags '(sdl:sdl-opengl sdl:sdl-resizable
@@ -57,8 +50,8 @@
                          sdl:sdl-doublebuf)
                 :title-caption "GLAW - Examples"
                 :icon-caption "GLAW - Examples")
-    (setf (sdl:frame-rate) 120)
-    (sdl:enable-unicode t)
+    (setf (sdl:frame-rate) 1000)
+    (sdl:enable-unicode)
     (sdl:enable-key-repeat nil nil)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)
@@ -71,11 +64,11 @@
       (:key-up-event (:key key :unicode code)
           (glaw:dispatch-key-event (glaw-sdl:translate-key key code)
                                    :release))
-      (:mouse-button-down-event (:button button :state state :x x :y y)
+      (:mouse-button-down-event (:button button)
           (glaw:dispatch-button-event :mouse
                                       (glaw-sdl:translate-mouse-button button)
                                       :press))
-      (:mouse-button-up-event (:button button :state state :x x :y y)
+      (:mouse-button-up-event (:button button)
           (glaw:dispatch-button-event :mouse
                                       (glaw-sdl:translate-mouse-button button)
                                       :release))

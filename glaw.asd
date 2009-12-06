@@ -11,6 +11,7 @@
    (:file "graphics")
    (:file "gui")
    (:file "assets")
+   (:file "particles")
    ;;(:file "console")
    (:file "glaw")))
 

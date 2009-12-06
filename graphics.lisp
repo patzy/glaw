@@ -137,6 +137,9 @@
 (defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
 
+(defun copy-color (color)
+  (copy-structure color))
+
 (defun mix-colors (color-1 color-2 value)
   (let ((r (+ (color-r color-1)
               (* (- (color-r color-2)
@@ -358,7 +361,8 @@
        when (shape-colors shape)
        do (gl:color  (aref (shape-colors shape) (* i 3))
                      (aref (shape-colors shape) (+ 1 (* i 3)))
-                     (aref (shape-colors shape) (+ 2 (* i 3))))
+                     (aref (shape-colors shape) (+ 2 (* i 3)))
+                     (aref (shape-colors shape) (+ 3 (* i 3))))
        when (shape-tex-coords shape)
        do (gl:tex-coord  (aref (shape-tex-coords shape) (* i 2))
                          (aref (shape-tex-coords shape) (+ 1 (* i 2))))
@@ -401,7 +405,7 @@
                                         :element-type 'single-float
                                         :fill-pointer 0))
               :indices (make-array nb-indices
-                                   :element-type 'integer
+                                   :element-type 'unsigned-byte
                                    :fill-pointer 0)))
 
 (defun shape-update-bbox (shape x y &optional (z 0.0))
@@ -426,12 +430,14 @@
                (setf (shape-z-max shape) z)))))
 
 (defun shape-add-vertex (shape x y &optional (z 0.0))
+  (declare (type single-float x y z))
   (shape-update-bbox shape x y z)
   (vector-push x (shape-vertices shape))
   (vector-push y (shape-vertices shape))
   (vector-push z (shape-vertices shape)))
 
 (defun shape-set-vertex (shape index x y &optional (z 0.0))
+  (declare (type single-float x y z))
   (setf (aref (shape-vertices shape) (* index 3))
         x
         (aref (shape-vertices shape) (+ 1 (* index 3)))
@@ -440,21 +446,27 @@
         z))
 
 (defun shape-add-color (shape color)
+  (declare (type color color))
   (vector-push (color-r color) (shape-colors shape))
   (vector-push (color-g color) (shape-colors shape))
-  (vector-push (color-b color) (shape-colors shape)))
+  (vector-push (color-b color) (shape-colors shape))
+  (vector-push (color-a color) (shape-colors shape)))
 
-(defun shape-add-color/rgb (shape r g b)
+(defun shape-add-color/rgb (shape r g b &optional (a 1.0))
+  (declare (type single-float r g b a))
   (vector-push r (shape-colors shape))
   (vector-push g (shape-colors shape))
-  (vector-push b (shape-colors shape)))
+  (vector-push b (shape-colors shape))
+  (vector-push a (shape-colors shape)))
 
 (defun shape-add-tex-vertex (shape u v)
+  (declare (type single-float u v))
   (vector-push u (shape-tex-coords shape))
   (vector-push v (shape-tex-coords shape)))
 
 (defun shape-add-indices (shape &rest indices)
   (dolist (i indices)
+    (declare (type unsigned-byte i))
     (vector-push i (shape-indices shape))))
 
 (defun shape-add-vertex/index (shape x y &optional (z 0.0))
@@ -474,13 +486,13 @@
     (loop for y from start-y below (+ start-y (* height step-y)) by step-y
        do (loop for x from start-x below (+ start-x (* width step-x)) by step-x
              for z = (if (functionp altitude)
-                                 (apply altitude x y)
+                                 (funcall altitude x y)
                                  altitude)
              do (progn (shape-add-vertex shape x y z)
                        (when color
                          (multiple-value-bind (r g b a)
                              (funcall color x y z)
-                           (shape-add-color/rgb shape r g b)))
+                           (shape-add-color/rgb shape r g b a)))
                        (when texture
                          (multiple-value-bind (u v)
                              (funcall texture x y z)
@@ -530,13 +542,13 @@
                              :texture t
                              :primitive (if filledp :quads :line-strip))))
   (shape-add-vertex/index shape left bottom)
-  (shape-add-tex-vertex shape 0 1)
+  (shape-add-tex-vertex shape 0.0 1.0)
   (shape-add-vertex/index shape right bottom)
-  (shape-add-tex-vertex shape 1 1)
+  (shape-add-tex-vertex shape 1.0 1.0)
   (shape-add-vertex/index shape right top)
-  (shape-add-tex-vertex shape 1 0)
+  (shape-add-tex-vertex shape 1.0 0.0)
   (shape-add-vertex/index shape left top)
-  (shape-add-tex-vertex shape 0 0)
+  (shape-add-tex-vertex shape 0.0 0.0)
   (shape-add-indices shape 0)
   shape))
 
@@ -550,11 +562,12 @@
   (shape-add-vertex/index shape x1 y1)
   shape))
 
-;;; Sprites management
+;;; Sprites are just textured quads
+;; TODO: use point sprites when possible
+;; TODO: implement sprite batches
 (defstruct sprite
   shape
-  (blend-mode '(:src-alpha :one-minus-src-alpha))
-  (texture nil)
+  texture
   (flip nil))      ;; :vertical, :horizontal or :both
 
 (defun create-sprite (x y width height texture)
@@ -562,87 +575,82 @@
                :shape (create-rectangle-shape x y (+ x width) (+ y height))))
 
 (defun render-sprite (sp)
-  (gl:blend-func (first (sprite-blend-mode sp))
-                 (second (sprite-blend-mode sp)))
-  (if (sprite-texture sp)
-      (progn (gl:enable :texture-2d)
-             (select-texture (sprite-texture sp)))
-      (gl:disable :texture-2d))
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
+  (gl:enable :texture-2d)
+  (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
 
-;;; Tilemap
-(defstruct tileset
-  texture
-  tilesize
-  width height)
+;; ;;; Tilemap
+;; (defstruct tileset
+;;   texture
+;;   tilesize
+;;   width height)
 
-(defun create-tileset (image tilesize width height)
-  (let ((tset (make-tileset :texture (create-texture image)
-                            :tilesize tilesize
-                            :width width
-                            :height height)))
-    tset))
+;; (defun create-tileset (image tilesize width height)
+;;   (let ((tset (make-tileset :texture (create-texture image)
+;;                             :tilesize tilesize
+;;                             :width width
+;;                             :height height)))
+;;     tset))
 
-(defun tile-tex-coords (tileset tile-index)
-  "Returns tex-coord of top left corner of the tile designated by
-   TILE-INDEX in the provided TILESET and tile's width/height in the
-   texture world."
-  (let ((tile-width (/ (tileset-tilesize tileset)
-                       (* (tileset-width tileset)
-                          (tileset-tilesize tileset))))
-        (tile-height (/ (tileset-tilesize tileset)
-                       (* (tileset-height tileset)
-                          (tileset-tilesize tileset)))))
-    (values (* tile-index tile-width) (* tile-index tile-height)
-            tile-width tile-height)))
+;; (defun tile-tex-coords (tileset tile-index)
+;;   "Returns tex-coord of top left corner of the tile designated by
+;;    TILE-INDEX in the provided TILESET and tile's width/height in the
+;;    texture world."
+;;   (let ((tile-width (/ (tileset-tilesize tileset)
+;;                        (* (tileset-width tileset)
+;;                           (tileset-tilesize tileset))))
+;;         (tile-height (/ (tileset-tilesize tileset)
+;;                        (* (tileset-height tileset)
+;;                           (tileset-tilesize tileset)))))
+;;     (values (* tile-index tile-width) (* tile-index tile-height)
+;;             tile-width tile-height)))
 
-(defun destroy-tileset (tileset)
-  (destroy-texture (tileset-texture tileset)))
+;; (defun destroy-tileset (tileset)
+;;   (destroy-texture (tileset-texture tileset)))
 
-(defstruct tilemap
-  width height
-  tiles
-  tileset)
+;; (defstruct tilemap
+;;   width height
+;;   tiles
+;;   tileset)
 
-(defun create-tilemap (tileset width height)
-  (let ((map (make-tilemap :tileset tileset
-                           :width width
-                           :height height
-                           :tiles (make-array (* width height)
-                                               :element-type 'integer))))
-    map))
+;; (defun create-tilemap (tileset width height)
+;;   (let ((map (make-tilemap :tileset tileset
+;;                            :width width
+;;                            :height height
+;;                            :tiles (make-array (* width height)
+;;                                                :element-type 'integer))))
+;;     map))
 
-(defun destroy-tilemap (tilemap)
-  (setf (tilemap-tiles tilemap) nil))
+;; (defun destroy-tilemap (tilemap)
+;;   (setf (tilemap-tiles tilemap) nil))
 
-(defun set-tile (tilemap x y value)
-  (setf (aref (tilemap-tiles tilemap) (+ x (* y (tilemap-width tilemap))))
-        value))
+;; (defun set-tile (tilemap x y value)
+;;   (setf (aref (tilemap-tiles tilemap) (+ x (* y (tilemap-width tilemap))))
+;;         value))
 
-(defun get-tile (tilemap x y)
-  (aref (tilemap-tiles tilemap) (+ x (* y (tilemap-width tilemap)))))
+;; (defun get-tile (tilemap x y)
+;;   (aref (tilemap-tiles tilemap) (+ x (* y (tilemap-width tilemap)))))
 
-(defun render-tilemap (tilemap)
-  (let* ((tilesize (tileset-tilesize (tilemap-tileset tilemap)))
-         (width (* (tilemap-width tilemap) tilesize))
-         (height (* (tilemap-height tilemap) tilesize)))
-    (select-texture (tileset-texture (tilemap-tileset tilemap)))
-    (gl:begin :quads)
-    (let ((tile-index 0))
-      (loop for x from 0 upto (tilemap-width tilemap)
-         do (loop for y from 0 upto (tilemap-height tilemap)
-               do (multiple-value-bind (tex-x tex-y tex-width tex-height)
-                      (tile-tex-coords (tilemap-tileset tilemap)
-                                      (aref (tilemap-tiles tilemap) tile-index))
-                    (gl:tex-coord tex-x tex-y)
-                    (gl:vertex (* x tilesize) (* y tilesize))
-                    (gl:tex-coord (+ tex-x tex-width) tex-y)
-                    (gl:vertex (* (+ x 1) tilesize) (* y tilesize))
-                    (gl:tex-coord (+ tex-x tex-width) (+ tex-y tex-height))
-                    (gl:vertex (* (+ x 1) tilesize) (* (+ y 1) tilesize))
-                    (gl:tex-coord tex-x (+ tex-y tex-height))
-                    (gl:vertex (* x tilesize) (* (+ y 1) tilesize))
-                    (incf tile-index)))))
-    (gl:end)))
+;; (defun render-tilemap (tilemap)
+;;   (let* ((tilesize (tileset-tilesize (tilemap-tileset tilemap)))
+;;          (width (* (tilemap-width tilemap) tilesize))
+;;          (height (* (tilemap-height tilemap) tilesize)))
+;;     (select-texture (tileset-texture (tilemap-tileset tilemap)))
+;;     (gl:begin :quads)
+;;     (let ((tile-index 0))
+;;       (loop for x from 0 upto (tilemap-width tilemap)
+;;          do (loop for y from 0 upto (tilemap-height tilemap)
+;;                do (multiple-value-bind (tex-x tex-y tex-width tex-height)
+;;                       (tile-tex-coords (tilemap-tileset tilemap)
+;;                                       (aref (tilemap-tiles tilemap) tile-index))
+;;                     (gl:tex-coord tex-x tex-y)
+;;                     (gl:vertex (* x tilesize) (* y tilesize))
+;;                     (gl:tex-coord (+ tex-x tex-width) tex-y)
+;;                     (gl:vertex (* (+ x 1) tilesize) (* y tilesize))
+;;                     (gl:tex-coord (+ tex-x tex-width) (+ tex-y tex-height))
+;;                     (gl:vertex (* (+ x 1) tilesize) (* (+ y 1) tilesize))
+;;                     (gl:tex-coord tex-x (+ tex-y tex-height))
+;;                     (gl:vertex (* x tilesize) (* (+ y 1) tilesize))
+;;                     (incf tile-index)))))
+;;     (gl:end)))
