@@ -12,7 +12,7 @@
 
 (defstruct resource-holder
   "Value holder for an actual resource object."
-  data finalizer (users 0 :type 'integer))
+  data finalizer (users 0))
 
 ;; TODO: add some conditions/restarts when overwriting an existing resource
 (defun add-resource (mgr id res &optional finalizer)

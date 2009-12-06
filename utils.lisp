@@ -25,12 +25,12 @@
   "Converts realtime to seconds with optional scale factor."
   (/ (/ time internal-time-units-per-second) resolution-unit))
 
+(declaim (inline deg->rad))
 (defun rad->deg (angle)
-  (declaim (inline deg-to-rad))
   (* angle (/ 180.0 pi)))
 
+(declaim (inline deg->rad))
 (defun deg->rad (angle)
-  (declaim (inline deg-to-rad))
   (* angle (/ pi 180.0)))
 
 (defun sqr-dist (x0 y0 x1 y1)
@@ -80,7 +80,7 @@
        collect item))
 
 (defun sign-of (nb)
-  (declaim (inline sign-of))
+  (declare (inline sign-of))
   (if (>= nb 0)
       :positive
       :negative))
@@ -106,13 +106,13 @@
      (* (vector-2d-y v1) (vector-2d-y v2))))
 
 (defun vec-perp-dot-product (v1 v2)
-  (dot-product (perp-vec v1) v2))
+  (vec-dot-product (vec-perp v1) v2))
 
 (defun vec-mag (v)
-  (sqrt (dot-product v v)))
+  (sqrt (vec-dot-product v v)))
 
 (defun vec-normalize (v)
-  (scale v (/ 1.0 (norm v))))
+  (vec-scale v (/ 1.0 (vec-mag v))))
 
 (defun vec-null-p (v)
   (and (zerop (vector-2d-x v))
@@ -135,7 +135,7 @@
 
 (defun vec-angle (v1 &optional (v2 (make-vector-2d :x 1 :y 0)))
   "Returns angle between vector v1 taking v2 as the origin."
-  (atan (dot-product (perp-vec v2) v1) (dot-product v2 v1)))
+  (atan (vec-dot-product (vec-perp v2) v1) (vec-dot-product v2 v1)))
 
 (defun vec-add (v1 v2)
   (make-vector-2d :x (+ (vector-2d-x v1) (vector-2d-x v2))

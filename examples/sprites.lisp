@@ -11,13 +11,13 @@
   (glaw:load-asset "font.png" :texture)
   (glaw:load-asset "lisplogo_alien_256.png" :texture)
   (setf (sprites-font it)
-        (glaw:create-bitmap-font (glaw:use-resource "font.png") 13 16))
+        (glaw:create-bitmap-font (glaw:use-resource "font.png") 13.0 16.0))
   (loop for i from 0 to 10 do
-       (push (glaw:create-sprite (random glaw:*display-width*) (random glaw:*display-height*)
-                           (+ 100 (random 100)) (+ 100 (random 100))
+       (push (glaw:create-sprite (float (random glaw:*display-width*))
+                                 (float (random glaw:*display-height*))
+                           (+ 100.0 (random 100.0)) (+ 100.0 (random 100.0))
                            (glaw:use-resource "lisplogo_alien_256.png"))
-             (sprites-sprites it)))
-  (format t "done~%"))
+             (sprites-sprites it))))
 
 (defmethod shutdown-example ((it sprites))
   (glaw:destroy-font (sprites-font it))
