@@ -21,7 +21,7 @@
    #:create-bitmap-font #:destroy-font
    #:render-bitmap-string #:string-width #:string-height
    #:format-at
-   #:fps-counter #:update-fps #:current-fps
+   #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps
    ;; view
    #:*display-width* #:*display-height* #:set-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view

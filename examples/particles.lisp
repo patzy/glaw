@@ -10,30 +10,55 @@
   (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :texture)
   (glaw:load-asset "particle.png" :texture)
+  (glaw:load-asset "fire-particle.png" :texture)
   (setf (particles-font it)
         (glaw:create-bitmap-font (glaw:use-resource "font.png") 13 16))
-  (push (glaw:create-particle-system) (particles-systems it))
-  (glaw::add-particle-emitter (first (particles-systems it))
-                              (glaw::make-particle-emitter
-                               :delay 0.2
-                               :rate 10.0
-                               :vx '(-10.0 10.0)
-                               :vy '(0.0 100.0)
-                               :lifetime 100.0
-                               :color (glaw:create-color 0.3 0.6 1.0 1.0)
-                               :width 10.0
-                               :height 10.0
-                               :x 500
-                               :y 400
-                               :texture (glaw:use-resource "particle.png"))
-                              )
-  (glaw::add-particle-affector (first (particles-systems it))
-                              (glaw::make-gravity-affector)
-                              )
-  (glaw::add-particle-affector (first (particles-systems it))
-                              (glaw::make-fading-affector)
-                              )
-  (format t "done~%"))
+  (loop for i below 10
+       do (if (oddp i)
+              ;; water thing
+              (let ((syst (glaw:create-particle-system)))
+                (push syst (particles-systems it))
+                (glaw::add-particle-emitter syst
+                                            (glaw::make-particle-emitter
+                                             :delay 0.00
+                                             :rate 1.0
+                                             :vx '(90.0 100.0)
+                                             :vy '(19 20)
+                                             :lifetime 8.0
+                                             :color (glaw:create-color 0.3 0.3 1.0 1.0)
+                                             :width 5.0
+                                             :height 5.0
+                                             :x (random glaw:*display-width*)
+                                             :y (random glaw:*display-height*)
+                                             :texture (glaw:use-resource "particle.png")))
+                (glaw::add-particle-affector syst
+                                             (glaw::make-gravity-affector
+                                              :strength 50))
+                (glaw::add-particle-affector syst
+                                             (glaw::make-fading-affector
+                                              :rate 0.3)))
+              ;; fire thing
+              (let ((syst (glaw:create-particle-system)))
+                (push syst (particles-systems it))
+                (glaw::add-particle-emitter syst
+                                            (glaw::make-particle-emitter
+                                             :delay 0.05
+                                             :rate '(1.0 10.0)
+                                             :vx 0.0
+                                             :vy '(-20.0 40.0)
+                                             :lifetime 2.0
+                                             :color (glaw:create-color 1.0 0.4 0.15 1.0)
+                                             :width 50.0
+                                             :height 50.0
+                                             :x (random glaw:*display-width*)
+                                             :y (random glaw:*display-height*)
+                                             :texture (glaw:use-resource "fire-particle.png")))
+                (glaw::add-particle-affector syst
+                                             (glaw::make-resistance-affector
+                                              :value 0.5))
+                (glaw::add-particle-affector syst
+                                             (glaw::make-fading-affector
+                                              :rate 2.0))))))
 
 (defmethod shutdown-example ((it particles))
   (glaw:destroy-font (particles-font it))
@@ -46,7 +71,8 @@
     (glaw:render-particles syst))
   (glaw:set-color/rgb 1 1 1)
   (glaw:format-at 50 80  (particles-font it) "Particles: ~a" glaw::*nb-particles*)
-  (glaw:format-at 50 100  (particles-font it) "FPS: ~a" (glaw:current-fps))
+  (glaw:format-at 50 100  (particles-font it) "FPS: ~a/~a/~a"
+                  (glaw:min-fps) (glaw:current-fps) (glaw:max-fps))
   (glaw:end-draw))
 
 (defmethod update-example ((it particles) dt)

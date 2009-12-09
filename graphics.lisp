@@ -4,7 +4,11 @@
 ;; TODO: add min/avg/max
 (defstruct frame-counter
   (nb-frames 0 :type fixnum)
-  (sample-size 100)
+  (sample-size 10)
+  (min most-positive-single-float)
+  (max most-negative-single-float)
+  (sum 0.0)
+  (nb-samples 0)
   (rate 0.0)
   (last-render-time (get-internal-real-time)))
 
@@ -19,14 +23,39 @@
                             (frame-counter-last-render-time *frame-counter*)))
            (fps (* (/ (frame-counter-nb-frames *frame-counter*)
                       (/ elapsed-time internal-time-units-per-second)) 1.0)))
+      (incf (frame-counter-nb-samples *frame-counter*))
+      (incf (frame-counter-sum *frame-counter*) fps)
+      (when (< fps (frame-counter-min *frame-counter*))
+        (setf (frame-counter-min *frame-counter*) fps))
+      (when (> fps (frame-counter-max *frame-counter*))
+        (setf (frame-counter-max *frame-counter*) fps))
       (setf (frame-counter-rate *frame-counter*) fps)
-      (format t "FPS: ~D~%" (frame-counter-rate *frame-counter*))
+      (format t "FPS(min/current/max/total avg): ~D / ~D / ~D / ~S~%"
+              (frame-counter-min *frame-counter*)
+              (frame-counter-rate *frame-counter*)
+              (frame-counter-max *frame-counter*)
+              (/ (frame-counter-sum *frame-counter*)
+                 (if (zerop (frame-counter-nb-samples *frame-counter*))
+                     1.0
+                     (frame-counter-nb-samples *frame-counter*))))
       (setf (frame-counter-last-render-time *frame-counter*)
             (get-internal-real-time))
       (setf (frame-counter-nb-frames *frame-counter*) 0))))
 
 (defun current-fps ()
   (frame-counter-rate *frame-counter*))
+
+(defun min-fps ()
+  (frame-counter-min *frame-counter*))
+
+(defun max-fps ()
+  (frame-counter-max *frame-counter*))
+
+(defun avg-fps ()
+  (/ (frame-counter-sum *frame-counter*)
+     (if (zerop (frame-counter-nb-samples *frame-counter*))
+         1.0
+         (frame-counter-nb-samples *frame-counter*))))
 
 ;;; General rendering
 (defvar *display-width* 0)
@@ -325,7 +354,7 @@
 (defstruct shape
   (primitive :triangle-strip)
   vertices   ;; x,y,z
-  colors     ;; r,g,b
+  colors     ;; r,g,b,a
   tex-coords ;; u,v
   indices
   x-min y-min z-min
@@ -362,10 +391,10 @@
        for index below dim
        for i = (aref (shape-indices shape) index)
        when (shape-colors shape)
-       do (gl:color  (aref (shape-colors shape) (* i 3))
-                     (aref (shape-colors shape) (+ 1 (* i 3)))
-                     (aref (shape-colors shape) (+ 2 (* i 3)))
-                     (aref (shape-colors shape) (+ 3 (* i 3))))
+       do (gl:color  (aref (shape-colors shape) (* i 4))
+                     (aref (shape-colors shape) (+ 1 (* i 4)))
+                     (aref (shape-colors shape) (+ 2 (* i 4)))
+                     (aref (shape-colors shape) (+ 3 (* i 4))))
        when (shape-tex-coords shape)
        do (gl:tex-coord  (aref (shape-tex-coords shape) (* i 2))
                          (aref (shape-tex-coords shape) (+ 1 (* i 2))))
@@ -400,7 +429,7 @@
                                     :element-type 'single-float
                                     :fill-pointer 0)
               :colors (when color
-                        (make-array (* nb-vertices 3)
+                        (make-array (* nb-vertices 4)
                                     :element-type 'single-float
                                     :fill-pointer 0))
               :tex-coords (when texture
@@ -412,6 +441,7 @@
                                    :fill-pointer 0)))
 
 (defun shape-update-bbox (shape x y &optional (z 0.0))
+  (declare (type single-float x y z))
   (if (zerop (fill-pointer (shape-vertices shape)))
       (setf (shape-x-min shape) x
             (shape-y-min shape) y
