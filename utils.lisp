@@ -39,7 +39,7 @@
 
 ;;; Random numbers
 (defun random-between (min max)
-  (+ min (random max)))
+  (+ min (random (- max min))))
 
 ;;; List manipulation
 (defun rotate-list-right (lst n)
