@@ -18,7 +18,7 @@
     (:sdl-key-escape #\Esc)
     (:sdl-key-space #\Space)
     (:sdl-key-backspace #\Backspace)
-    (otherwise (coerce code 'character))))
+    (otherwise (unless (zerop code) (coerce code 'character)))))
 
 (defun translate-mouse-button (button)
   (case button
