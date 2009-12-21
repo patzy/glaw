@@ -251,6 +251,8 @@
   priority)
 
 (defun create-texture (width height bpp data &rest args)
+  "Create a new GL texture. Pixels should be of the '(unsigned-byte 8)
+   type."
   (let ((tex (apply 'make-texture :index (first (gl:gen-textures 1))
                                   :width width :height height
                                   :bpp bpp
@@ -264,7 +266,6 @@
                        (4 :rgba))
                      :unsigned-byte
                      data)
-    (gl:bind-texture :texture-2d (texture-index tex))
     (gl:tex-parameter :texture-2d :texture-min-filter (texture-min-filter tex))
     (gl:tex-parameter :texture-2d :texture-mag-filter (texture-mag-filter tex))
     ;; (gl:tex-parameter :texture-2d :texture-min-lod (texture-min-lod tex))

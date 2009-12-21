@@ -1,7 +1,8 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
 (defsystem glaw-examples
-  :depends-on (glaw glaw-sdl)
+  :depends-on (glaw glop glaw-imago)
+  ;;:depends-on (glaw glaw-sdl)
   :serial t
   :components
   ((:file "glaw-examples")
