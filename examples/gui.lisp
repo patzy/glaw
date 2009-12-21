@@ -6,13 +6,13 @@
 (defmethod init-example ((it gui))
   (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :texture)
-  (glaw:load-asset "starfield.jpg" :texture)
+  (glaw:load-asset "starfield.png" :texture)
   (glaw:load-asset "button.png" :texture)
   (glaw:init-gui (glaw:create-bitmap-font (glaw:use-resource "font.png") 13 16))
   (let* ((window (glaw:create-widget 'glaw:gui-window nil
                                      :x 50 :y 50
                                      :width 300 :height 500
-                                     :texture (glaw:use-resource "starfield.jpg")
+                                     :texture (glaw:use-resource "starfield.png")
                                      :title "Static window"))
          (window2 (glaw:create-widget 'glaw:gui-window nil
                                      :x 100 :y 200
