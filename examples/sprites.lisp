@@ -31,7 +31,8 @@
   (glaw:format-at 50 100  (sprites-font it) "FPS: ~a" (glaw:current-fps))
   (glaw:end-draw))
 
-(defmethod update-example ((it sprites) dt))
+(defmethod update-example ((it sprites) dt)
+  (declare (ignore it dt)))
 
 (defmethod reshape-example ((it sprites) w h)
   (glaw:update-2d-view (sprites-view it) 0 0 w h))

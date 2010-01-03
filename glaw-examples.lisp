@@ -1,7 +1,7 @@
 (defpackage :glaw-examples
   (:use #:cl)
   (:export #:run-example
-           #:gui #:particles))
+           #:gui #:particles #:sprites))
 
 (in-package #:glaw-examples)
 
@@ -44,13 +44,15 @@
 
 
 (defmethod glop:on-close (window)
+  (declare (ignore window))
   (shutdown-example *current-example*))
 
 (defmethod glop:on-button (window state button)
-  (format t "Button event: ~S: ~S~%" button state)
+  (declare (ignore window))
   (glaw:dispatch-button-event :mouse button state))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
+  (declare (ignore window))
   (glaw:update-mouse-position x y)
   (glaw:dispatch-motion-event :mouse dx dy))
 
@@ -67,7 +69,7 @@
 
 (defun run-example (example-name)
   ;; how to get extensions
-  ;;(setf cl-opengl-bindings:*gl-get-proc-address* #'glop:gl-get-proc-address)
+  (setf cl-opengl-bindings:*gl-get-proc-address* 'glop:gl-get-proc-address)
   (glop:with-window (win "Glaw examples" 800 600)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)

@@ -9,7 +9,7 @@
   (let* ((width (imago:image-width img))
          (height (imago:image-height img))
          (pixels (imago:image-pixels img))
-         (bpp (imago::pixel-size img))
+         ;;(bpp (imago::pixel-size img))
          (res (make-array (* width height 4) :fill-pointer 0 :element-type '(unsigned-byte 8))))
     (loop for y below height do
          (loop for x below width do

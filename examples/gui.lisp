@@ -3,6 +3,7 @@
 (defstruct gui)
 
 (defmethod init-example ((it gui))
+  (declare (ignore it))
   (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
   (glaw:load-asset "font.png" :texture)
   (glaw:load-asset "starfield.png" :texture)
@@ -49,6 +50,7 @@
                                     :texture (glaw:use-resource "button.png")
                                     :action (let ((nb-clicks 0))
                                               (lambda (self)
+                                                (declare (ignore self))
                                                 (incf nb-clicks)
                                                 (setf (glaw:text label)
                                                       (format nil
@@ -84,15 +86,19 @@
                                 :text (format nil "button ~d" i)))))
 
 (defmethod shutdown-example ((it gui))
+  (declare (ignore it))
   (glaw:shutdown-gui))
 
 (defmethod render-example ((it gui))
+  (declare (ignore it))
   (glaw:begin-draw)
   (glaw:render-gui)
   (glaw:end-draw))
 
-(defmethod update-example ((it gui) dt))
+(defmethod update-example ((it gui) dt)
+  (declare (ignore it dt)))
 
 (defmethod reshape-example ((it gui) w h)
+  (declare (ignore it w h))
   (glaw:update-gui))
 
