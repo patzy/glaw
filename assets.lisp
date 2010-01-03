@@ -5,6 +5,7 @@
 (defvar *content-directory* nil)
 
 (defun init-content-manager (&optional (content-dir ""))
+  (format t "Initializing content manager with ~S~%" content-dir)
   (setf *content-manager* (create-resource-manager))
   (setf *content-directory* content-dir))
 

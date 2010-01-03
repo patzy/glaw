@@ -66,6 +66,8 @@
 
 
 (defun run-example (example-name)
+  ;; how to get extensions
+  ;;(setf cl-opengl-bindings:*gl-get-proc-address* #'glop:gl-get-proc-address)
   (glop:with-window (win "Glaw examples" 800 600)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)

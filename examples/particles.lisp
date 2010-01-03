@@ -7,7 +7,7 @@
   (emitters '()))
 
 (defmethod init-example ((it particles))
-  (glaw:init-content-manager "data/")
+  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
   (glaw:load-asset "font.png" :texture)
   (glaw:load-asset "particle.png" :texture)
   (glaw:load-asset "fire-particle.png" :texture)

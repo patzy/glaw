@@ -1,10 +1,9 @@
 (in-package #:glaw-examples)
 
-
 (defstruct gui)
 
 (defmethod init-example ((it gui))
-  (glaw:init-content-manager "data/")
+  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
   (glaw:load-asset "font.png" :texture)
   (glaw:load-asset "starfield.png" :texture)
   (glaw:load-asset "button.png" :texture)
