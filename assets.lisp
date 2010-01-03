@@ -1,5 +1,8 @@
 (in-package #:glaw)
 
+#+clisp ;; why ansi isn"t default behavior?
+(setf custom:*merge-pathnames-ansi* t)
+
 ;; Game asset are loaded from files
 (defvar *content-manager* nil)
 (defvar *content-directory* nil)
@@ -19,7 +22,7 @@
   (format t "Loading asset of type ~S from ~S~%" type filename)
   (with-resource-manager *content-manager*
     (let ((loader (gethash type *asset-loaders* nil))
-          (pathname (merge-pathnames *content-directory* filename)))
+          (pathname (merge-pathnames filename *content-directory*)))
       (if loader
           (use-resource filename (funcall (first loader) pathname) (second loader))
           (error "No asset loader defined for ~S~%" type)))))
