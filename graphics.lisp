@@ -142,10 +142,10 @@
               (zerop *display-width*) (zerop *display-height*))
     (let ((width-factor (/ (2d-view-width view) *display-width*))
           (height-factor (/ (2d-view-height view) *display-height*)))
-      (values (+ (2d-view-left view)
-                 (* x width-factor))
-              (+ (2d-view-bottom view)
-                 (* (- *display-height* y) height-factor))))))
+      (values (float (+ (2d-view-left view)
+                        (* x width-factor)))
+              (float (+ (2d-view-bottom view)
+                        (* (- *display-height* y) height-factor)))))))
 
 
 ;;; Colors helpers
