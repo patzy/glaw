@@ -49,7 +49,7 @@
 
 (defmethod glop:on-button (window state button)
   (declare (ignore window))
-  (glaw:dispatch-button-event :mouse button state))
+  (glaw:dispatch-button-event :mouse (glaw:translate-mouse-button button) state))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window))
@@ -111,11 +111,11 @@
 ;;                                    :release))
 ;;       (:mouse-button-down-event (:button button)
 ;;           (glaw:dispatch-button-event :mouse
-;;                                       (glaw-sdl:translate-mouse-button button)
+;;                                       (glaw:translate-mouse-button button)
 ;;                                       :press))
 ;;       (:mouse-button-up-event (:button button)
 ;;           (glaw:dispatch-button-event :mouse
-;;                                       (glaw-sdl:translate-mouse-button button)
+;;                                       (glaw:translate-mouse-button button)
 ;;                                       :release))
 ;;       (:mouse-motion-event (:x x :y y :x-rel x-rel :y-rel y-rel)
 ;;           (glaw:update-mouse-position x y)

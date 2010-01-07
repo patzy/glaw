@@ -5,6 +5,15 @@
 (defvar *mouse-x* 0)
 (defvar *mouse-y* 0)
 
+(defun translate-mouse-button (button)
+  (case button
+    (1 :left-button)
+    (2 :middle-button)
+    (3 :right-button)
+    (4 :wheel-up)
+    (5 :wheel-down)
+    (otherwise button)))
+
 (defvar *input-handlers* '(:global)
   "All active input handlers.")
 

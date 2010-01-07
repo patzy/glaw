@@ -33,6 +33,7 @@
    #:coords-overlap-p
    #:shape-intersect-p
    #:translate-shape
+   #:shape-set-vertex #:shape-set-color #:shape-set-tex-coord
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
    #:shape-add-color #:shape-add-color/rgb
    #:shape-add-tex-vertex
@@ -47,6 +48,7 @@
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event
    #:key-handler #:button-handler #:motion-handler
    #:*mouse-x* #:*mouse-y* #:update-mouse-position
+   #:translate-mouse-button
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui
    #:gui-focus #:gui-focus-next #:gui-focus-prev

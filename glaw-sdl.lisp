@@ -20,14 +20,6 @@
     (:sdl-key-backspace #\Backspace)
     (otherwise (unless (zerop code) (coerce code 'character)))))
 
-(defun translate-mouse-button (button)
-  (case button
-    (1 :left-button)
-    (2 :middle-button)
-    (3 :right-button)
-    (4 :wheel-up)
-    (5 :wheel-down)))
-
 ;; image asset
 (defasset :image
   ;; load
