@@ -521,7 +521,7 @@
                              (* width height 2 3)
                              :color color
                              :texture texture
-                             :primitive :triangles)))
+                             :primitive :quads)))
     (loop for y from start-y below (+ start-y (* height step-y)) by step-y
        do (loop for x from start-x below (+ start-x (* width step-x)) by step-x
              for z = (if (functionp altitude)
@@ -536,12 +536,11 @@
                          (multiple-value-bind (u v)
                              (funcall texture x y z)
                            (shape-add-tex-vertex shape u v))))))
-    (loop for x from 0 below (1- width)
-       do (loop for y from 0 below (1- height)
+    (loop for y from 0 below (1- height)
+       do (loop for x from 0 below (1- width)
                for i = (+ x (* width y))
              do (shape-add-indices shape
-                   i (+ i 1) (+ i width)
-                   (+ i width 1) (+ i width) (+ i 1))))
+                   i (+ i 1) (+ i width 1) (+ i width))))
     shape))
 
 (defun create-circle-shape (x y radius &key (resolution 20) (filledp t))
