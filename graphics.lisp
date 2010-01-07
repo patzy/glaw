@@ -361,18 +361,32 @@
   x-min y-min z-min
   x-max y-max z-max)
 
-(defmacro with-shape-vertices (v-sym shape &body body)
+(defmacro with-shape-vertices ((v-sym shape) &body body)
   `(let ((,v-sym (shape-vertices ,shape)))
      ,@body))
 
-(defmacro with-shape-colors (c-sym shape &body body)
+(defmacro with-shape-colors ((c-sym shape) &body body)
   `(let ((,c-sym (shape-colors ,shape)))
      ,@body))
 
-(defmacro with-shape-tex-coords (t-sym shape &body body)
+(defmacro with-shape-tex-coords ((t-sym shape) &body body)
   `(let ((,t-sym (shape-tex-coords ,shape)))
      ,@body))
 
+(defun shape-set-vertex (shape index x y &optional (z 0.0))
+  (setf (aref (shape-vertices shape) (* index 3)) x
+        (aref (shape-vertices shape) (+ 1 (* index 3))) y
+        (aref (shape-vertices shape) (+ 2 (* index 3))) z))
+
+(defun shape-set-color (shape index r g b &optional (a 0.0))
+  (setf (aref (shape-colors shape) (* index 4)) r
+        (aref (shape-colors shape) (+ 1 (* index 4))) g
+        (aref (shape-colors shape) (+ 2 (* index 4))) b
+        (aref (shape-colors shape) (+ 3 (* index 4))) a))
+
+(defun shape-set-tex-coord (shape index u v)
+  (setf (aref (shape-tex-coords shape) (* index 2)) u
+        (aref (shape-tex-coords shape) (+ 1 (* index 2))) v))
 
 (defun translate-shape (shape dx dy &optional (dz 0.0))
   (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
@@ -469,15 +483,6 @@
   (vector-push x (shape-vertices shape))
   (vector-push y (shape-vertices shape))
   (vector-push z (shape-vertices shape)))
-
-(defun shape-set-vertex (shape index x y &optional (z 0.0))
-  (declare (type single-float x y z))
-  (setf (aref (shape-vertices shape) (* index 3))
-        x
-        (aref (shape-vertices shape) (+ 1 (* index 3)))
-        y
-        (aref (shape-vertices shape) (+ 2 (* index 3)))
-        z))
 
 (defun shape-add-color (shape color)
   (declare (type color color))
