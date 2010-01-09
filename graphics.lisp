@@ -147,6 +147,11 @@
               (float (+ (2d-view-bottom view)
                         (* (- *display-height* y) height-factor)))))))
 
+(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (screen-to-view ,x-val ,y-val ,view)
+     ,@body))
+
 
 ;;; Colors helpers
 (defstruct color
