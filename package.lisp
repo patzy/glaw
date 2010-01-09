@@ -25,7 +25,7 @@
    ;; view
    #:*display-width* #:*display-height* #:set-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view
-   #:update-2d-view #:screen-to-view
+   #:update-2d-view #:screen-to-view #:with-2d-view-coords
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
    #:create-shape #:render-shape #:render-bbox
@@ -49,6 +49,9 @@
    #:key-handler #:button-handler #:motion-handler
    #:*mouse-x* #:*mouse-y* #:update-mouse-position
    #:translate-mouse-button
+   ;; game screens
+   #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
+   #:init-screen #:shutdown-screen #:render-screen #:update-screen
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui
    #:gui-focus #:gui-focus-next #:gui-focus-prev

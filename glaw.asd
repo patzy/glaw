@@ -12,6 +12,7 @@
    (:file "gui")
    (:file "assets")
    (:file "particles")
+   (:file "screen")
    ;;(:file "console")
    (:file "glaw")))
 
