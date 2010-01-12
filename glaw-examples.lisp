@@ -37,9 +37,9 @@
       (setf last-update-time (get-internal-real-time)))))
 
 ;; Using GLOP
-(defmethod glop:on-key (window state key)
-  (glaw:dispatch-key-event key state)
-  (when (eql key #\Escape)
+(defmethod glop:on-key (window pressed keycode keysym string)
+  (glaw:dispatch-key-event keysym (if pressed :press :release) keycode string)
+  (when (eql keysym :escape)
     (glop:push-close-event window)))
 
 
@@ -47,9 +47,10 @@
   (declare (ignore window))
   (shutdown-example *current-example*))
 
-(defmethod glop:on-button (window state button)
+(defmethod glop:on-button (window pressed button)
   (declare (ignore window))
-  (glaw:dispatch-button-event :mouse (glaw:translate-mouse-button button) state))
+  (glaw:dispatch-button-event :mouse (glaw:translate-mouse-button button)
+                              (if pressed :press :release)))
 
 (defmethod glop:on-mouse-motion (window x y dx dy)
   (declare (ignore window))
@@ -80,7 +81,7 @@
          (glop:swap-buffers win))))
 
 ;; ;; Using SDL
-;; (glaw:key-handler :global (#\Esc :press)
+;; (glaw:key-handler :global (:escape :press)
 ;;   (shutdown-example *current-example*)
 ;;   (sdl:push-quit-event))
 

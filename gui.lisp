@@ -1,5 +1,19 @@
 (in-package #:glaw)
 
+;;; Input compatibility layer
+;; Since we're defining some default input handlers for the GUI stuff
+;; we need to make sure received input values are the right ones.
+;; Also, make sure to provide :press or :release for key and button states
+(defun translate-mouse-button (button)
+  (case button
+    (1 :left-button)
+    (2 :middle-button)
+    (3 :right-button)
+    (4 :wheel-up)
+    (5 :wheel-down)
+    (otherwise button)))
+
+
 ;;; GUI
 (defvar *gui* nil)
 (defvar *gui-view* nil)
@@ -73,7 +87,7 @@
     (focus (gui-focus it))))
 
 ;; input handling
-(key-handler (it gui) (#\Tab :press)
+(key-handler (it gui) (:tab :press)
      (when (gui-focus it)
        (gui-focus-next it)))
 
@@ -385,16 +399,16 @@
   (setf (width w) (string-width (text w) (gui-font *gui*))))
 
 ;; setup keymap
-(key-handler (it gui-text-input) (#\Return :press)
-    (when (action it)
-      (funcall (action it) it)))
-(key-handler (it gui-text-input) (#\Backspace :press)
-    (when (input it)
-      (decf (width it) (font-width (gui-font *gui*)))
-      (pop (input it))))
-(key-handler (it gui-text-input) (nil :press)
-    (incf (width it) (font-width (gui-font *gui*)))
-    (push key (input it)))
+;; (key-handler (it gui-text-input) (:return :press)
+;;     (when (action it)
+;;       (funcall (action it) it)))
+;; (key-handler (it gui-text-input) (:backspace :press)
+;;     (when (input it)
+;;       (decf (width it) (font-width (gui-font *gui*)))
+;;       (pop (input it))))
+;; (key-handler (it gui-text-input) (nil :press)
+;;     (incf (width it) (font-width (gui-font *gui*)))
+;;     (push key (input it)))
 
 (defmethod show ((w gui-text-input))
   (add-input-handler w)
