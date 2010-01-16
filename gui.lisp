@@ -22,7 +22,6 @@
 
 (defun create-gui (default-font)
   (let ((gui (make-gui :default-font default-font)))
-    (format t "Gui default font: ~S~%" default-font)
     (add-input-handler gui)
     gui))
 
@@ -35,8 +34,7 @@
 
 (defun init-gui (font)
   "Init GUI singleton using the provided bitmap font."
-  (setf *gui* (create-gui font))
-  (format t "Created gui: ~S~%" *gui*))
+  (setf *gui* (create-gui font)))
 
 (defun shutdown-gui ()
   "Shutdown GUI singleton."
@@ -261,8 +259,7 @@
 
 (defmethod add-child-widget ((p gui) (c gui-widget))
   (unless (gui-widget-font c)
-    (setf (gui-widget-font c) (gui-default-font p))
-    (format t "Widget font is: ~S~%" (gui-widget-font c)))
+    (setf (gui-widget-font c) (gui-default-font p)))
   (when (gui-focus p)
     (unfocus (gui-focus p)))
   (push c (gui-widgets p))
@@ -270,11 +267,9 @@
 
 (defmethod add-child-widget ((e gui-widget) (c gui-widget))
   (unless (gui-widget-font c)
-    (setf (gui-widget-font c) (gui-widget-font e))
-    (format t "Widget font is: ~S~%" (gui-widget-font c)))
+    (setf (gui-widget-font c) (gui-widget-font e)))
   (setf (parent-widget c) e)
   (setf (children e) (append (children e) (list c)))
-  (format t "Added ~S into ~S~%" c e)
   (apply-layout e))
 
 (defgeneric render-widget (gui-widget)
