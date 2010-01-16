@@ -5,7 +5,9 @@
 (defstruct screen-stack
   screens     ;; all pushed screens
   render      ;; screens that need to be rendered
+  render-backup
   update      ;; screens that need to be updated
+  update-backup
   )
 
 (defgeneric init-screen (screen &rest initargs &key &allow-other-keys))
@@ -19,13 +21,17 @@
   (when (screen-stack-screens stack)
     (first (screen-stack-screens stack))))
 
-(defun push-screen (screen stack &key propagate-rendering propagate-update initargs)
+(defun push-screen (screen stack &key propagate-rendering propagate-updating initargs)
   "Push SCREEN on top of STACK and then initialize SCREEN."
   (push screen (screen-stack-screens stack))
   (unless propagate-rendering
+    (when (screen-stack-render stack)
+      (push (screen-stack-render stack) (screen-stack-render-backup stack)))
     (setf (screen-stack-render stack) '()))
   (push screen (screen-stack-render stack))
-  (unless propagate-update
+  (unless propagate-updating
+    (when (screen-stack-update stack)
+      (push (screen-stack-update stack) (screen-stack-update-backup stack)))
     (setf (screen-stack-update stack) '()))
   (push screen (screen-stack-update stack))
   (apply 'init-screen screen initargs))
@@ -36,7 +42,12 @@
     (shutdown-screen scr)
     (pop (screen-stack-screens stack))
     (setf (screen-stack-render stack) (remove scr (screen-stack-render stack)))
-    (setf (screen-stack-update stack) (remove scr (screen-stack-update stack)))))
+    (when (and (not (screen-stack-render stack)) (screen-stack-render-backup stack))
+      (setf (screen-stack-render stack) (pop (screen-stack-render-backup stack))))
+    (setf (screen-stack-update stack) (remove scr (screen-stack-update stack)))
+    (when (and (not (screen-stack-update stack)) (screen-stack-update-backup stack))
+      (setf (screen-stack-update stack) (pop (screen-stack-update-backup stack))))))
+
 
 (defun render-screens (stack)
   (dolist (scr (screen-stack-render stack))

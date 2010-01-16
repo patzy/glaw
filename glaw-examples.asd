@@ -9,4 +9,5 @@
    (:module "examples"
             :components ((:file "gui")
                          (:file "sprites")
+                         (:file "screens")
                          (:file "particles")))))
