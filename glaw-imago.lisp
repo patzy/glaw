@@ -56,4 +56,6 @@
                                  (imago::pixel-size img) (translate-image-pixels img))))
         (create-bitmap-font tex 13 16))))
   ;; unload
-  'glaw:destroy-bitmap-font)
+  (lambda (font)
+    (glaw:destroy-texture (glaw::font-texture font))
+    (glaw:destroy-bitmap-font font)))
