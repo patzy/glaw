@@ -4,11 +4,10 @@
 
 (defmethod init-example ((it gui))
   (declare (ignore it))
-  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
-  (glaw:load-asset "font.png" :texture)
+  (glaw:load-asset "font.png" :bitmap-font)
   (glaw:load-asset "starfield.png" :texture)
   (glaw:load-asset "button.png" :texture)
-  (glaw:init-gui (glaw:create-bitmap-font (glaw:use-resource "font.png") 13 16))
+  (glaw:init-gui (glaw:use-resource "font.png"))
   (let* ((window (glaw:create-widget 'glaw:gui-window nil
                                      :x 50 :y 50
                                      :width 300 :height 500
@@ -87,6 +86,9 @@
 
 (defmethod shutdown-example ((it gui))
   (declare (ignore it))
+  (glaw:dispose-asset "font.png")
+  (glaw:dispose-asset "starfield.png")
+  (glaw:dispose-asset "button.png")
   (glaw:shutdown-gui))
 
 (defmethod render-example ((it gui))

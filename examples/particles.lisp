@@ -7,12 +7,10 @@
   (emitters '()))
 
 (defmethod init-example ((it particles))
-  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
-  (glaw:load-asset "font.png" :texture)
+  (glaw:load-asset "font.png" :bitmap-font)
   (glaw:load-asset "particle.png" :texture)
   (glaw:load-asset "fire-particle.png" :texture)
-  (setf (particles-font it)
-        (glaw:create-bitmap-font (glaw:use-resource "font.png") 13 16))
+  (setf (particles-font it) (glaw:use-resource "font.png"))
   (loop for i below 10
        do (if (oddp i)
               ;; water thing
@@ -61,8 +59,9 @@
                                               :rate 2.0))))))
 
 (defmethod shutdown-example ((it particles))
-  (glaw:destroy-font (particles-font it))
-  (glaw:shutdown-content-manager))
+  (glaw:dispose-asset "font.png")
+  (glaw:dispose-asset "particle.png")
+  (glaw:dispose-asset "fire-particle.png"))
 
 (defmethod render-example ((it particles))
   (glaw:begin-draw)

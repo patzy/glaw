@@ -79,3 +79,17 @@
                         (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))))
   ;; unload
   'glaw:destroy-texture)
+
+
+;; font asset
+;; XXX: assumes 256x256 image
+(defasset :bitmap-font
+  ;; load
+  (lambda (filename)
+    (let ((img-surf (sdl-image:load-image filename)))
+      (sdl-base::with-pixel (pix (sdl:fp img-surf))
+        (let ((tex (create-texture (sdl:width img-surf) (sdl:height img-surf)
+                                   (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix))))
+          (create-bitmap-font tex 13 16)))))
+  ;; unload
+  'glaw:destroy-bitmap-font)

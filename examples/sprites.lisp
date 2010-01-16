@@ -8,10 +8,9 @@
 
 (defmethod init-example ((it sprites))
   (glaw:init-content-manager "data/")
-  (glaw:load-asset "font.png" :texture)
+  (glaw:load-asset "font.png" :bitmap-font)
   (glaw:load-asset "lisplogo_alien_256.png" :texture)
-  (setf (sprites-font it)
-        (glaw:create-bitmap-font (glaw:use-resource "font.png") 13.0 16.0))
+  (setf (sprites-font it) (glaw:use-resource "font.png"))
   (loop for i from 0 to 10 do
        (push (glaw:create-sprite (float (random glaw:*display-width*))
                                  (float (random glaw:*display-height*))
@@ -20,8 +19,8 @@
              (sprites-sprites it))))
 
 (defmethod shutdown-example ((it sprites))
-  (glaw:destroy-font (sprites-font it))
-  (glaw:shutdown-content-manager))
+  (glaw:dispose-asset "font.png")
+  (glaw:dispose-asset "lisplogo_alien_256.png"))
 
 (defmethod render-example ((it sprites))
   (glaw:begin-draw)

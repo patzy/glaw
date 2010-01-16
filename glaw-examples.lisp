@@ -45,7 +45,8 @@
 
 (defmethod glop:on-close (window)
   (declare (ignore window))
-  (shutdown-example *current-example*))
+  (shutdown-example *current-example*)
+  (setf *current-example* nil))
 
 (defmethod glop:on-button (window pressed button)
   (declare (ignore window))
@@ -71,6 +72,7 @@
 (defun run-example (example-name)
   ;; how to get extensions
   (setf cl-opengl-bindings:*gl-get-proc-address* 'glop:gl-get-proc-address)
+  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
   (glop:with-window (win "Glaw examples" 800 600)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)
@@ -78,7 +80,8 @@
     (loop while (glop:dispatch-events win :blocking nil) do
          (idle)
          (draw)
-         (glop:swap-buffers win))))
+         (glop:swap-buffers win)))
+  (glaw:shutdown-content-manager))
 
 ;; ;; Using SDL
 ;; (glaw:key-handler :global (:escape :press)

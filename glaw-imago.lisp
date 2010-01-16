@@ -43,3 +43,17 @@
                       (imago::pixel-size img) (translate-image-pixels img))))
   ;; unload
   'glaw:destroy-texture)
+
+
+;; font asset
+;; XXX: assumes 256x256 image
+(defasset :bitmap-font
+  ;; load
+  (lambda (filename)
+    (let ((img (imago:read-image (namestring filename))))
+      (format t "Loaded: ~S~%" img)
+      (let ((tex (create-texture (imago:image-width img) (imago:image-height img)
+                                 (imago::pixel-size img) (translate-image-pixels img))))
+        (create-bitmap-font tex 13 16))))
+  ;; unload
+  'glaw:destroy-bitmap-font)
