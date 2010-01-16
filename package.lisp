@@ -2,9 +2,9 @@
   (:use #:cl)
   (:export
    ;; resources
-   #:create-resource #:use-resource #:get-resource #:drop-resource #:destroy-resource
+   #:use-resource #:get-resource #:drop-resource
    #:create-resource-manager #:destroy-resource-manager
-   #:width-resource-manager #:with-resource
+   #:with-resource-manager #:with-resource
    ;; assets
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
    ;; colors
@@ -18,7 +18,7 @@
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture
-   #:create-bitmap-font #:destroy-font
+   #:create-bitmap-font #:destroy-bitmap-font
    #:render-bitmap-string #:string-width #:string-height
    #:format-at
    #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps

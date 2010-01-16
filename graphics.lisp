@@ -330,7 +330,7 @@
             (gl:end-list)))
     fnt))
 
-(defun destroy-font (fnt)
+(defun destroy-bitmap-font (fnt)
   (destroy-texture (font-texture fnt))
   (gl:delete-lists (font-base fnt) 256))
 
