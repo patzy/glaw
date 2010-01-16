@@ -28,8 +28,9 @@
           (error "No asset loader defined for ~S~%" type)))))
 
 (defun dispose-asset (filename)
-  (with-resource-manager *content-manager*
-    (drop-resource filename)))
+  "Dispose designated asset regardless of its current users."
+  (format t "Disposing of asset: ~S~%" filename)
+  (remove-resource *content-manager* filename))
 
 
 (defun defasset (asset-type load &optional unload)
