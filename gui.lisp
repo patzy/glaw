@@ -3,7 +3,9 @@
 ;;; Input compatibility layer
 ;; Since we're defining some default input handlers for the GUI stuff
 ;; we need to make sure received input values are the right ones.
+;; Use the following translation function for mouse button events.
 ;; Also, make sure to provide :press or :release for key and button states
+
 (defun translate-mouse-button (button)
   (case button
     (1 :left-button)
@@ -13,28 +15,36 @@
     (5 :wheel-down)
     (otherwise button)))
 
-
-;;; GUI
-(defvar *gui* nil)
-(defvar *gui-view* nil)
-
 (defstruct gui
-  (font nil)
+  (default-font nil)
+  (view (create-2d-view 0 0 *display-width* *display-height*))
   (widgets '())) ;; last one has focus
 
+(defun create-gui (default-font)
+  (let ((gui (make-gui :default-font default-font)))
+    (format t "Gui default font: ~S~%" default-font)
+    (add-input-handler gui)
+    gui))
+
+(defun destroy-gui (gui)
+  (remove-input-handler gui)
+  (setf gui nil))
+
+;; The following are helpers when you only need one gui in your app (i.e. a singleton)
+(defvar *gui* nil)
+
 (defun init-gui (font)
-  (setf *gui* (make-gui :font font))
-  (setf *gui-view* (create-2d-view 0 0 *display-width* *display-height*))
-  (add-input-handler *gui*))
+  "Init GUI singleton using the provided bitmap font."
+  (setf *gui* (create-gui font))
+  (format t "Created gui: ~S~%" *gui*))
 
 (defun shutdown-gui ()
-  (remove-input-handler *gui*)
-  (destroy-font (gui-font *gui*))
-  (setf *gui* nil))
+  "Shutdown GUI singleton."
+  (destroy-gui *gui*))
 
-(defun render-gui ()
-  (set-view-2d *gui-view*)
-  (dolist (w (reverse (gui-widgets *gui*)))
+(defun render-gui (&optional (gui *gui*))
+  (set-view-2d (gui-view gui))
+  (dolist (w (reverse (gui-widgets gui)))
     (render-widget w)
     (when (focused w)
       (gl:disable :texture-2d)
@@ -50,28 +60,28 @@
                     (- (gl-y w) (height w)))))))
 
 
-(defun update-gui (&optional (width *display-width*)
+(defun update-gui (&optional (gui *gui*)
+                             (width *display-width*)
                              (height *display-height*))
-  (update-2d-view *gui-view* 0 0 width height)
-  (dolist (w (gui-widgets *gui*))
-    (format t "Updatin layout of ~S~%" w)
+  (update-2d-view (gui-view gui) 0 0 width height)
+  (dolist (w (gui-widgets gui))
     (apply-layout w)))
 
 (defun create-widget (widget-type parent-widget &rest initargs)
   (let ((created-widget (apply 'make-instance widget-type initargs)))
-    (format t "Created widget: ~S~%" created-widget)
-    (add-child-widget parent-widget created-widget)
+    (if parent-widget
+        (add-child-widget parent-widget created-widget)
+        (add-child-widget *gui* created-widget))
     created-widget))
 
-;; focus management
 (defmethod gui-focus ((it gui))
   (first (gui-widgets it)))
 
-(defmethod (setf gui-focus) (value)
-  (when (gui-focus *gui*)
-    (unfocus (gui-focus *gui*)))
-  (setf (gui-widgets *gui*)
-        (append (list value) (butlast (gui-widgets *gui*))))
+(defmethod (setf gui-focus) (value (it gui))
+  (when (gui-focus it)
+    (unfocus (gui-focus it)))
+  (setf (gui-widgets it)
+        (append (list value) (butlast (gui-widgets it))))
   (focus value))
 
 (defmethod gui-focus-next ((it gui))
@@ -86,11 +96,6 @@
     (setf (gui-widgets it) (rotate-list-right (gui-widgets it) 1))
     (focus (gui-focus it))))
 
-;; input handling
-(key-handler (it gui) (:tab :press)
-     (when (gui-focus it)
-       (gui-focus-next it)))
-
 (defun gui-widget-at (gui x y)
   (loop for w in (gui-widgets gui)
      for found = (gui-widget-child-at w x y)
@@ -101,13 +106,13 @@
                       btn (btn-state (eql :press)))
   (let ((widget (gui-widget-at it *mouse-x* *mouse-y*)))
     (when widget
-      (gui-widget-mouse-down widget))))
+      (gui-widget-mouse-down widget btn))))
 
 (defmethod on-button ((it gui) (device (eql :mouse))
                       btn (btn-state (eql :release)))
   (let ((widget (gui-widget-at it *mouse-x* *mouse-y*)))
     (when widget
-      (gui-widget-mouse-up widget))))
+      (gui-widget-mouse-up widget btn))))
 
 (let ((entered-widget nil))
   (defmethod on-motion ((it gui) (device (eql :mouse)) dx dy)
@@ -120,6 +125,7 @@
           (setf entered-widget widget))
         (gui-widget-mouse-move widget dx dy)))))
 
+;; GUI widgets
 (defclass gui-widget ()
   (;; relative coordinates for absolute position
    ;; may be overriden by layout if not :absolute
@@ -133,15 +139,13 @@
    (y-off :accessor gui-widget-y-off :initform 0 :initarg :y-off)
    ;; children layout (:vertical, :horizontal or :absolute)
    (layout :accessor gui-widget-layout :initform :absolute :initarg :layout)
-   ;; are we allowed to resize the widget?
-   (autosize :accessor gui-widget-autosize :initform nil :initarg :autosize)
-   (stick :accessor gui-widget-stick :initform nil :initarg :stick)
    ;; visual appearance
    (color :accessor gui-widget-color
           :initform (create-color 0.35 0.35 0.35 0.5)
           :initarg :color)
    (texture :accessor gui-widget-texture :initform nil :initarg :texture)
    (visible :accessor visible :initform t)
+   (font :accessor gui-widget-font :initform nil :initarg :font) ;; XXX: move this?
    (focused :accessor focused :initform t)
    (parent :accessor parent-widget :initform nil)
    (children :accessor children :initform '()))
@@ -172,13 +176,13 @@
 ;; Default input methods for static widgets
 ;; simply forward to parent widget
 ;; Dynamic widgets should override these to provided specific behavior
-(defmethod gui-widget-mouse-down ((it gui-widget))
+(defmethod gui-widget-mouse-down ((it gui-widget) btn)
   (when (parent-widget it)
-    (gui-widget-mouse-down (parent-widget it))))
+    (gui-widget-mouse-down (parent-widget it) btn)))
 
-(defmethod gui-widget-mouse-up ((it gui-widget))
+(defmethod gui-widget-mouse-up ((it gui-widget) btn)
   (when (parent-widget it)
-    (gui-widget-mouse-up (parent-widget it))))
+    (gui-widget-mouse-up (parent-widget it) btn)))
 
 (defmethod gui-widget-mouse-move ((it gui-widget) dx dy)
   (when (parent-widget it)
@@ -255,20 +259,19 @@
   (setf (focused w) nil)
   (remove-input-handler w))
 
-(defmethod add-child-widget ((p (eql nil)) (c gui-widget))
-  (format t "Adding root widget ~S~%" c)
-  (when (gui-focus *gui*)
-    (unfocus (gui-focus *gui*)))
-  (push c (gui-widgets *gui*))
-  (focus c))
-
 (defmethod add-child-widget ((p gui) (c gui-widget))
+  (unless (gui-widget-font c)
+    (setf (gui-widget-font c) (gui-default-font p))
+    (format t "Widget font is: ~S~%" (gui-widget-font c)))
   (when (gui-focus p)
     (unfocus (gui-focus p)))
   (push c (gui-widgets p))
   (focus c))
 
 (defmethod add-child-widget ((e gui-widget) (c gui-widget))
+  (unless (gui-widget-font c)
+    (setf (gui-widget-font c) (gui-widget-font e))
+    (format t "Widget font is: ~S~%" (gui-widget-font c)))
   (setf (parent-widget c) e)
   (setf (children e) (append (children e) (list c)))
   (format t "Added ~S into ~S~%" c e)
@@ -327,16 +330,17 @@
 (defclass gui-window (gui-widget)
   ((moveable :accessor gui-window-moveable :initform nil :initarg :moveable)
    (moving :accessor gui-window-moving :initform nil)
-   (title :reader title :initarg :title))
+   (title :reader gui-window-title :initarg :title))
   (:default-initargs))
 
-(defmethod initialize-instance :after ((it gui-window) &key title)
-  (setf (gui-widget-y-off it) (+ 6 (string-height title (gui-font *gui*)))))
+(defmethod update-dimensions ((it gui-window))
+  (when (and (gui-window-title it) (gui-widget-font it))
+    (setf (gui-widget-y-off it) (+ 6 (string-height (gui-window-title it) (gui-widget-font it))))))
 
-(defmethod gui-widget-mouse-down ((it gui-window))
+(defmethod gui-widget-mouse-down ((it gui-window) (btn (eql :left-button)))
   (setf (gui-window-moving it) t))
 
-(defmethod gui-widget-mouse-up ((it gui-window))
+(defmethod gui-widget-mouse-up ((it gui-window) (btn (eql :left-button)))
   (setf (gui-window-moving it) nil))
 
 (defmethod gui-widget-mouse-move ((it gui-window) dx dy)
@@ -350,17 +354,18 @@
 (defmethod render-widget ((w gui-window))
   (call-next-method)
   (set-color/rgb 1 1 1)
+  (update-dimensions w) ;; FIXME: move this
   (render-bitmap-string (gl-x w) (- (gl-y w) 3
-                                    (string-height (title w)
-                                                   (gui-font *gui*)))
-                        (title w) (gui-font *gui*))
+                                    (string-height (gui-window-title w)
+                                                   (gui-widget-font w)))
+                        (gui-window-title w) (gui-widget-font w))
   (gl:with-primitive :lines
     (gl:vertex (gl-x w)
-               (- (gl-y w) 6 (string-height (title w)
-                                            (gui-font *gui*))))
+               (- (gl-y w) 6 (string-height (gui-window-title w)
+                                            (gui-widget-font w))))
     (gl:vertex (+ (gl-x w) (width w))
-               (- (gl-y w) 6 (string-height (title w)
-                                           (gui-font *gui*))))))
+               (- (gl-y w) 6 (string-height (gui-window-title w)
+                                           (gui-widget-font w))))))
 
 
 (defclass gui-label (gui-widget)
@@ -369,12 +374,9 @@
                :initform (create-color 1 1 1)))
   (:documentation "One line text"))
 
-(defmethod initialize-instance :after ((w gui-label) &key)
-  (update-dimensions w))
-
 (defmethod update-dimensions ((w gui-label))
-  (setf (width w) (string-width (text w) (gui-font *gui*)))
-  (setf (height w) (string-height (text w) (gui-font *gui*))))
+  (setf (width w) (string-width (text w) (gui-widget-font w)))
+  (setf (height w) (string-height (text w) (gui-widget-font w))))
 
 (defmethod (setf text) ((txt string) (w gui-label))
   (setf (slot-value w 'text) txt)
@@ -382,8 +384,9 @@
 
 (defmethod render-widget ((w gui-label))
   (set-color (text-color w))
+  (update-dimensions w) ;; FIXME: move this
   (render-bitmap-string (pos-x w) (- (gl-y w) (height w))
-                        (text w) (gui-font *gui*)))
+                        (text w) (gui-widget-font w)))
 
 
 (defclass gui-text-input (gui-widget)
@@ -395,8 +398,9 @@
   (coerce (reverse (input it)) 'string))
 
 (defmethod initialize-instance :after ((w gui-text-input) &key)
-  (setf (height w) (string-height (text w) (gui-font *gui*)))
-  (setf (width w) (string-width (text w) (gui-font *gui*))))
+  (when (and (text w) (gui-widget-font w))
+    (setf (height w) (string-height (text w) (gui-widget-font w)))
+    (setf (width w) (string-width (text w) (gui-widget-font w)))))
 
 ;; setup keymap
 ;; (key-handler (it gui-text-input) (:return :press)
@@ -426,7 +430,7 @@
 (defmethod render-widget ((w gui-text-input))
   (gl:color 1 1 1 1)
   (render-bitmap-string (pos-x w) (- (gl-y w) (height w)) (text w)
-                        (gui-font *gui*)))
+                        (gui-widget-font w)))
 
 (defclass gui-button (gui-widget)
   ((text :accessor text :initform '() :initarg :text)
@@ -441,14 +445,14 @@
 ;;     (when (action it)
 ;;       (funcall (action it) it)))
 
-(defmethod gui-widget-mouse-down ((it gui-button))
+(defmethod gui-widget-mouse-down ((it gui-button) (btn (eql :left-button)))
   (setf (gui-button-pressed it) t)
   (when (gui-button-pressed-texture it)
     (let ((tex (gui-widget-texture it)))
       (setf (gui-widget-texture it) (gui-button-pressed-texture it))
       (setf (gui-button-pressed-texture it) tex))))
 
-(defmethod gui-widget-mouse-up ((it gui-button))
+(defmethod gui-widget-mouse-up ((it gui-button) (btn (eql :left-button)))
   (when (and (gui-button-pressed it) (action it))
     (funcall (action it) it))
   (setf (gui-button-pressed it) nil)
@@ -469,11 +473,11 @@
   (call-next-method)
   (render-bitmap-string (- (+ (pos-x w)
                               (/ (width w) 2.0))
-                           (/ (string-width (text w) (gui-font *gui*)) 2.0))
+                           (/ (string-width (text w) (gui-widget-font w)) 2.0))
                         (- (gl-y w)
                            (/ (height w) 2.0)
-                           (/ (string-height (text w) (gui-font *gui*)) 2.0))
-                        (text w) (gui-font *gui*)))
+                           (/ (string-height (text w) (gui-widget-font w)) 2.0))
+                        (text w) (gui-widget-font w)))
 
 ;; (defclass gui-multiline-text (gui-label)
 ;;   ((nb-lines :accessor nb-lines :initform 10 :initarg :nb-lines)
@@ -539,10 +543,10 @@
       (gl:vertex (+ (gl-x w) (* slider-scale (gui-slider-value w)))
                  (- (gl-y w) (height w))))))
 
-(defmethod gui-widget-mouse-down ((it gui-slider))
+(defmethod gui-widget-mouse-down ((it gui-slider) (btn (eql :left-button)))
   (setf (gui-slider-sliding it) t))
 
-(defmethod gui-widget-mouse-up ((it gui-slider))
+(defmethod gui-widget-mouse-up ((it gui-slider) (btn (eql :left-button)))
   (setf (gui-slider-sliding it) nil))
 
 (defmethod gui-widget-mouse-move ((it gui-slider) dx dy)
