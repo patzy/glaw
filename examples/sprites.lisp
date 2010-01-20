@@ -8,7 +8,7 @@
 
 (defmethod init-example ((it sprites))
   (glaw:init-content-manager "data/")
-  (glaw:load-asset "font.png" :bitmap-font)
+  (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "lisplogo_alien_256.png" :texture)
   (setf (sprites-font it) (glaw:use-resource "font.png"))
   (loop for i from 0 to 10 do

@@ -330,7 +330,7 @@
 
 (defmethod update-dimensions ((it gui-window))
   (when (and (gui-window-title it) (gui-widget-font it))
-    (setf (gui-widget-y-off it) (+ 6 (string-height (gui-window-title it) (gui-widget-font it))))))
+    (setf (gui-widget-y-off it) (+ 6 (string-height (gui-widget-font it) (gui-window-title it))))))
 
 (defmethod gui-widget-mouse-down ((it gui-window) (btn (eql :left-button)))
   (setf (gui-window-moving it) t))
@@ -350,17 +350,17 @@
   (call-next-method)
   (set-color/rgb 1 1 1)
   (update-dimensions w) ;; FIXME: move this
-  (render-bitmap-string (gl-x w) (- (gl-y w) 3
-                                    (string-height (gui-window-title w)
-                                                   (gui-widget-font w)))
+  (render-string (gl-x w) (- (gl-y w) 3
+                                    (string-height (gui-widget-font w)
+                                                   (gui-window-title w)))
                         (gui-window-title w) (gui-widget-font w))
   (gl:with-primitive :lines
     (gl:vertex (gl-x w)
-               (- (gl-y w) 6 (string-height (gui-window-title w)
-                                            (gui-widget-font w))))
+               (- (gl-y w) 6 (string-height (gui-widget-font w)
+                                            (gui-window-title w))))
     (gl:vertex (+ (gl-x w) (width w))
-               (- (gl-y w) 6 (string-height (gui-window-title w)
-                                           (gui-widget-font w))))))
+               (- (gl-y w) 6 (string-height (gui-widget-font w)
+                                            (gui-window-title w))))))
 
 
 (defclass gui-label (gui-widget)
@@ -370,8 +370,8 @@
   (:documentation "One line text"))
 
 (defmethod update-dimensions ((w gui-label))
-  (setf (width w) (string-width (text w) (gui-widget-font w)))
-  (setf (height w) (string-height (text w) (gui-widget-font w))))
+  (setf (width w) (string-width (gui-widget-font w) (text w)))
+  (setf (height w) (string-height (gui-widget-font w) (text w))))
 
 (defmethod (setf text) ((txt string) (w gui-label))
   (setf (slot-value w 'text) txt)
@@ -380,7 +380,7 @@
 (defmethod render-widget ((w gui-label))
   (set-color (text-color w))
   (update-dimensions w) ;; FIXME: move this
-  (render-bitmap-string (pos-x w) (- (gl-y w) (height w))
+  (render-string (pos-x w) (- (gl-y w) (height w))
                         (text w) (gui-widget-font w)))
 
 
@@ -394,8 +394,8 @@
 
 (defmethod initialize-instance :after ((w gui-text-input) &key)
   (when (and (text w) (gui-widget-font w))
-    (setf (height w) (string-height (text w) (gui-widget-font w)))
-    (setf (width w) (string-width (text w) (gui-widget-font w)))))
+    (setf (height w) (string-height (gui-widget-font w) (text w)))
+    (setf (width w) (string-width (gui-widget-font w) (text w)))))
 
 ;; setup keymap
 ;; (key-handler (it gui-text-input) (:return :press)
@@ -424,7 +424,7 @@
 
 (defmethod render-widget ((w gui-text-input))
   (gl:color 1 1 1 1)
-  (render-bitmap-string (pos-x w) (- (gl-y w) (height w)) (text w)
+  (render-string (pos-x w) (- (gl-y w) (height w)) (text w)
                         (gui-widget-font w)))
 
 (defclass gui-button (gui-widget)
@@ -466,12 +466,12 @@
 
 (defmethod render-widget ((w gui-button))
   (call-next-method)
-  (render-bitmap-string (- (+ (pos-x w)
+  (render-string (- (+ (pos-x w)
                               (/ (width w) 2.0))
-                           (/ (string-width (text w) (gui-widget-font w)) 2.0))
+                           (/ (string-width (gui-widget-font w) (text w)) 2.0))
                         (- (gl-y w)
                            (/ (height w) 2.0)
-                           (/ (string-height (text w) (gui-widget-font w)) 2.0))
+                           (/ (string-height (gui-widget-font w) (text w)) 2.0))
                         (text w) (gui-widget-font w)))
 
 ;; (defclass gui-multiline-text (gui-label)
@@ -496,7 +496,7 @@
 ;;   (let ((x (gl-x w))
 ;;         (y (- (gl-y w) (string-height "" (gui-font *gui*)))))
 ;;   (dolist (txt (reverse (text w)))
-;;     (render-bitmap-string x y txt)
+;;     (render-string x y txt)
 ;;     (decf y (string-height "" (gui-font *gui*))))))
 
 

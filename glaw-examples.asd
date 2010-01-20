@@ -10,4 +10,5 @@
             :components ((:file "gui")
                          (:file "sprites")
                          (:file "screens")
+                         (:file "text")
                          (:file "particles")))))

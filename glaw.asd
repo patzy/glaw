@@ -11,6 +11,7 @@
    (:file "graphics")
    (:file "gui")
    (:file "assets")
+   (:file "font")
    (:file "particles")
    (:file "screen")
    ;;(:file "console")

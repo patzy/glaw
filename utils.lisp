@@ -155,3 +155,11 @@
      ,@body
      (format t ,fmt (* 1.0 ( / (- (get-internal-real-time) start-time)
                               internal-time-units-per-second)))))
+
+;; binary files (stolen from imago)
+(defun read-integer (stream size)
+  (loop with number = 0
+        for i below size
+        as byte = (read-byte stream)
+        do (incf number (ash byte (* i 8)))
+        finally (return number)))

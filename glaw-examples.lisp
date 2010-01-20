@@ -1,7 +1,7 @@
 (defpackage :glaw-examples
   (:use #:cl)
   (:export #:run-example
-           #:gui #:particles #:sprites #:screens))
+           #:gui #:particles #:sprites #:screens #:text))
 
 (in-package #:glaw-examples)
 

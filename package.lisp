@@ -18,9 +18,12 @@
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture
-   #:create-bitmap-font #:destroy-bitmap-font
-   #:render-bitmap-string #:string-width #:string-height
+   ;; text rendering
+   #:create-font #:destroy-font
+   #:font-set-glyph-data #:font-build-cache #:font-line-height #:char-width
+   #:render-string #:string-width #:string-height
    #:format-at
+   ;; fps
    #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps
    ;; view
    #:*display-width* #:*display-height* #:set-view-2d

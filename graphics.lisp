@@ -248,6 +248,7 @@
   width height bpp
   index ;; GL texture index
   ;; GL texture parameters
+  (internal-format :rgba)
   (min-filter :linear)
   (mag-filter :linear)
   ;; min-lod max-lod
@@ -263,9 +264,9 @@
                                   :bpp bpp
                                   args)))
     (gl:bind-texture :texture-2d (texture-index tex))
-    (gl:tex-image-2d :texture-2d 0 :rgba width height 0
+    (gl:tex-image-2d :texture-2d 0 (texture-internal-format tex) width height 0
                      (ecase bpp
-                       (1 :luminance)
+                       (1 :alpha)
                        (2 :luminance-alpha)
                        (3 :rgb)
                        (4 :rgba))
@@ -301,59 +302,6 @@
                 :texture-env-mode env-mode)
     (setf *selected-texture-index* (texture-index tex))))
 
-
-;;; Text rendering
-(defstruct font
-  texture base width height)
-
-(defmethod create-bitmap-font (texture char-width char-height)
-  ;; XXX: assume 16x16 character bitmap
-  ;; TODO: use char-width and font-height when creating display lists
-  (let ((fnt (make-font :width char-width :height char-height)))
-    (setf (font-texture fnt) texture)
-    (setf (font-base fnt) (gl:gen-lists 256))
-    (select-texture (font-texture fnt) :env-mode :modulate)
-    (loop for i from 0 to 256
-       do (let ((cx (/ (mod i 16.0) 16.0))
-                (cy (/ (truncate (/ i 16)) 16.0)))
-            (gl:new-list (+ (font-base fnt) i) :compile)
-            (gl:with-primitive :quads
-              (gl:tex-coord cx (- 1.0 cy 0.0625))
-              (gl:vertex 0 0)
-              (gl:tex-coord (+ cx 0.0625) (- 1.0 cy 0.0625))
-              (gl:vertex 16 0)
-              (gl:tex-coord (+ cx 0.0625) (- 1.0 cy))
-              (gl:vertex 16 16)
-              (gl:tex-coord cx (- 1.0 cy))
-              (gl:vertex 0 16))
-            (gl:translate 13 0 0)
-            (gl:end-list)))
-    fnt))
-
-(defun destroy-bitmap-font (fnt)
-  (destroy-texture (font-texture fnt))
-  (gl:delete-lists (font-base fnt) 256))
-
-(defun render-bitmap-string (x y text fnt)
-  (gl:enable :texture-2d)
-  (select-texture (font-texture fnt) :env-mode :modulate)
-  (gl:with-pushed-matrix
-    (gl:translate x y 0)
-    (gl:list-base (font-base fnt))
-    (let ((char-lst (loop for c across text
-                       collect (char-code c))))
-      (gl:call-lists char-lst)))
-  (gl:disable :texture-2d))
-
-(defun string-width (str fnt)
-  (* (font-width fnt) (length str)))
-
-(defun string-height (str fnt)
-  (declare (ignore str))
-  (font-height fnt))
-
-(defmacro format-at (x y fnt fmt &rest values)
-  `(render-bitmap-string ,x ,y (format nil ,fmt ,@values) ,fnt))
 
 
 ;;; Shapes management

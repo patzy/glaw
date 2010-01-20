@@ -4,10 +4,10 @@
 
 (defmethod init-example ((it gui))
   (declare (ignore it))
-  (glaw:load-asset "font.png" :bitmap-font)
+  (glaw:load-asset "dejavu-sans.fnt" :fonttool-bitmap-font)
   (glaw:load-asset "starfield.png" :texture)
   (glaw:load-asset "button.png" :texture)
-  (glaw:init-gui (glaw:use-resource "font.png"))
+  (glaw:init-gui (glaw:use-resource "dejavu-sans.fnt"))
   (let* ((window (glaw:create-widget 'glaw:gui-window nil
                                      :x 50 :y 50
                                      :width 300 :height 500
@@ -86,7 +86,7 @@
 
 (defmethod shutdown-example ((it gui))
   (declare (ignore it))
-  (glaw:dispose-asset "font.png")
+  (glaw:dispose-asset "dejavu-sans.fnt")
   (glaw:dispose-asset "starfield.png")
   (glaw:dispose-asset "button.png")
   (glaw:shutdown-gui))
