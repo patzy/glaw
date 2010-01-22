@@ -21,8 +21,8 @@
    ;; text rendering
    #:create-font #:destroy-font
    #:font-set-glyph-data #:font-build-cache #:font-line-height #:char-width
-   #:render-string #:string-width #:string-height
-   #:format-at
+   #:string-width #:string-height #:string-wrap
+   #:render-string #:render-wrapped-string #:format-at
    ;; fps
    #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps
    ;; view

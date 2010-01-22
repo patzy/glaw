@@ -163,3 +163,12 @@
         as byte = (read-byte stream)
         do (incf number (ash byte (* i 8)))
         finally (return number)))
+
+;; string manipulation
+(defun split-string (string delim)
+  "Split the provided string and returns a list."
+  (loop for i = 0 then (1+ j)
+        as j = (position delim string :start i)
+        when (not (= (length (subseq string i j)) 0)) ;remove last elt
+        collect (subseq string i j)
+        while j))

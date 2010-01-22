@@ -27,6 +27,26 @@
   (declare (ignore str))
   (font-line-height fnt))
 
+(defun string-wrap (fnt str max-width)
+  "Wrap the provided string at MAX-WIDTH and returns a list of string, one for each line of the
+wrapped text."
+  (let ((words (split-string str #\Space))
+        (lines '()))
+    (loop with current-width = 0
+       with line = ""
+       for word-width = (string-width fnt w)
+       for w in words do
+         (if (< (+ current-width word-width) max-width)
+             (progn  (incf current-width word-width)
+                     (if (string-equal line "")
+                         (setf line w)
+                         (setf line (concatenate 'string line " " w))))
+             (progn (push line lines)
+                    (setf line w)
+                    (setf current-width 0)))
+         finally (unless (string-equal line "") (push line lines)))
+    (reverse lines)))
+
 (defun create-font (texture &key (line-height 16) (nb-glyphs 256))
   "Create a new font object that can be used to render text using the provided texture."
   (let ((fnt (make-font :texture texture :line-height line-height
@@ -70,23 +90,35 @@
   (when (/= (font-base fnt) -1)
     (gl:delete-lists (font-base fnt) 256)))
 
-(defun render-string (x y text fnt)
-  (let ((char-lst (loop for c across text
+(defun render-string (x y fnt str)
+  (let ((char-lst (loop for c across str
                      collect (char-code c))))
     (gl:enable :texture-2d)
     (select-texture (font-texture fnt) :env-mode :modulate)
     (gl:with-pushed-matrix
         (gl:translate x y 0)
       (if (= (font-base fnt) -1)
-          (loop for c across text do
+          (loop for c across str do
                (font-render-glyph fnt (char-code c))
                (gl:translate (char-width fnt c) 0 0))
           (progn (gl:list-base (font-base fnt))
                  (gl:call-lists char-lst))))
       (gl:disable :texture-2d)))
 
+(defun render-wrapped-string (x y wdth fnt str &key (justify :left))
+  (let ((line-x x)
+        (line-y y)
+        (lines (glaw:string-wrap fnt str wdth)))
+    (loop for l in lines do
+         (case justify
+           (:right (setf line-x (+ x (- wdth (string-width fnt l)))))
+           (:center (setf line-x (+ x (round (- (/ wdth 2.0) (/ (string-width fnt l) 2.0)))))))
+         (render-string line-x line-y fnt l)
+         (decf line-y (font-line-height fnt)))))
+
+
 (defmacro format-at (x y fnt fmt &rest values)
-  `(render-string ,x ,y (format nil ,fmt ,@values) ,fnt))
+  `(render-string ,x ,y ,fnt (format nil ,fmt ,@values)))
 
 
 ;; loader for fonttool generated fonts
@@ -126,3 +158,4 @@
   (lambda (font)
     (destroy-texture (glaw::font-texture font))
     (destroy-font font)))
+
