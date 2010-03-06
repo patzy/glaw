@@ -24,6 +24,8 @@ To do so:
  - commment the GLOP part in `glaw-examples.lisp` (from `;; Using GLOP` to `;; Using SDL`)
  - uncomment the SDL part (from `;; Using SDL` to the end of the file)
  
+Note that I don't test often with lb-sdl and it may not work/compile properly.
+ 
 To load the examples do:
  
      (asdf:operate 'asdf:load-op :glaw-examples)
@@ -37,5 +39,6 @@ Where `example-name` may be one of the following:
  - `sprites`
  - `gui`
  - `particles`
+ - `text`
  
 There's also a simple breakout game using glaw [here](http://github.com/patzy/outbreak).

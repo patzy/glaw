@@ -43,6 +43,7 @@
 (defun render-gui (&optional (gui *gui*))
   (set-view-2d (gui-view gui))
   (dolist (w (reverse (gui-widgets gui)))
+    (format t "Rendering widget: ~S~%" w)
     (render-widget w)
     (when (focused w)
       (gl:disable :texture-2d)
@@ -351,9 +352,9 @@
   (set-color/rgb 1 1 1)
   (update-dimensions w) ;; FIXME: move this
   (render-string (gl-x w) (- (gl-y w) 3
-                                    (string-height (gui-widget-font w)
+                             (string-height (gui-widget-font w)
                                                    (gui-window-title w)))
-                        (gui-window-title w) (gui-widget-font w))
+                         (gui-widget-font w) (gui-window-title w))
   (gl:with-primitive :lines
     (gl:vertex (gl-x w)
                (- (gl-y w) 6 (string-height (gui-widget-font w)
@@ -381,7 +382,7 @@
   (set-color (text-color w))
   (update-dimensions w) ;; FIXME: move this
   (render-string (pos-x w) (- (gl-y w) (height w))
-                        (text w) (gui-widget-font w)))
+                        (gui-widget-font w) (text w)))
 
 
 (defclass gui-text-input (gui-widget)
@@ -424,8 +425,7 @@
 
 (defmethod render-widget ((w gui-text-input))
   (gl:color 1 1 1 1)
-  (render-string (pos-x w) (- (gl-y w) (height w)) (text w)
-                        (gui-widget-font w)))
+  (render-string (pos-x w) (- (gl-y w) (height w)) (gui-widget-font w) (text w)))
 
 (defclass gui-button (gui-widget)
   ((text :accessor text :initform '() :initarg :text)
@@ -472,7 +472,7 @@
                         (- (gl-y w)
                            (/ (height w) 2.0)
                            (/ (string-height (gui-widget-font w) (text w)) 2.0))
-                        (text w) (gui-widget-font w)))
+                         (gui-widget-font w) (text w)))
 
 ;; (defclass gui-multiline-text (gui-label)
 ;;   ((nb-lines :accessor nb-lines :initform 10 :initarg :nb-lines)
