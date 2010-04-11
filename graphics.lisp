@@ -271,6 +271,19 @@
 (defstruct image
   width height bpp data)
 
+(defun create-image (width height bpp)
+  (make-image :width width :height height :bpp bpp
+              :data (make-array (* width height bpp) :initial-element 255
+                                :element-type '(unsigned-byte 8))))
+
+(defun image-set-pixel (image x y r g b &optional alpha)
+  (let ((bpp (image-bpp image)))
+    (setf (aref (image-data image) (+ (* x bpp) (* y (* (image-width image) bpp)))) r
+          (aref (image-data image) (+ 1 (* x bpp) (* y (* (image-width image) bpp)))) g
+          (aref (image-data image) (+ 2 (* x bpp) (* y (* (image-width image) bpp)))) b)
+    (when alpha
+      (setf (aref (image-data image) (+ 3 (* x bpp) (* y (* (image-width image) bpp)))) alpha))))
+
 ;;; 2D Texture
 (defstruct texture
   width height bpp
@@ -291,9 +304,11 @@
                                   :width width :height height
                                   :bpp bpp
                                   args)))
-    (gl:bind-texture :texture-2d (texture-index tex))
-    (gl:tex-image-2d :texture-2d 0 (texture-internal-format tex) width height 0
-                     (ecase bpp
+    (select-texture tex)
+    (gl:tex-image-2d :texture-2d 0 (texture-internal-format tex)
+                     (texture-width tex)
+                     (texture-height tex) 0
+                     (ecase (texture-bpp tex)
                        (1 :alpha)
                        (2 :luminance-alpha)
                        (3 :rgb)
@@ -311,25 +326,45 @@
     ;; (gl:tex-parameter :texture-2d :texture-wrap-r (texture-wrap-r tex))
     tex))
 
+(defun update-texture (tex data &optional (x 0) (y 0)
+                       (width (texture-width tex)) (height (texture-height tex)))
+  (select-texture tex)
+  (gl:tex-sub-image-2d :texture-2d 0 x y width height
+                   (ecase (texture-bpp tex)
+                     (1 :alpha)
+                     (2 :luminance-alpha)
+                     (3 :rgb)
+                     (4 :rgba))
+                   :unsigned-byte
+                   data))
+
 (defun create-texture-from-image (image &rest args)
   (apply 'create-texture
          (image-width image) (image-height image) (image-bpp image) (image-data image)
          args))
 
+(defun update-texture-from-image (tex image)
+  (update-texture tex (image-data image)))
+
 (defun destroy-texture (tex)
   (gl:delete-textures (list (texture-index tex))))
 
-(defvar *selected-texture-index* -1
+(defvar *selected-texture-index* nil
   "Current texture in GL context.")
 
 (defun select-texture (tex &key (env-mode :replace))
   "Set TEX as the current gl texture if necessary."
-  (unless (= (texture-index tex) *selected-texture-index*)
-    (gl:bind-texture :texture-2d (texture-index tex))
-    (gl:tex-env :texture-env
-                :texture-env-mode env-mode)
-    (setf *selected-texture-index* (texture-index tex))))
-
+  (if tex
+      (progn (unless *selected-texture-index*
+               (gl:enable :texture-2d)
+               (setf *selected-texture-index* -1))
+             (unless (= (texture-index tex) *selected-texture-index*)
+               (gl:bind-texture :texture-2d (texture-index tex))
+               (gl:tex-env :texture-env
+                           :texture-env-mode env-mode)
+               (setf *selected-texture-index* (texture-index tex))))
+      (progn (gl:disable :texture-2d)
+             (setf *selected-texture-index* nil))))
 
 
 ;;; Shapes management

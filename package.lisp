@@ -18,10 +18,10 @@
    #:set-color-from-gradient #:get-color-from-gradient
    #:get-color-from-gradient/rgb
    ;; images
-   #:create-image-from-file #:destroy-image #:make-image
+   #:create-image #:image-set-pixel #:image-width #:image-height #:image-bpp
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
-   #:destroy-texture #:select-texture
+   #:destroy-texture #:select-texture #:update-texture #:update-texture-from-image
    ;; text rendering
    #:create-font #:destroy-font
    #:font-set-glyph-data #:font-build-cache #:font-line-height #:char-width
