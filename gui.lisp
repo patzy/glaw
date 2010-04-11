@@ -29,7 +29,7 @@
   (remove-input-handler gui)
   (setf gui nil))
 
-;; The following are helpers when you only need one gui in your app (i.e. a singleton)
+;; GUI singleton
 (defvar *gui* nil)
 
 (defun init-gui (font)
@@ -43,7 +43,6 @@
 (defun render-gui (&optional (gui *gui*))
   (set-view-2d (gui-view gui))
   (dolist (w (reverse (gui-widgets gui)))
-    (format t "Rendering widget: ~S~%" w)
     (render-widget w)
     (when (focused w)
       (gl:disable :texture-2d)
@@ -143,7 +142,7 @@
           :initform (create-color 0.35 0.35 0.35 0.5)
           :initarg :color)
    (texture :accessor gui-widget-texture :initform nil :initarg :texture)
-   (visible :accessor visible :initform t)
+   (visible :accessor gui-widget-visible :initform t :initarg :visible)
    (font :accessor gui-widget-font :initform nil :initarg :font) ;; XXX: move this?
    (focused :accessor focused :initform t)
    (parent :accessor parent-widget :initform nil)
@@ -172,9 +171,12 @@
 (defmethod (setf height) (value (it gui-widget))
   (setf (slot-value it 'height) value))
 
+(defmethod move-widget ((it gui-widget) x y)
+  (setf (pos-x it) x (pos-y it) y))
+
 ;; Default input methods for static widgets
 ;; simply forward to parent widget
-;; Dynamic widgets should override these to provided specific behavior
+;; Interactive widgets should override these to provided specific behavior
 (defmethod gui-widget-mouse-down ((it gui-widget) btn)
   (when (parent-widget it)
     (gui-widget-mouse-down (parent-widget it) btn)))
@@ -200,8 +202,10 @@
                   (- y (pos-y w) (gui-widget-y-off w)))))
       (when found
         (return-from gui-widget-child-at found))))
-  (when (and (> x (pos-x w)) (< x (+ (pos-x w) (width w)))
-             (> y (pos-y w)) (< y (+ (pos-y w) (height w))))
+  (when (and (gui-widget-visible w)
+             (< (pos-x w) x (+ (pos-x w) (width w)))
+             (< (pos-y w) y (+ (pos-y w) (height w))))
+    (format t "Matching widget: ~S~%" w)
     w))
 
 ;; gui Y-axis is inverted (top left origin instead of OGL bottom left)
@@ -297,7 +301,7 @@
                 (- (gl-y w) (height w)))))
 
 (defmethod render-widget :around ((w gui-widget))
-  (when (visible w)
+  (when (gui-widget-visible w)
     (call-next-method)
     (gl:with-pushed-matrix
         (gl:translate (+ (gui-widget-x-off w) (pos-x w))
@@ -313,13 +317,13 @@
   (declare (ignore w)))
 
 (defmethod show ((e gui-widget))
-  (unless (visible e)
-    (setf (visible e) t)
+  (unless (gui-widget-visible e)
+    (setf (gui-widget-visible e) t)
     (add-input-handler e)))
 
 (defmethod hide ((e gui-widget))
-  (when (visible e)
-    (setf (visible e) nil)
+  (when (gui-widget-visible e)
+    (setf (gui-widget-visible e) nil)
     (remove-input-handler e)))
 
 ;; Some widget definitions
@@ -363,7 +367,6 @@
                (- (gl-y w) 6 (string-height (gui-widget-font w)
                                             (gui-window-title w))))))
 
-
 (defclass gui-label (gui-widget)
   ((text :accessor text :initarg :text :initform "Some text?")
    (text-color :accessor text-color :initarg :text-color
@@ -383,7 +386,6 @@
   (update-dimensions w) ;; FIXME: move this
   (render-string (pos-x w) (- (gl-y w) (height w))
                         (gui-widget-font w) (text w)))
-
 
 (defclass gui-text-input (gui-widget)
   ((input :accessor input :initform '() :initarg :input)
@@ -430,15 +432,12 @@
 (defclass gui-button (gui-widget)
   ((text :accessor text :initform '() :initarg :text)
    (action :accessor action :initform nil :initarg :action)
+   (args :accessor gui-button-args :initform nil :initarg :args)
    (pressed :accessor gui-button-pressed :initform nil)
    (pressed-texture :accessor gui-button-pressed-texture :initform nil
                     :initarg :pressed-texture))
   (:default-initargs
     :color (create-color 1 1 1)))
-
-;; (key-handler gui-button (#\Return :press)
-;;     (when (action it)
-;;       (funcall (action it) it)))
 
 (defmethod gui-widget-mouse-down ((it gui-button) (btn (eql :left-button)))
   (setf (gui-button-pressed it) t)
@@ -449,7 +448,7 @@
 
 (defmethod gui-widget-mouse-up ((it gui-button) (btn (eql :left-button)))
   (when (and (gui-button-pressed it) (action it))
-    (funcall (action it) it))
+    (apply (action it) (gui-button-args it)))
   (setf (gui-button-pressed it) nil)
   (when (gui-button-pressed-texture it)
     (let ((tex (gui-widget-texture it)))

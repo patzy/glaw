@@ -59,10 +59,10 @@
    #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
    ;; gui
-   #:init-gui #:shutdown-gui #:render-gui #:update-gui
+   #:init-gui #:shutdown-gui #:render-gui #:update-gui #:gui-view
    #:gui-focus #:gui-focus-next #:gui-focus-prev
-   #:create-widget
-   #:text
+   #:create-widget #:gui-widget-visible #:show-widget #:hide-widget
+   #:text #:move-widget
    ;; gui widgets
    #:gui-widget
    #:gui-label #:gui-dynamic-label #:gui-window #:gui-text-input #:gui-button

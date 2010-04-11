@@ -14,7 +14,7 @@
                                      :texture (glaw:use-resource "starfield.png")
                                      :title "Static window"))
          (window2 (glaw:create-widget 'glaw:gui-window nil
-                                     :x 100 :y 200
+                                     :x 10 :y 10
                                      :width 300 :height 500
                                      :moveable t
                                      :title "Moveable window"))
@@ -48,7 +48,7 @@
                                     :width 100 :height 50
                                     :texture (glaw:use-resource "button.png")
                                     :action (let ((nb-clicks 0))
-                                              (lambda (self)
+                                              (lambda ()
                                                 (declare (ignore self))
                                                 (incf nb-clicks)
                                                 (setf (glaw:text label)
