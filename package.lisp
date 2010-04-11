@@ -6,6 +6,7 @@
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    ;; resources
    #:use-resource #:get-resource #:drop-resource
+   #:use-resources #:drop-resources
    #:create-resource-manager #:destroy-resource-manager
    #:with-resource-manager #:with-resource
    ;; assets

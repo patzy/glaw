@@ -70,6 +70,12 @@
       (when (zerop (resource-holder-users holder))
         (remove-resource %resource-manager% id)))))
 
+(defun use-resources (&rest res-ids)
+  (loop for id in res-ids collect (use-resource id)))
+
+(defun drop-resources (&rest res-ids)
+  (loop for id in res-ids do (drop-resource id)))
+
 (defun create-resource-manager (&optional (keep-current nil))
   "Make a new resource manager, maybe binds %RESOURCE-MANAGER% and returns it."
   (let ((mgr (make-resource-manager)))
