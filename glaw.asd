@@ -9,6 +9,8 @@
    (:file "resource")
    (:file "input")
    (:file "graphics")
+   (:file "2d")
+   (:file "anim")
    (:file "gui")
    (:file "assets")
    (:file "font")

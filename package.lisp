@@ -49,6 +49,12 @@
    #:create-line-shape #:create-circle-shape #:create-triangle-shape
    ;; sprites
    #:create-sprite #:render-sprite
+   #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset
+   #:tileset-pixel-width #:tileset-pixel-height #:tileset-tiles-width #:tileset-tiles-height
+   #:tileset-spacing #:tileset-margin #:tileset-start-index
+   ;; animation
+   #:make-anim-state #:make-texture-anim #:animation-apply-frame #:animation-apply-time
+   #:anim-state-update #:anim-state-apply
    ;; particles
    #:create-particle-system #:update-particles #:render-particles
    ;; input management

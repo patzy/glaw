@@ -9,6 +9,8 @@
    (:module "examples"
             :components ((:file "gui")
                          (:file "sprites")
+                         (:file "texture")
                          (:file "screens")
                          (:file "text")
+                         (:file "tilemap")
                          (:file "particles")))))
