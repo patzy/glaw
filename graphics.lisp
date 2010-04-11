@@ -147,11 +147,39 @@
               (float (+ (2d-view-bottom view)
                         (* (- *display-height* y) height-factor)))))))
 
-(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
+(defun view-to-screen (x y view)
+  (unless (or (zerop (2d-view-width view)) (zerop (2d-view-height view))
+              (zerop *display-width*) (zerop *display-height*))
+    (let ((width-factor (/ *display-width* (2d-view-width view)))
+          (height-factor (/ *display-height* (2d-view-height view))))
+      (values (float (- (* x width-factor) (* (2d-view-left view) width-factor)))
+              (float (+ (- *display-height* (* y height-factor))
+                        (* height-factor (2d-view-bottom view))))))))
+
+(defun view-to-view (x y from-view to-view)
+  (unless (or (zerop (2d-view-width from-view)) (zerop (2d-view-height from-view))
+              (zerop (2d-view-width to-view)) (zerop (2d-view-height to-view)))
+    (let ((width-factor (/ (2d-view-width to-view) (2d-view-width from-view)))
+          (height-factor (/ (2d-view-height to-view) (2d-view-height from-view))))
+      (values (float (+ (2d-view-left to-view)
+                        (* x width-factor)))
+              (float (+ (2d-view-bottom to-view)
+                        (* y height-factor)))))))
+
+(defmacro with-2d-view-screen-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
   `(multiple-value-bind (,x-sym ,y-sym)
        (screen-to-view ,x-val ,y-val ,view)
      ,@body))
 
+(defmacro with-2d-screen-view-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-screen ,x-val ,y-val ,view)
+     ,@body))
+
+(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) from-view to-view  &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val ,y-val ,from-view ,to-view)
+     ,@body))
 
 ;;; Colors helpers
 (defstruct color
