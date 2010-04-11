@@ -41,6 +41,9 @@
 (defun random-between (min max)
   (+ min (random (- max min))))
 
+(defun random-nth (lst)
+  (nth (random-between 0 (length lst)) lst))
+
 ;;; List manipulation
 (defun rotate-list-right (lst n)
    (if (zerop n)

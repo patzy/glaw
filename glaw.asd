@@ -14,6 +14,7 @@
    (:file "font")
    (:file "particles")
    (:file "screen")
+   (:file "scheduler")
    ;;(:file "console")
    (:file "glaw")))
 

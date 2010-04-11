@@ -1,6 +1,9 @@
 (defpackage :glaw
   (:use #:cl)
   (:export
+   ;; utils
+   #:random-between #:random-nth
+   #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    ;; resources
    #:use-resource #:get-resource #:drop-resource
    #:create-resource-manager #:destroy-resource-manager
