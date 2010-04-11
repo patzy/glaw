@@ -18,19 +18,19 @@
 
 (defvar *asset-loaders* (make-hash-table))
 
-(defun load-asset (filename type)
+(defun load-asset (filename type &optional (identifier filename))
   (format t "Loading asset of type ~S from ~S~%" type filename)
   (with-resource-manager *content-manager*
     (let ((loader (gethash type *asset-loaders* nil))
           (pathname (merge-pathnames filename *content-directory*)))
       (if loader
-          (use-resource filename (funcall (first loader) pathname) (second loader))
+          (use-resource identifier (funcall (first loader) pathname) (second loader))
           (error "No asset loader defined for ~S~%" type)))))
 
-(defun dispose-asset (filename)
+(defun dispose-asset (identifier)
   "Dispose designated asset regardless of its current users."
-  (format t "Disposing of asset: ~S~%" filename)
-  (remove-resource *content-manager* filename))
+  (format t "Disposing of asset: ~S~%" identifier)
+  (remove-resource *content-manager* identifier))
 
 
 (defun defasset (asset-type load &optional unload)
