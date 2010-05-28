@@ -12,7 +12,6 @@
                :shape (create-rectangle-shape x y (+ x width) (+ y height))))
 
 (defun render-sprite (sp)
-  (gl:enable :texture-2d)
   (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
@@ -99,7 +98,6 @@
 (defun render-tilemap (tilemap tileset)
   (let* ((tile-width (tileset-tile-width tileset))
          (tile-height (tileset-tile-height tileset)))
-    (gl:enable :texture-2d)
     (select-texture (tileset-texture tileset))
     (gl:begin :quads)
     (let ((tile-index 0))

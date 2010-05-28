@@ -74,7 +74,6 @@ wrapped text."
 (defun font-render-glyph (fnt index)
   (let ((g (aref (font-glyphs fnt) index)))
     (when (glyph-id g)
-      (gl:enable :texture-2d)
       (select-texture (font-texture fnt) :env-mode :modulate)
       (gl:with-primitive :quads
         (gl:tex-coord (glyph-u g) (+ (glyph-v g) (glyph-dv g)))
@@ -93,7 +92,6 @@ wrapped text."
 (defun render-string (x y fnt str)
   (let ((char-lst (loop for c across str
                      collect (char-code c))))
-    (gl:enable :texture-2d)
     (select-texture (font-texture fnt) :env-mode :modulate)
     (gl:with-pushed-matrix
         (gl:translate x y 0)
@@ -103,7 +101,7 @@ wrapped text."
                (gl:translate (char-width fnt c) 0 0))
           (progn (gl:list-base (font-base fnt))
                  (gl:call-lists char-lst))))
-      (gl:disable :texture-2d)))
+    (select-texture nil)))
 
 (defun render-wrapped-string (x y wdth fnt str &key (justify :left))
   (let ((line-x x)

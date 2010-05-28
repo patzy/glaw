@@ -44,8 +44,8 @@
   (set-view-2d (gui-view gui))
   (dolist (w (reverse (gui-widgets gui)))
     (render-widget w)
-    (when (focused w)
-      (gl:disable :texture-2d)
+    (when (and (gui-widget-visible w) (focused w))
+      (select-texture nil)
       (gl:color 1 1 1 1)
       (gl:with-primitive :line-loop
         (gl:vertex  (gl-x w)
@@ -205,7 +205,6 @@
   (when (and (gui-widget-visible w)
              (< (pos-x w) x (+ (pos-x w) (width w)))
              (< (pos-y w) y (+ (pos-y w) (height w))))
-    (format t "Matching widget: ~S~%" w)
     w))
 
 ;; gui Y-axis is inverted (top left origin instead of OGL bottom left)
@@ -282,10 +281,7 @@
 
 (defmethod render-widget ((w gui-widget))
   (set-color (gui-widget-color w))
-  (if (gui-widget-texture w)
-      (progn (gl:enable :texture-2d)
-             (select-texture (gui-widget-texture w)))
-      (gl:disable :texture-2d))
+  (select-texture (gui-widget-texture w))
   (gl:with-primitive :quads
     (gl:tex-coord 0 0)
     (gl:vertex  (gl-x w)
@@ -437,7 +433,7 @@
    (pressed-texture :accessor gui-button-pressed-texture :initform nil
                     :initarg :pressed-texture))
   (:default-initargs
-    :color (create-color 1 1 1)))
+    :color (create-color 1 1 1 0.3)))
 
 (defmethod gui-widget-mouse-down ((it gui-button) (btn (eql :left-button)))
   (setf (gui-button-pressed it) t)
@@ -465,6 +461,7 @@
 
 (defmethod render-widget ((w gui-button))
   (call-next-method)
+  (set-color/rgb 1 1 1)
   (render-string (- (+ (pos-x w)
                               (/ (width w) 2.0))
                            (/ (string-width (gui-widget-font w) (text w)) 2.0))
