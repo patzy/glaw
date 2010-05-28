@@ -13,4 +13,5 @@
                          (:file "screens")
                          (:file "text")
                          (:file "tilemap")
-                         (:file "particles")))))
+                         (:file "particles")
+                         (:file "pathfinding")))))

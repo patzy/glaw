@@ -55,6 +55,11 @@
    ;; animation
    #:make-anim-state #:make-texture-anim #:animation-apply-frame #:animation-apply-time
    #:anim-state-update #:anim-state-apply
+   ;; pathfinding
+   #:create-grid-navmesh #:navmesh-cell #:navmesh-remove-cell-at #:connect-grid-navmesh
+   #:simplify-navmesh #:render-navmesh #:navcell-vertices #:navmesh-nb-cells
+   #:find-path/cells #:find-path #:make-navcell #:navcell-add-vertex #:make-navmesh
+   #:navcells-connected-p #:navmesh-containing-cell #:navcell-center
    ;; particles
    #:create-particle-system #:update-particles #:render-particles
    ;; input management

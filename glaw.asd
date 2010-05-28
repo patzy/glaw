@@ -17,6 +17,7 @@
    (:file "particles")
    (:file "screen")
    (:file "scheduler")
+   (:file "navmesh")
    ;;(:file "console")
    (:file "glaw")))
 
