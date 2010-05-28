@@ -7,7 +7,7 @@
   (emitters '()))
 
 (defmethod init-example ((it particles))
-  (glaw:load-asset "font.png" :bitmap-font)
+  (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "particle.png" :texture)
   (glaw:load-asset "fire-particle.png" :texture)
   (setf (particles-font it) (glaw:use-resource "font.png"))
