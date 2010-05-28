@@ -3,6 +3,11 @@
   (:export
    ;; utils
    #:random-between #:random-nth
+   #:make-vector-2d #:vec-from-lst #:vec-from-coords #:vec-slope #:vec-dot-product
+   #:vec-perp-dot-product #:vec-mag #:vec-normalize #:vec-null-p
+   #:ver-perp #:vec-opposite #:vec-rotate #:vec-angle #:vec-add #:vec-sum #:vec-sub #:vec-diff
+   #:vec-scale #:vector-2d-x #:vector-2d-y
+   #:deg->rad #:rad->deg
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    ;; resources
    #:use-resource #:get-resource #:drop-resource

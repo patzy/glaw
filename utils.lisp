@@ -140,13 +140,23 @@
   "Returns angle between vector v1 taking v2 as the origin."
   (atan (vec-dot-product (vec-perp v2) v1) (vec-dot-product v2 v1)))
 
-(defun vec-add (v1 v2)
+(defun vec-sum (v1 v2)
   (make-vector-2d :x (+ (vector-2d-x v1) (vector-2d-x v2))
                   :y (+ (vector-2d-y v1) (vector-2d-y v2))))
 
+(defun vec-add (v1 v2)
+  (incf (vector-2d-x v1) (vector-2d-x v2))
+  (incf (vector-2d-y v1) (vector-2d-y v2))
+  v1)
+
 (defun vec-diff (v1 v2)
-  (make-vector-2d :x (- (vector-2d-x v1) (vector-2d-x v2))
-                  :y (- (vector-2d-y v1) (vector-2d-y v2))))
+  (make-vector-2d :x (- (vector-2d-x v2) (vector-2d-x v1))
+                  :y (- (vector-2d-y v2) (vector-2d-y v1))))
+
+(defun vec-sub (v1 v2)
+  (decf (vector-2d-x v2) (vector-2d-x v1))
+  (decf (vector-2d-y v2) (vector-2d-y v1))
+  v2)
 
 (defun vec-scale (v factor)
   (make-vector-2d :x (* factor (vector-2d-x v))
