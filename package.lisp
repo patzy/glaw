@@ -18,12 +18,12 @@
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
    ;; colors
    #:create-color #:mix-colors #:create-color-gradient
-   #:copy-color
+   #:color-copy
    #:set-color #:set-color/rgb
    #:set-color-from-gradient #:get-color-from-gradient
    #:get-color-from-gradient/rgb
    ;; images
-   #:create-image #:image-set-pixel #:image-width #:image-height #:image-bpp
+   #:create-image #:image-set-pixel #:image-set-pixel/index #:image-width #:image-height #:image-bpp
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture #:update-texture #:update-texture-from-image
@@ -45,13 +45,13 @@
    #:shape-x-min #:shape-x-max #:shape-y-min #:shape-y-max
    #:coords-overlap-p
    #:shape-intersect-p
-   #:translate-shape
+   #:translate-shape #:rotate-shape-2d
    #:shape-set-vertex #:shape-set-color #:shape-set-tex-coord
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
    #:shape-add-color #:shape-add-color/rgb
    #:shape-add-tex-vertex
    #:create-grid-shape #:create-cross-shape #:create-rectangle-shape
-   #:create-line-shape #:create-circle-shape #:create-triangle-shape
+   #:create-line-shape #:create-circle-shape #:create-triangle-shape #:create-polygon-shape
    ;; sprites
    #:create-sprite #:render-sprite
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset

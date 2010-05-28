@@ -113,7 +113,7 @@
                                    (float (range-or-value (particle-emitter-height em)))
                                    (particle-emitter-texture em))
                     (particle-blend-mode part) (particle-emitter-blend-mode em))
-              (copy-color (particle-emitter-color em) (particle-color part))
+              (color-copy (particle-emitter-color em) (particle-color part))
               ;; particle parameters init
               (setf (particle-lifetime part) (range-or-value (particle-emitter-lifetime em))
                     (particle-vx part) (range-or-value (particle-emitter-vx em))

@@ -199,7 +199,7 @@
 (defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
 
-(defun copy-color (src dest)
+(defun color-copy (src dest)
   (setf (color-r dest) (color-r src)
         (color-g dest) (color-g src)
         (color-b dest) (color-b src)
@@ -276,13 +276,23 @@
               :data (make-array (* width height bpp) :initial-element 255
                                 :element-type '(unsigned-byte 8))))
 
-(defun image-set-pixel (image x y r g b &optional alpha)
+(defun image-set-pixel (image x y r &optional (g 255) (b 255) (a 255))
+  (let ((index (+ x (* y (image-width image)))))
+    (image-set-pixel/index image index r g b a)))
+
+(defun image-set-pixel/index (image index r &optional (g 255) (b 255) (a 255))
   (let ((bpp (image-bpp image)))
-    (setf (aref (image-data image) (+ (* x bpp) (* y (* (image-width image) bpp)))) r
-          (aref (image-data image) (+ 1 (* x bpp) (* y (* (image-width image) bpp)))) g
-          (aref (image-data image) (+ 2 (* x bpp) (* y (* (image-width image) bpp)))) b)
-    (when alpha
-      (setf (aref (image-data image) (+ 3 (* x bpp) (* y (* (image-width image) bpp)))) alpha))))
+    (ecase bpp
+      (1 (setf (aref (image-data image) (* index bpp)) r))
+      (2 (setf (aref (image-data image) (* index bpp)) r
+               (aref (image-data image) (+ 1 (* index bpp))) g))
+      (3 (setf (aref (image-data image) (* index bpp)) r
+               (aref (image-data image) (+ 1 (* index bpp))) g
+               (aref (image-data image) (+ 2 (* index bpp))) b))
+      (4 (setf (aref (image-data image) (* index bpp)) r
+               (aref (image-data image) (+ 1 (* index bpp))) g
+               (aref (image-data image) (+ 2 (* index bpp))) b
+               (aref (image-data image) (+ 3 (* index bpp))) a)))))
 
 ;;; 2D Texture
 (defstruct texture
@@ -416,8 +426,25 @@
   (incf (shape-z-min shape) dz)
   (incf (shape-z-max shape) dz))
 
-(defun render-shape (shape)
-  (gl:begin (shape-primitive shape))
+(defun rotate-shape-2d (shape angle &optional (center-x 0.0) (center-y 0.0))
+  (unless (and (zerop center-x) (zerop center-y))
+    (translate-shape shape (- center-x) (- center-y) 0.0))
+  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+       (let ((x (aref (shape-vertices shape) i))
+             (y (aref (shape-vertices shape) (+ i 1))))
+         (setf (aref (shape-vertices shape) i)
+               (- (* x (cos angle)) (* y (sin angle)))
+               (aref (shape-vertices shape) (+ i 1))
+               (+ (* y (cos angle)) (* x (sin angle))))))
+  (unless (and (zerop center-x) (zerop center-y))
+    (translate-shape shape center-x center-y 0.0))
+  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+       (shape-update-bbox shape (aref (shape-vertices shape) i)
+                                (aref (shape-vertices shape) (+ i 1))
+                                (aref (shape-vertices shape) (+ i 2)))))
+
+(defun render-shape (shape &optional (primitive (shape-primitive shape)))
+  (gl:begin primitive)
   (loop with dim = (fill-pointer (shape-indices shape))
        for index below dim
        for i = (aref (shape-indices shape) index)
@@ -559,10 +586,10 @@
                    i (+ i 1) (+ i width 1) (+ i width))))
     shape))
 
-(defun create-circle-shape (x y radius &key (resolution 20) (filledp t))
+(defun create-circle-shape (x y radius &key (resolution 20) (filled t))
   (let ((shape (create-shape (round (/ 360 resolution) 1.0)
                              (round (/ 360 resolution) 1.0)
-                             :primitive (if filledp :triangle-fan :line-loop))))
+                             :primitive (if filled :triangle-fan :line-loop))))
     (loop for angle from 0 to 360 by resolution
        for radian = (deg->rad angle)
        do (shape-add-vertex/index shape
@@ -570,10 +597,10 @@
                                   (+ y (* radius (sin radian)))))
     shape))
 
-(defun create-triangle-shape (x0 y0 x1 y1 x2 y2)
+(defun create-triangle-shape (x0 y0 x1 y1 x2 y2 &key (filled t))
   (let ((shape (create-shape 3
                              3
-                             :primitive :triangles)))
+                             :primitive (if filled :triangles :line-loop))))
     (shape-add-vertex/index shape x0 y0)
     (shape-add-vertex/index shape x1 y1)
     (shape-add-vertex/index shape x2 y2)
@@ -590,11 +617,11 @@
     (shape-add-vertex/index shape x (+ y size))
     shape))
 
-(defun create-rectangle-shape (left bottom right top &key (filledp t))
+(defun create-rectangle-shape (left bottom right top &key (filled t))
   (let ((shape (create-shape 4 5
                              :color nil
                              :texture t
-                             :primitive (if filledp :quads :line-strip))))
+                             :primitive (if filled :quads :line-strip))))
   (shape-add-vertex/index shape left bottom)
   (shape-add-tex-vertex shape 0.0 1.0)
   (shape-add-vertex/index shape right bottom)
@@ -615,3 +642,12 @@
   (shape-add-vertex/index shape x0 y0)
   (shape-add-vertex/index shape x1 y1)
   shape))
+
+(defun create-polygon-shape (coords)
+  (let ((shape (create-shape (length coords) (length coords)
+                             :color nil
+                             :texture nil
+                             :primitive :polygon)))
+    (loop for v in coords
+         do (shape-add-vertex/index shape (first v) (second v)))
+    shape))
