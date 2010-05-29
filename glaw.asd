@@ -1,23 +1,29 @@
 ;;;; -*- Mode: Lisp; indent-tabs-mode: nil -*-
 
-(defsystem glaw
-  :depends-on (cl-opengl cl-glu)
-  :serial t
+(asdf:defsystem glaw
+  :license "MIT"
+  :version "git"
+  :description "Game programming utilities"
+  :depends-on (:cl-opengl :cl-glu :cl-openal)
   :components
-  ((:file "package")
-   (:file "utils")
-   (:file "resource")
-   (:file "input")
-   (:file "graphics")
-   (:file "2d")
-   (:file "anim")
-   (:file "gui")
-   (:file "assets")
-   (:file "font")
-   (:file "particles")
-   (:file "screen")
-   (:file "scheduler")
-   (:file "navmesh")
-   ;;(:file "console")
-   (:file "glaw")))
+  ((:module "src"
+            :serial t
+            :components
+            ((:file "package")
+             (:file "utils")
+             (:file "resource")
+             (:file "input")
+             (:file "graphics")
+             (:file "2d")
+             (:file "anim")
+             (:file "gui")
+             (:file "assets")
+             (:file "font")
+             (:file "particles")
+             (:file "screen")
+             (:file "scheduler")
+             (:file "navmesh")
+             (:file "sound")
+             ;;(:file "console")
+             (:file "glaw")))))
 

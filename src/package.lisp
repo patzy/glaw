@@ -24,6 +24,7 @@
    #:get-color-from-gradient/rgb
    ;; images
    #:create-image #:image-set-pixel #:image-set-pixel/index #:image-width #:image-height #:image-bpp
+   #:make-image
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture #:update-texture #:update-texture-from-image

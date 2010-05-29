@@ -89,7 +89,7 @@
       :negative))
 
 ;;; 2D vectors manipulation
-(defstruct vector-2d
+(defstruct (vector-2d (:type (vector float)))
   (x 0.0)
   (y 0.0))
 
