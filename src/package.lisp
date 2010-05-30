@@ -77,6 +77,9 @@
    ;; game screens
    #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
+   ;; sound
+   #:init-sound #:shutdown-sound #:update-sound #:sound-nb-channels #:sound-nb-free-channels
+   #:sound-nb-used-channels #:play-sound #:stop-sound
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui #:gui-view
    #:gui-focus #:gui-focus-next #:gui-focus-prev
