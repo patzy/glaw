@@ -69,7 +69,7 @@
    ;; particles
    #:create-particle-system #:update-particles #:render-particles
    ;; input management
-   #:add-input-handler #:remove-input-handler
+   #:add-input-handler #:remove-input-handler #:push-input-handlers #:pop-input-handlers
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event
    #:key-handler #:button-handler #:motion-handler
    #:*mouse-x* #:*mouse-y* #:update-mouse-position

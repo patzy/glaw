@@ -12,8 +12,17 @@
 
 (defvar *mouse-y* 0)
 
+(defvar *input-stack* '())
+
 (defvar *input-handlers* '(:global)
   "All active input handlers.")
+
+(defun push-input-handlers ()
+  (push *input-handlers* *input-stack*)
+  (setf *input-handlers* '(:global)))
+
+(defun pop-input-handlers ()
+  (setf *input-handlers* (pop *input-stack*)))
 
 (defun dispatch-key-event (keysym state keycode string)
   "Dispatch keyboard events."
