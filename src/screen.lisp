@@ -14,6 +14,13 @@
 (defgeneric shutdown-screen (screen))
 (defgeneric update-screen (screen dt))
 (defgeneric render-screen (screen))
+(defgeneric suspend-screen (screen))
+(defgeneric resume-screen (screen))
+
+(defmethod suspend-screen (screen)
+  (declare (ignore screen)))
+(defmethod resume-screen (screen)
+  (declare (ignore screen)))
 
 (defun current-screen (stack)
   "Returns current active game screen or NIL if there's no screen
@@ -23,6 +30,8 @@
 
 (defun push-screen (screen stack &key propagate-rendering propagate-updating initargs)
   "Push SCREEN on top of STACK and then initialize SCREEN."
+  (when (current-screen stack)
+    (suspend-screen (current-screen stack)))
   (push screen (screen-stack-screens stack))
   (unless propagate-rendering
     (when (screen-stack-render stack)
@@ -46,8 +55,14 @@
       (setf (screen-stack-render stack) (pop (screen-stack-render-backup stack))))
     (setf (screen-stack-update stack) (remove scr (screen-stack-update stack)))
     (when (and (not (screen-stack-update stack)) (screen-stack-update-backup stack))
-      (setf (screen-stack-update stack) (pop (screen-stack-update-backup stack))))))
+      (setf (screen-stack-update stack) (pop (screen-stack-update-backup stack)))))
+  (when (current-screen stack)
+    (resume-screen (current-screen stack))))
 
+
+(defun replace-screen (stack screen)
+  (pop-screen stack)
+  (push-screen screen stack))
 
 (defun render-screens (stack)
   (dolist (scr (screen-stack-render stack))

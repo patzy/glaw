@@ -76,6 +76,7 @@
    #:translate-mouse-button
    ;; game screens
    #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
+   #:replace-screen #:suspend-screen #:resume-screen
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
    ;; sound
    #:init-sound #:shutdown-sound #:update-sound #:sound-nb-channels #:sound-nb-free-channels
