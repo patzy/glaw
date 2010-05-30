@@ -30,14 +30,6 @@
       (when (> fps (frame-counter-max *frame-counter*))
         (setf (frame-counter-max *frame-counter*) fps))
       (setf (frame-counter-rate *frame-counter*) fps)
-      (format t "FPS(min/current/max/total avg): ~D / ~D / ~D / ~S~%"
-              (frame-counter-min *frame-counter*)
-              (frame-counter-rate *frame-counter*)
-              (frame-counter-max *frame-counter*)
-              (/ (frame-counter-sum *frame-counter*)
-                 (if (zerop (frame-counter-nb-samples *frame-counter*))
-                     1.0
-                     (frame-counter-nb-samples *frame-counter*))))
       (setf (frame-counter-last-render-time *frame-counter*)
             (get-internal-real-time))
       (setf (frame-counter-nb-frames *frame-counter*) 0))))
@@ -132,8 +124,9 @@
 (defun set-view-2d (view)
   (gl:matrix-mode :projection)
   (gl:load-identity)
-  (glu:ortho-2d (2d-view-left view) (2d-view-right view)
-                (2d-view-bottom view) (2d-view-top view))
+  (gl:ortho (2d-view-left view) (2d-view-right view)
+            (2d-view-bottom view) (2d-view-top view)
+            -1.0 1.0)
   (gl:matrix-mode :modelview)
   (gl:load-identity))
 
