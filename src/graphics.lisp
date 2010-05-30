@@ -477,22 +477,22 @@
                                              (primitive :triangles))
   (make-shape :primitive primitive
               :vertices (make-array (* nb-vertices 3)
-                                    :element-type 'single-float
+                                    ;;:element-type 'single-float
                                     :fill-pointer 0)
               :colors (when color
                         (make-array (* nb-vertices 4)
-                                    :element-type 'single-float
+                                    ;;:element-type 'single-float
                                     :fill-pointer 0))
               :tex-coords (when texture
                             (make-array (* nb-vertices 2)
-                                        :element-type 'single-float
+                                        ;;:element-type 'single-float
                                         :fill-pointer 0))
               :indices (make-array nb-indices
                                    :element-type 'unsigned-byte
                                    :fill-pointer 0)))
 
 (defun shape-update-bbox (shape x y &optional (z 0.0))
-  (declare (type single-float x y z))
+  ;;(declare (type single-float x y z))
   (if (zerop (fill-pointer (shape-vertices shape)))
       (setf (shape-x-min shape) x
             (shape-y-min shape) y
@@ -514,28 +514,28 @@
                (setf (shape-z-max shape) z)))))
 
 (defun shape-add-vertex (shape x y &optional (z 0.0))
-  (declare (type single-float x y z))
+  ;;(declare (type single-float x y z))
   (shape-update-bbox shape x y z)
   (vector-push x (shape-vertices shape))
   (vector-push y (shape-vertices shape))
   (vector-push z (shape-vertices shape)))
 
 (defun shape-add-color (shape color)
-  (declare (type color color))
+  ;;(declare (type color color))
   (vector-push (color-r color) (shape-colors shape))
   (vector-push (color-g color) (shape-colors shape))
   (vector-push (color-b color) (shape-colors shape))
   (vector-push (color-a color) (shape-colors shape)))
 
 (defun shape-add-color/rgb (shape r g b &optional (a 1.0))
-  (declare (type single-float r g b a))
+  ;;(declare (type single-float r g b a))
   (vector-push r (shape-colors shape))
   (vector-push g (shape-colors shape))
   (vector-push b (shape-colors shape))
   (vector-push a (shape-colors shape)))
 
 (defun shape-add-tex-vertex (shape u v)
-  (declare (type single-float u v))
+  ;;(declare (type single-float u v))
   (vector-push u (shape-tex-coords shape))
   (vector-push v (shape-tex-coords shape)))
 
