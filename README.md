@@ -3,6 +3,7 @@ Glaw
 The goal of GLAW is to provide a collection of basic functionalities to help developping games.
 
 Basic ideas are:
+
  - as few non-lisp dependencies as possible
  - collection of tools that can work together instead of fully integrated engine
  - do *not* force the user to a specific game genre
@@ -11,10 +12,12 @@ Basic ideas are:
 Description
 -----------
 Required dependencies:
+
  - [cl-opengl](http://github.com/3b/cl-opengl/)
  - [cl-openal](http://github.com/patzy/cl-openal).
 
 Extensions:
+
  - glaw-imago: `:texture` assets loading using [imago](http://common-lisp.net/project/imago/)
  - glaw-sdl: `:texture` assets loading using lispbuilder-sdl-image and lispbuilder-sdl helpers for integration
 
