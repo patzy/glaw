@@ -194,6 +194,7 @@
   (navmesh-containing-cell nv x y))
 
 (defun navmesh-cells-dist (nv start-cell end-cell)
+  (declare (ignore nv))
   (let* ((start-coords (navcell-center start-cell))
          (end-coords (navcell-center end-cell))
          (dx (- (first end-coords) (first start-coords)))
@@ -330,7 +331,7 @@
   (let ((start-cell (navmesh-containing-cell nv start-x start-y))
         (end-cell (navmesh-containing-cell nv end-x end-y)))
     (assert (and start-cell end-cell))
-    (find-path/cells nb start-cell end-cell g-func h-func)))
+    (find-path/cells nv start-cell end-cell g-func h-func)))
 
 (defun find-path/cells (nv start-cell end-cell &optional (g-func #'navmesh-cells-dist)
                                                          (h-func #'navmesh-cells-dist))
