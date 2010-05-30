@@ -32,6 +32,9 @@
   (format t "Disposing of asset: ~S~%" identifier)
   (remove-resource *content-manager* identifier))
 
+(defun dispose-assets (&rest ids)
+  (dolist (it ids)
+    (dispose-asset it)))
 
 (defun defasset (asset-type load &optional unload)
   (setf (gethash asset-type *asset-loaders*) (list load unload)))
