@@ -34,8 +34,9 @@ wrapped text."
         (lines '()))
     (loop with current-width = 0
        with line = ""
+       for w in words
        for word-width = (string-width fnt w)
-       for w in words do
+       do
          (if (< (+ current-width word-width) max-width)
              (progn  (incf current-width word-width)
                      (if (string-equal line "")

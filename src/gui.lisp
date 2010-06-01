@@ -426,7 +426,7 @@
   (render-string (pos-x w) (- (gl-y w) (height w)) (gui-widget-font w) (text w)))
 
 (defclass gui-button (gui-widget)
-  ((text :accessor text :initform '() :initarg :text)
+  ((text :accessor text :initform "Some text?" :initarg :text)
    (action :accessor action :initform nil :initarg :action)
    (args :accessor gui-button-args :initform nil :initarg :args)
    (pressed :accessor gui-button-pressed :initform nil)
