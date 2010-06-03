@@ -128,7 +128,7 @@
 
 (defstruct gravity-affector
   (strength 100.0)
-  (direction (make-vector-2d :x 0 :y -1)))
+  (direction (make-vector-2d :x 0.0 :y -1.0)))
 
 (defmethod affect-particles ((a gravity-affector) (s particle-system) dt)
   (let ((dx (* (gravity-affector-strength a) (vector-2d-x (gravity-affector-direction a)) dt))
