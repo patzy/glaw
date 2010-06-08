@@ -1,64 +1,73 @@
 (in-package #:glaw)
 
+;;; Animation
+(defgeneric animation-duration (anim)
+  (:documentation "Returns total time length of ANIM."))
+
+(defgeneric animation-apply (anim obj date)
+  (:documentation "Apply animation animation ANIM at DATE to OBJ."))
+
 (defstruct anim-state
   animation
-  time
-  scale)
+  (time 0.0)
+  (scale 1.0)
+  (loops 0);;FIXME: we don't even know if we can loop here....
+  )
 
 (defun anim-state-update (state dt)
-  (when (or (= (animation-loops (anim-state-animation state)) 0)
-            (< (anim-state-time state) (* (animation-loops (anim-state-animation state))
+  (when (or (= (anim-state-loops state) 0)
+            (< (anim-state-time state) (* (anim-state-loops state)
                                           (animation-duration (anim-state-animation state)))))
     (incf (anim-state-time state) (* dt (anim-state-scale state)))))
 
-(defstruct animation
+(defun anim-state-apply (state obj)
+  (animation-apply (anim-state-animation state) obj (anim-state-time state)))
+
+;;; Keyframed animation
+;; Each channel contains frame data for a specific aspect of the object you want to apply anim to
+;; TODO: interpolation support
+(defstruct keyframe-anim
+  (channels #() :type vector)
+  (hints '())
   frame-time
   start-frame
-  nb-frames
-  (loops 1))
+  nb-frames)
 
-(defun animation-end-frame (anim)
-  (+ (animation-start-frame anim) (animation-nb-frames anim)))
+(defun keyframe-anim-end-frame (anim)
+  (+ (keyframe-anim-start-frame anim) (keyframe-anim-nb-frames anim)))
 
-(defun animation-frame-date (anim frame)
-  (* (mod frame (animation-nb-frames anim)) (animation-frame-time anim)))
+(defun keyframe-anim-frame-date (anim frame)
+  (* (mod frame (keyframe-anim-nb-frames anim)) (keyframe-anim-frame-time anim)))
 
-(defun animation-date-frame (anim date)
+(defun keyframe-anim-date-frame (anim date)
   (let* ((cursor (* (mod (/ date (animation-duration anim)) 1.0)
-                    (- (animation-nb-frames anim) 1)))
+                    (- (keyframe-anim-nb-frames anim) 1)))
          (index (floor cursor)))
     (if (< (- cursor index) 0.5)
         index
         (1+ index))))
 
-(defun animation-duration (anim)
-  (* (animation-nb-frames anim) (animation-frame-time anim)))
+(defmethod animation-duration ((anim keyframe-anim))
+  (* (keyframe-anim-nb-frames anim) (keyframe-anim-frame-time anim)))
 
-(defgeneric animation-apply-time (anim obj date))
-(defgeneric animation-apply-frame (anim obj frame))
+(defun channel-frame-data (channel frame)
+  (if (listp channel)
+      (nth frame channel)
+      (when (zerop frame)
+        channel)))
 
-(defun anim-state-apply (state obj)
-  (animation-apply-time (anim-state-animation state) obj (anim-state-time state)))
+(defgeneric frame-apply-channel (channel-type obj frame-data))
 
-;;; Texture animation
-(defstruct (texture-anim (:include animation))
-  textures
-  coords)
+(defmethod animation-apply ((it keyframe-anim) obj date)
+  (let ((frame (keyframe-anim-date-frame it date)))
+    (loop for (type . index) in (keyframe-anim-hints it)
+       for frame-data = (channel-frame-data (nth index (keyframe-anim-channels it)) frame)
+       when frame-data
+       do (frame-apply-channel type obj frame-data))))
 
-(defun texture-anim-frame (tex-anim frame)
-  (let ((tex (if (listp (texture-anim-textures tex-anim))
-                 (nth frame (texture-anim-textures tex-anim))
-                 (texture-anim-textures tex-anim)))
-        (coords (if (listp (texture-anim-coords tex-anim))
-                    (nth frame (texture-anim-coords tex-anim))
-                    (texture-anim-coords tex-anim))))
-    (values tex coords)))
-
-;; Sprite animation
-(defmethod animation-apply-time ((it texture-anim) (sp sprite) date)
-  (animation-apply-frame it sp (animation-date-frame it date)))
-
-(defmethod animation-apply-frame ((it texture-anim) (sp sprite) (frame integer))
-  (multiple-value-bind (tex coords) (texture-anim-frame it frame)
-    (setf (sprite-texture sp) tex)
-    (setf (shape-tex-coords (sprite-shape sp)) coords)))
+(defmacro define-anim-channels (((obj-sym obj-type) data-sym) &rest channels)
+  `(progn ,@(loop for ( type . body ) in channels
+                 collect `(defmethod frame-apply-channel ((type (eql ,type))
+                                                          (,obj-sym ,obj-type)
+                                                          ,data-sym)
+                            ,@body))))

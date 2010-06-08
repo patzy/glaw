@@ -59,7 +59,7 @@
    #:tileset-pixel-width #:tileset-pixel-height #:tileset-tiles-width #:tileset-tiles-height
    #:tileset-spacing #:tileset-margin #:tileset-start-index
    ;; animation
-   #:make-anim-state #:make-texture-anim #:animation-apply-frame #:animation-apply-time
+   #:make-anim-state #:make-keyframe-anim #:animation-apply
    #:anim-state-update #:anim-state-apply
    ;; pathfinding
    #:create-grid-navmesh #:navmesh-cell #:navmesh-remove-cell-at #:connect-grid-navmesh

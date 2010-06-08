@@ -16,12 +16,13 @@
   (glaw:load-asset "explosion-blue-1.png" :texture "expl0")
   (glaw:load-asset "explosion-blue-2.png" :texture "expl1")
   (glaw:load-asset "explosion-blue-3.png" :texture "expl2")
-  (setf (sprites-animation it) (glaw:make-texture-anim
+  (setf (sprites-animation it) (glaw:make-keyframe-anim
                                 :frame-time 0.2
                                 :start-frame 0
                                 :nb-frames 3
-                                :textures (glaw:use-resources "expl0" "expl1" "expl2")
-                                :coords #(0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0)))
+                                :hints '((:texture . 0))
+                                :channels (list (glaw:use-resources "expl0" "expl1" "expl2"))))
+  (format t "Animation: ~S~%" (sprites-animation it))
   (setf (sprites-anim-state it) (glaw:make-anim-state :animation (sprites-animation it)
                                                      :time 0.0
                                                      :scale 1.0))
@@ -30,7 +31,7 @@
                                                         (+ 100.0 (random 100.0))
                                                         (+ 100.0 (random 100.0))
                                                         nil))
-  (glaw:animation-apply-frame (sprites-animation it) (sprites-animated-sprite it) 0)
+  (glaw:anim-state-apply (sprites-anim-state it) (sprites-animated-sprite it))
   (setf (sprites-font it) (glaw:use-resource "font.png"))
   (loop for i from 0 to 10 do
        (push (glaw:create-sprite (float (random glaw:*display-width*))
