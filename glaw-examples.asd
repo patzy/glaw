@@ -15,4 +15,5 @@
                          (:file "tilemap")
                          (:file "particles")
                          (:file "pathfinding")
-                         (:file "sound")))))
+                         (:file "sound")
+                         (:file "skeleton")))))

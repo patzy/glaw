@@ -23,6 +23,7 @@
              (:file "screen")
              (:file "scheduler")
              (:file "navmesh")
+             (:file "skeleton")
              (:file "sound")
              ;;(:file "console")
              (:file "glaw")))))

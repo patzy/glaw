@@ -2,7 +2,7 @@
   (:use #:cl)
   (:export #:run-example
            #:gui #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
-           #:sound))
+           #:sound #:skeletons))
 
 (in-package #:glaw-examples)
 
