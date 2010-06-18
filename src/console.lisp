@@ -1,73 +1,50 @@
 (in-package #:glaw)
 
-;;; Input console
-
-(defclass console ()
-  ((input :accessor input :initform '() :initarg :input)
-   (height :accessor height :initform 10);; in number of lines
-   (buffer :accessor buffer :initform '("Input console:"))))
-
-(key-handler console (#\Return :press)
-   (let* ((text (char-list->string (input it))))
-     (push text (buffer it))
-     (setf (input it) '())
-     (push (format nil "~S" (handler-case (eval (read-from-string text))
-                              (error (e) (format nil "~A" e))))
-           (buffer it))))
-
-(key-handler console (#\Esc :press)
-   (toggle-console))
-
-(key-handler console (#\Backspace :press)
-    (pop (input it)))
-
-(key-handler console (nil :press)
-    (push key (input it)))
+;;; In-game console
 
 (defun char-list->string (char-list)
-  (coerce (reverse char-list)
-          'string))
+  (apply #'concatenate 'string (reverse char-list)))
 
 (defun string->char-list (string)
   (reverse (loop for c across string
               collect c)))
 
-(defmethod render-widget ((co console))
+(defstruct console
+  (input '())
+  (prompt "> ")
+  (buffer '("Input console:"))
+  (parser (lambda (text)
+            (handler-case (format nil "~S" (eval (read-from-string text)))
+              (error (e) (format nil "ERROR" e))))))
+
+(defmethod on-key ((it console) (key (eql :return)) (key-state (eql :press)) keycode string)
+  (let ((text (char-list->string (console-input it))))
+    (setf (console-input it) '())
+    (push text (console-buffer it))
+    (push (concatenate 'string "=> " (funcall (console-parser it) text)) (console-buffer it))))
+
+(defmethod on-key ((it console) (key (eql :backspace)) (key-state (eql :press)) keycode string)
+  (pop (console-input it)))
+
+(defmethod on-key ((it console) key (key-state (eql :press)) keycode string)
+  (push string (console-input it)))
+
+(defun render-console (console font &optional (x 0) (y 0) (w *display-width*) (h *display-height*))
   (gl:color 0 0 0 0.6)
-  (gl:disable :texture-2d)
   (gl:with-primitive :quads
-    (gl:vertex 0
-               (- *display-height*
-                  (* (height co) 16))
-               0)
-    (gl:vertex *display-width*
-               (- *display-height*
-                  (* (height co) 16))
-               0)
-    (gl:vertex *display-width*
-               *display-height*
-               0)
-    (gl:vertex 0
-               *display-height*
-               0))
-  (gl:color 1 1 1 1)
-  (format-at  (- *display-width* 150)
-              (- *display-height* 25)
-              "~D" (current-fps))
-  (gl:with-pushed-matrix
-      (gl:translate 0
-                    (- *display-height*
-                       (* (height co) 16))
-                     0)
-    (gl:color 1 1 1 1)
-    ;; Render buffer content
-    ;; one line per item
-    (let ((x 0)
-          (y 16))
-      (loop for i in (buffer co)
-         do (progn (render-bitmap-string x y i)
-                   (incf y 16))
-         finally (render-bitmap-string
-                  x 0
-                  (concatenate 'string "=> "
-                               (char-list->string (append (input co)))))))))
+    (gl:vertex x y)
+    (gl:vertex (+ x w) y)
+    (gl:vertex (+ x w) (+ y h))
+    (gl:vertex x (+ y h)))
+  (gl:color .75 .75 .75 1)
+  (let ((nb-lines (round (/ h (font-line-height font))))
+        (lines (mapcan (lambda (item) (string-wrap font item w)) (console-buffer console)))
+        (line-x x)
+        (line-y (- (+ y h) (font-line-height font))))
+    (loop for i in (last (reverse lines) (1- nb-lines)) do
+         (setf line-y (render-wrapped-string line-x line-y w font i))
+       finally (gl:color 1 1 1 1)
+         (render-wrapped-string line-x line-y w font
+                      (concatenate 'string (console-prompt console)
+                                   (char-list->string (console-input console)))))))
+

@@ -113,8 +113,8 @@ wrapped text."
            (:right (setf line-x (+ x (- wdth (string-width fnt l)))))
            (:center (setf line-x (+ x (round (- (/ wdth 2.0) (/ (string-width fnt l) 2.0)))))))
          (render-string line-x line-y fnt l)
-         (decf line-y (font-line-height fnt)))))
-
+         (decf line-y (font-line-height fnt)))
+    line-y))
 
 (defmacro format-at (x y fnt fmt &rest values)
   `(render-string ,x ,y ,fnt (format nil ,fmt ,@values)))

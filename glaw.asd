@@ -25,6 +25,6 @@
              (:file "navmesh")
              (:file "skeleton")
              (:file "sound")
-             ;;(:file "console")
+             (:file "console")
              (:file "glaw")))))
 

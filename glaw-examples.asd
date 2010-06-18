@@ -16,4 +16,5 @@
                          (:file "particles")
                          (:file "pathfinding")
                          (:file "sound")
-                         (:file "skeleton")))))
+                         (:file "skeleton")
+                         (:file "console")))))
