@@ -4,7 +4,6 @@
 (defstruct sprite
   shape
   texture
-  anim-state
   (flip nil))      ;; :vertical, :horizontal or :both
 
 (defun create-sprite (x y width height texture)
@@ -14,6 +13,11 @@
 (defun render-sprite (sp)
   (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
+
+(define-anim-channels ((it sprite) data)
+    (:texture (setf (sprite-texture it) data))
+    (:tex-coords (setf (shape-tex-coords (sprite-shape it)) data))
+    (:coords  (setf (shape-vertices (sprite-shape it)) data)))
 
 ;;; Tilemap
 (defstruct tileset

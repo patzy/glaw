@@ -33,6 +33,9 @@
   start-frame
   nb-frames)
 
+(defmethod animation-duration ((anim keyframe-anim))
+  (* (keyframe-anim-nb-frames anim) (keyframe-anim-frame-time anim)))
+
 (defun keyframe-anim-end-frame (anim)
   (+ (keyframe-anim-start-frame anim) (keyframe-anim-nb-frames anim)))
 
@@ -46,9 +49,6 @@
     (if (< (- cursor index) 0.5)
         index
         (1+ index))))
-
-(defmethod animation-duration ((anim keyframe-anim))
-  (* (keyframe-anim-nb-frames anim) (keyframe-anim-frame-time anim)))
 
 (defun channel-frame-data (channel frame)
   (if (listp channel)
@@ -71,3 +71,5 @@
                                                           (,obj-sym ,obj-type)
                                                           ,data-sym)
                             ,@body))))
+
+
