@@ -27,7 +27,7 @@
 ;; Each channel contains frame data for a specific aspect of the object you want to apply anim to
 ;; TODO: interpolation support
 (defstruct keyframe-anim
-  (channels #() :type vector)
+  (channels '())
   (hints '())
   frame-time
   start-frame
