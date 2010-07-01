@@ -74,6 +74,8 @@
    #:key-handler #:button-handler #:motion-handler
    #:*mouse-x* #:*mouse-y* #:update-mouse-position
    #:translate-mouse-button
+   #:input-handler #:make-input-repeat #:make-input-chord #:make-input-sequence
+   #:input-processor-reset #:input-processor-valid-p
    ;; game screens
    #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
    #:replace-screen #:suspend-screen #:resume-screen

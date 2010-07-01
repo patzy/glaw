@@ -17,4 +17,5 @@
                          (:file "pathfinding")
                          (:file "sound")
                          (:file "skeleton")
-                         (:file "console")))))
+                         (:file "console")
+                         (:file "input")))))
