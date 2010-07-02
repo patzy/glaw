@@ -1,8 +1,7 @@
 (defpackage :glaw-sdl
   (:use #:cl #:glaw)
   (:export
-     #:translate-key
-     #:translate-mouse-button))
+     #:translate-keysym))
 
 (in-package #:glaw-sdl)
 
@@ -83,15 +82,21 @@
 
 ;; font asset
 ;; XXX: assumes 256x256 image
-(defasset :bitmap-font
+(defasset :fixed-bitmap-font
   ;; load
   (lambda (filename)
     (let ((img-surf (sdl-image:load-image filename)))
       (sdl-base::with-pixel (pix (sdl:fp img-surf))
-        (let ((tex (create-texture (sdl:width img-surf) (sdl:height img-surf)
-                                   (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix))))
-          (create-bitmap-font tex 13 16)))))
+        (let* ((tex (create-texture (sdl:width img-surf) (sdl:height img-surf)
+                                    (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))
+               (fnt (create-font tex)))
+        (loop for i below 256
+             for cx = (/ (mod i 16.0) 16.0)
+             for cy = (/ (truncate (/ i 16)) 16.0) do
+             (font-set-glyph-data fnt i cx cy 0.0625 0.0625 16))
+        (font-build-cache fnt)
+        fnt))))
   ;; unload
   (lambda (font)
     (glaw:destroy-texture (glaw::font-texture font))
-    (glaw:destroy-bitmap-font font)))
+    (glaw:destroy-font font)))
