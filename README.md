@@ -33,8 +33,7 @@ and imago.
 To do so:
 
  - change the `:depends-on` line in `glaw-examples.asd`
- - commment the GLOP part in `examples/examples.lisp` (from `;; Using GLOP` to `;; Using SDL`)
- - uncomment the SDL part (from `;; Using SDL` to the end of the file)
+ - use `:glaw-examples-sdl` in `*features*` instead of `:glaw-examples-glop`
  
 Note that I don't test often with lb-sdl and it may not work/compile properly.
  
@@ -56,6 +55,9 @@ Where `example-name` may be one of the following:
  - `texture`
  - `tilemap`
  - `sound`
+ - `skeletons`
+ - `console`
+ - `input`
  
 There's also a simple breakout game using glaw [here](http://github.com/patzy/outbreak),
 and a more polished asteroid clone [here](http://github.com/patzy/kayou).

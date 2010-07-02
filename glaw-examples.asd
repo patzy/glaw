@@ -19,3 +19,9 @@
                          (:file "skeleton")
                          (:file "console")
                          (:file "input")))))
+
+
+;; Use GLOP for input and window/context management
+(push :glaw-examples-glop *features*)
+;; Or SDL
+;; (push :glaw-examples-sdl *features*)
