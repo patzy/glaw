@@ -9,6 +9,7 @@
    #:vec-scale #:vector-2d-x #:vector-2d-y
    #:deg->rad #:rad->deg
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
+   #:with-timestep
    ;; resources
    #:use-resource #:get-resource #:drop-resource
    #:use-resources #:drop-resources

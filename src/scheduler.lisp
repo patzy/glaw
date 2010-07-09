@@ -46,5 +46,11 @@
 (defun cancel-timer (timer)
   (setf *timers* (remove timer *timers*)))
 
-(defun update-scheduler (dt)
+(defun update-scheduler (dt &key (lock 0))
   (setf *timers* (run-timers *timers* dt)))
+
+;; timestep lock
+(defmacro with-timestep ((real expected) &body body)
+  `(progn (when (< ,real ,expected)
+            (sleep (- ,expected ,real)))
+          ,@body))

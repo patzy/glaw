@@ -190,7 +190,7 @@ int main(int args, char** argv)
     size_t size = 11;
 
     if (args < 3){
-      throw "Need at least two arguments - font file and output file.";
+      throw "Need at least three arguments - font file, output file and output size.";
     }
     else{
       if (args > 3){
