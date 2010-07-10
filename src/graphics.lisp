@@ -376,9 +376,7 @@
   vertices   ;; x,y,z
   colors     ;; r,g,b,a
   tex-coords ;; u,v
-  indices
-  x-min y-min z-min
-  x-max y-max z-max)
+  indices)
 
 (defmacro with-shape-vertices ((v-sym shape) &body body)
   `(let ((,v-sym (shape-vertices ,shape)))
@@ -411,13 +409,7 @@
   (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
        (incf (aref (shape-vertices shape) i) dx)
        (incf (aref (shape-vertices shape) (+ i 1)) dy)
-       (incf (aref (shape-vertices shape) (+ i 2)) dz))
-  (incf (shape-x-min shape) dx)
-  (incf (shape-x-max shape) dx)
-  (incf (shape-y-min shape) dy)
-  (incf (shape-y-max shape) dy)
-  (incf (shape-z-min shape) dz)
-  (incf (shape-z-max shape) dz))
+       (incf (aref (shape-vertices shape) (+ i 2)) dz)))
 
 (defun rotate-shape-2d (shape angle &optional (center-x 0.0) (center-y 0.0))
   (unless (and (zerop center-x) (zerop center-y))
@@ -430,11 +422,7 @@
                (aref (shape-vertices shape) (+ i 1))
                (+ (* y (cos angle)) (* x (sin angle))))))
   (unless (and (zerop center-x) (zerop center-y))
-    (translate-shape shape center-x center-y 0.0))
-  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
-       (shape-update-bbox shape (aref (shape-vertices shape) i)
-                                (aref (shape-vertices shape) (+ i 1))
-                                (aref (shape-vertices shape) (+ i 2)))))
+    (translate-shape shape center-x center-y 0.0)))
 
 (defun render-shape (shape &optional (primitive (shape-primitive shape)))
   (gl:begin primitive)
@@ -454,25 +442,6 @@
                      (aref (shape-vertices shape) (+ 2 (* i 3)))))
   (gl:end))
 
-(defun render-bbox (shape)
-  (gl:begin :line-strip)
-  (gl:vertex (shape-x-min shape) (shape-y-max shape))
-  (gl:vertex (shape-x-max shape) (shape-y-max shape))
-  (gl:vertex (shape-x-max shape) (shape-y-min shape))
-  (gl:vertex (shape-x-min shape) (shape-y-min shape))
-  (gl:vertex (shape-x-min shape) (shape-y-max shape))
-  (gl:end))
-
-(defun coords-overlap-p (a b c d)
-  (or (< c a d b) (< a c b d)
-      (< a c d b) (< c a b d)))
-
-(defun shape-intersect-p (shape-1 shape-2)
-  (and (coords-overlap-p (shape-x-min shape-1) (shape-x-max shape-1)
-                         (shape-x-min shape-2) (shape-x-max shape-2))
-       (coords-overlap-p (shape-y-min shape-1) (shape-y-max shape-1)
-                         (shape-y-min shape-2) (shape-y-max shape-2))))
-
 (defun create-shape (nb-vertices nb-indices &key color texture
                                              (primitive :triangles))
   (make-shape :primitive primitive
@@ -491,31 +460,8 @@
                                    :element-type 'unsigned-byte
                                    :fill-pointer 0)))
 
-(defun shape-update-bbox (shape x y &optional (z 0.0))
-  ;;(declare (type single-float x y z))
-  (if (zerop (fill-pointer (shape-vertices shape)))
-      (setf (shape-x-min shape) x
-            (shape-y-min shape) y
-            (shape-z-min shape) z
-            (shape-x-max shape) x
-            (shape-y-max shape) y
-            (shape-z-max shape) z)
-      (progn (when (< x (shape-x-min shape))
-               (setf (shape-x-min shape) x))
-             (when (< y (shape-y-min shape))
-               (setf (shape-y-min shape) y))
-             (when (< z (shape-z-min shape))
-               (setf (shape-z-min shape) z))
-             (when (> x (shape-x-max shape))
-               (setf (shape-x-max shape) x))
-             (when (> y (shape-y-max shape))
-               (setf (shape-y-max shape) y))
-             (when (> z (shape-z-max shape))
-               (setf (shape-z-max shape) z)))))
-
 (defun shape-add-vertex (shape x y &optional (z 0.0))
   ;;(declare (type single-float x y z))
-  (shape-update-bbox shape x y z)
   (vector-push x (shape-vertices shape))
   (vector-push y (shape-vertices shape))
   (vector-push z (shape-vertices shape)))
@@ -644,3 +590,68 @@
     (loop for v in coords
          do (shape-add-vertex/index shape (first v) (second v)))
     shape))
+
+;;; Bounding box
+(defstruct bbox
+  valid
+  x-min y-min z-min
+  x-max y-max z-max)
+
+(defun bbox-invalidate (bbox)
+  (setf (bbox-valid bbox) nil))
+
+(defun render-bbox (bbox)
+  (gl:begin :line-strip)
+  (gl:vertex (bbox-x-min bbox) (bbox-y-max bbox))
+  (gl:vertex (bbox-x-max bbox) (bbox-y-max bbox))
+  (gl:vertex (bbox-x-max bbox) (bbox-y-min bbox))
+  (gl:vertex (bbox-x-min bbox) (bbox-y-min bbox))
+  (gl:vertex (bbox-x-min bbox) (bbox-y-max bbox))
+  (gl:end))
+
+(defun bbox-intersect-p (bbox-1 bbox-2)
+  (and (coords-overlap-p (bbox-x-min bbox-1) (bbox-x-max bbox-1)
+                         (bbox-x-min bbox-2) (bbox-x-max bbox-2))
+       (coords-overlap-p (bbox-y-min bbox-1) (bbox-y-max bbox-1)
+                         (bbox-y-min bbox-2) (bbox-y-max bbox-2))))
+
+(defun bbox-update (bbox x y &optional (z 0.0))
+  ;;(declare (type single-float x y z))
+  (if (bbox-valid bbox)
+      (progn (when (< x (bbox-x-min bbox))
+               (setf (bbox-x-min bbox) x))
+             (when (< y (bbox-y-min bbox))
+               (setf (bbox-y-min bbox) y))
+             (when (< z (bbox-z-min bbox))
+               (setf (bbox-z-min bbox) z))
+             (when (> x (bbox-x-max bbox))
+               (setf (bbox-x-max bbox) x))
+             (when (> y (bbox-y-max bbox))
+               (setf (bbox-y-max bbox) y))
+             (when (> z (bbox-z-max bbox))
+               (setf (bbox-z-max bbox) z)))
+      (progn (setf (bbox-x-min bbox) x
+                   (bbox-y-min bbox) y
+                   (bbox-z-min bbox) z
+                   (bbox-x-max bbox) x
+                   (bbox-y-max bbox) y
+                   (bbox-z-max bbox) z
+                   (bbox-valid bbox) t))))
+
+(defun bbox-update/shape (bbox shape)
+  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+       (bbox-update bbox (aref (shape-vertices shape) i)
+                         (aref (shape-vertices shape) (+ i 1))
+                         (aref (shape-vertices shape) (+ i 2)))))
+
+(defun bbox-overwrite/shape (bbox shape)
+  (bbox-invalidate bbox)
+  (bbox-update/shape bbox shape))
+
+(defun bbox-translate (bbox dx dy &optional (dz 0.0))
+  (incf (bbox-x-min bbox) dx)
+  (incf (bbox-y-min bbox) dy)
+  (incf (bbox-z-min bbox) dz)
+  (incf (bbox-x-max bbox) dx)
+  (incf (bbox-y-max bbox) dy)
+  (incf (bbox-z-max bbox) dz))

@@ -7,7 +7,8 @@
    #:vec-perp-dot-product #:vec-mag #:vec-normalize #:vec-null-p
    #:ver-perp #:vec-opposite #:vec-rotate #:vec-angle #:vec-add #:vec-sum #:vec-sub #:vec-diff
    #:vec-scale #:vector-2d-x #:vector-2d-y
-   #:deg->rad #:rad->deg
+   #:deg->rad #:rad->deg #:coords-overlap-p
+   ;; timing
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    #:with-timestep
    ;; resources
@@ -43,10 +44,7 @@
    #:view-to-view #:with-2d-view-coords
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
-   #:create-shape #:render-shape #:render-bbox
-   #:shape-x-min #:shape-x-max #:shape-y-min #:shape-y-max
-   #:coords-overlap-p
-   #:shape-intersect-p
+   #:create-shape #:render-shape
    #:translate-shape #:rotate-shape-2d
    #:shape-set-vertex #:shape-set-color #:shape-set-tex-coord
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
@@ -54,6 +52,10 @@
    #:shape-add-tex-vertex
    #:create-grid-shape #:create-cross-shape #:create-rectangle-shape
    #:create-line-shape #:create-circle-shape #:create-triangle-shape #:create-polygon-shape
+   ;; bbox
+   #:make-bbox #:bbox-invalidate #:bbox-intersect-p #:bbox-update #:bbox-update/shape
+   #:bbox-overwrite/shape
+   #:bbox-x-min #:bbox-x-max #:bbox-y-min #:bbox-y-max #:render-bbox
    ;; sprites
    #:create-sprite #:render-sprite
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset

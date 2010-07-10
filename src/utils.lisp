@@ -37,6 +37,10 @@
   (+ (* (- x1 x0) (- x1 x0))
      (* (- y1 y0) (- y1 y0))))
 
+(defun coords-overlap-p (a b c d)
+  (or (< c a d b) (< a c b d)
+      (< a c d b) (< c a b d)))
+
 ;;; Random numbers
 (defun random-between (min max)
   (+ min (random (- max min))))
