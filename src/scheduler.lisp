@@ -46,7 +46,7 @@
 (defun cancel-timer (timer)
   (setf *timers* (remove timer *timers*)))
 
-(defun update-scheduler (dt &key (lock 0))
+(defun update-scheduler (dt)
   (setf *timers* (run-timers *timers* dt)))
 
 ;; timestep lock
