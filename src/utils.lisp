@@ -38,7 +38,8 @@
      (* (- y1 y0) (- y1 y0))))
 
 (defun coords-overlap-p (a b c d)
-  (or (< c a d b) (< a c b d)
+  (or (= a c) (= b d)
+      (< c a d b) (< a c b d)
       (< a c d b) (< c a b d)))
 
 ;;; Random numbers
