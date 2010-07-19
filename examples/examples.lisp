@@ -85,11 +85,11 @@
                                    last-update-time))
                   (dt (/ (* elapsed-time 1.0)
                          internal-time-units-per-second)))
+             (setf last-update-time (get-internal-real-time))
              (glaw:with-timestep (dt *max-frame-time*)
                (update dt)
                (draw)
-               (glop:swap-buffers win))
-             (setf last-update-time (get-internal-real-time))))))
+               (glop:swap-buffers win))))))
   (glaw:shutdown-content-manager))
 
 ;; Using SDL
@@ -121,6 +121,7 @@
                               last-update-time))
              (dt (/ (* elapsed-time 1.0)
                     internal-time-units-per-second)))
+      (setf last-update-time (get-internal-real-time))
       (sdl:with-events (:poll)
         (:quit-event () t)
         (:key-down-event (:key key :unicode code :scancode scancode)
@@ -152,5 +153,4 @@
         (:idle ()
                (update dt)
                (draw)
-               (sdl:update-display))))
-      (setf last-update-time (get-internal-real-time)))))
+               (sdl:update-display)))))))
