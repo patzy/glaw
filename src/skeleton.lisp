@@ -2,9 +2,9 @@
 
 ;; skeleton
 (defstruct bone
-  (angle 0.0 :type short-float)
-  (length 0.0 :type float)
-  (parent nil :type unsigned-byte)
+  (angle 0.0)
+  (length 0.0)
+  (parent nil)
   (children '()))
 
 ;; (defun bone-nb-children (bone)
