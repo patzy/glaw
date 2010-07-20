@@ -101,14 +101,14 @@
                          (btn-state (eql ,btn-state)))
        ,@body))
 
-(defmacro motion-handler (class device &body body)
+(defmacro motion-handler (class device (dx-sym dy-sym) &body body)
   `(defmethod on-motion (,(if (eq class :global)
                            `(it (eql :global))
                            class)
                          ,(if device
                               `(device (eql ,device))
                               `device)
-                      dx dy)
+                      ,dx-sym ,dy-sym)
      ,@body))
 
 
