@@ -4,7 +4,7 @@
   :license "MIT"
   :version "git"
   :description "Game programming utilities"
-  :depends-on (:cl-opengl :cl-glu :cl-openal)
+  :depends-on (:cl-opengl :cl-openal)
   :components
   ((:module "src"
             :serial t
@@ -12,12 +12,12 @@
             ((:file "package")
              (:file "utils")
              (:file "resource")
+             (:file "assets")
              (:file "input")
              (:file "graphics")
              (:file "anim")
              (:file "2d")
              (:file "gui")
-             (:file "assets")
              (:file "font")
              (:file "particles")
              (:file "screen")
@@ -25,6 +25,5 @@
              (:file "navmesh")
              (:file "skeleton")
              (:file "sound")
-             (:file "console")
-             (:file "glaw")))))
+             (:file "console")))))
 
