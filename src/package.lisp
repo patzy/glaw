@@ -59,8 +59,10 @@
    #:create-line-shape #:create-circle-shape #:create-triangle-shape #:create-polygon-shape
    ;; bbox
    #:make-bbox #:bbox-invalidate #:bbox-intersect-p #:bbox-update #:bbox-update/shape
-   #:bbox-overwrite/shape
+   #:bbox-visible-p
+   #:bbox-overwrite/shape #:bbox-translate #:bbox-inside-p
    #:bbox-x-min #:bbox-x-max #:bbox-y-min #:bbox-y-max #:render-bbox
+   #:create-bbox-from-shape
    ;; sprites
    #:create-sprite #:render-sprite
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset

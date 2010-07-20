@@ -662,6 +662,19 @@
        (coords-overlap-p (bbox-y-min bbox-1) (bbox-y-max bbox-1)
                          (bbox-y-min bbox-2) (bbox-y-max bbox-2))))
 
+(defun bbox-inside-p (bbox x y)
+  (and (< (bbox-x-min bbox) x (bbox-x-max bbox))
+       (< (bbox-y-min bbox) y (bbox-y-max bbox))))
+
+(defun bbox-visible-p (bbox view)
+  (let ((view-box (make-bbox :valid t
+                             :z-min 0.0 :z-max 0.0
+                             :x-min (2d-view-left view)
+                             :x-max (2d-view-right view)
+                             :y-min (2d-view-bottom view)
+                             :y-max (2d-view-top view))))
+    (bbox-intersect-p bbox view-box)))
+
 (defun bbox-update (bbox x y &optional (z 0.0))
   ;;(declare (type single-float x y z))
   (if (bbox-valid bbox)
@@ -686,10 +699,10 @@
                    (bbox-valid bbox) t))))
 
 (defun bbox-update/shape (bbox shape)
-  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
-       (bbox-update bbox (aref (shape-vertices shape) i)
-                         (aref (shape-vertices shape) (+ i 1))
-                         (aref (shape-vertices shape) (+ i 2)))))
+  (loop for i from 0 below (shape-nb-vertices shape) do
+       (bbox-update bbox (aref (shape-vertices shape) (* i 3))
+                         (aref (shape-vertices shape) (+ (* i 3) 1))
+                         (aref (shape-vertices shape) (+ (* i 3) 2)))))
 
 (defun bbox-overwrite/shape (bbox shape)
   (bbox-invalidate bbox)
@@ -702,3 +715,9 @@
   (incf (bbox-x-max bbox) dx)
   (incf (bbox-y-max bbox) dy)
   (incf (bbox-z-max bbox) dz))
+
+
+(defun create-bbox-from-shape (shape)
+  (let ((bbox (make-bbox)))
+    (bbox-update/shape bbox shape)
+    bbox))
