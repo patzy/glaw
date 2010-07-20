@@ -529,6 +529,18 @@
   (shape-add-vertex shape x y z)
   (shape-add-indices shape (fill-pointer (shape-indices shape))))
 
+(defasset :glaw-shape
+    ;; load
+    (lambda (filename)
+      (with-open-file (in filename :direction :input)
+        ;; FIXME: unable to modify loaded shape (no fill-pointer)
+        (read in)))
+    ;; unload
+    (lambda (shape)
+      ;; nothing to do
+      (declare (ignore shape))
+      (values)))
+
 
 (defun create-grid-shape (width height step-x step-y
                           &key (start-x 0) (start-y 0)
