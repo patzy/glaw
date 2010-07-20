@@ -46,12 +46,15 @@
    #:2d-view-left #:2d-view-bottom #:2d-view-right #:2d-view-top #:2d-view-width #:2d-view-height
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
-   #:create-shape #:render-shape
+   #:create-shape #:render-shape #:shape-nb-vertices #:shape-nb-indices #:shape-get-vertex
+   #:shape-get-index
+   #:shape-ensure-adjustable
    #:translate-shape #:rotate-shape-2d
    #:shape-set-vertex #:shape-set-color #:shape-set-tex-coord
    #:shape-add-vertex  #:shape-add-vertex/index #:shape-set-vertex
    #:shape-add-color #:shape-add-color/rgb
    #:shape-add-tex-vertex
+   #:shape-add-indices
    #:create-grid-shape #:create-cross-shape #:create-rectangle-shape
    #:create-line-shape #:create-circle-shape #:create-triangle-shape #:create-polygon-shape
    ;; bbox
