@@ -18,6 +18,10 @@
 
 (defvar *asset-loaders* (make-hash-table))
 
+(defun supported-assets ()
+  "Return list of supported assets types."
+  (loop for k being the hash-keys of *asset-loaders* collect k))
+
 (defun load-asset (filename type &optional (identifier filename))
   (format t "Loading asset of type ~S from ~S~%" type filename)
   (with-resource-manager *content-manager*
