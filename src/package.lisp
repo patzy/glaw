@@ -18,6 +18,7 @@
    #:with-resource-manager #:with-resource
    ;; assets
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
+   #:supported-assets
    ;; colors
    #:create-color #:mix-colors #:create-color-gradient
    #:color-copy
@@ -39,9 +40,10 @@
    #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps
    ;; view
    #:*display-width* #:*display-height* #:set-view-2d
-   #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view
-   #:update-2d-view #:screen-to-view #:with-2d-view-screen-coords #:with-2d-screen-view-coords
+   #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view
+   #:screen-to-view #:view-to-screen #:with-2d-view-screen-coords #:with-2d-screen-view-coords
    #:view-to-view #:with-2d-view-coords
+   #:2d-view-left #:2d-view-bottom #:2d-view-right #:2d-view-top #:2d-view-width #:2d-view-height
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
    #:create-shape #:render-shape

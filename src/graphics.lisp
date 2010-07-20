@@ -78,6 +78,7 @@
   (update-fps)
   (gl:flush))
 
+;;; 2D view
 (defstruct 2d-view
   left right bottom top
   (zoom 1.0))
@@ -130,6 +131,22 @@
   (gl:matrix-mode :modelview)
   (gl:load-identity))
 
+(defun view-to-view (x y from-view to-view &optional (absolute t))
+  (unless (or (zerop (2d-view-width from-view)) (zerop (2d-view-height from-view))
+              (zerop (2d-view-width to-view)) (zerop (2d-view-height to-view)))
+    (let ((width-factor (/ (2d-view-width to-view) (2d-view-width from-view)))
+          (height-factor (/ (2d-view-height to-view) (2d-view-height from-view))))
+      (if absolute
+          (values (float (+ (2d-view-left to-view)
+                            (* x width-factor)))
+                  (float (+ (2d-view-bottom to-view)
+                            (* y height-factor))))
+          (values (float (* x width-factor))
+                  (float (* y height-factor)))))))
+
+;; special screen case for coords
+;; handle inverted Y axis
+;; for screen/view deltas just use view-to-view with NIL absolute argument
 (defun screen-to-view (x y view)
   (unless (or (zerop (2d-view-width view)) (zerop (2d-view-height view))
               (zerop *display-width*) (zerop *display-height*))
@@ -146,18 +163,8 @@
     (let ((width-factor (/ *display-width* (2d-view-width view)))
           (height-factor (/ *display-height* (2d-view-height view))))
       (values (float (- (* x width-factor) (* (2d-view-left view) width-factor)))
-              (float (+ (- *display-height* (* y height-factor))
+              (float (+ (- *display-height* (* (- y) height-factor))
                         (* height-factor (2d-view-bottom view))))))))
-
-(defun view-to-view (x y from-view to-view)
-  (unless (or (zerop (2d-view-width from-view)) (zerop (2d-view-height from-view))
-              (zerop (2d-view-width to-view)) (zerop (2d-view-height to-view)))
-    (let ((width-factor (/ (2d-view-width to-view) (2d-view-width from-view)))
-          (height-factor (/ (2d-view-height to-view) (2d-view-height from-view))))
-      (values (float (+ (2d-view-left to-view)
-                        (* x width-factor)))
-              (float (+ (2d-view-bottom to-view)
-                        (* y height-factor)))))))
 
 (defmacro with-2d-view-screen-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
   `(multiple-value-bind (,x-sym ,y-sym)
