@@ -1,5 +1,9 @@
 (in-package #:glaw)
 
+(defun ensure-adjustable (vec)
+  (make-array (length vec) :fill-pointer (length vec) :initial-contents vec
+              :adjustable t))
+
 (defun nearest-power-of-two (size)
   (let ((next-size 1))
     ;; compute next power of two

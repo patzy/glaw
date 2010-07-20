@@ -385,6 +385,12 @@
   tex-coords ;; u,v
   indices)
 
+(defun shape-nb-vertices (shape)
+  (/ (length (shape-vertices shape)) 3))
+
+(defun shape-nb-indices (shape)
+  (length (shape-indices shape)))
+
 (defmacro with-shape-vertices ((v-sym shape) &body body)
   `(let ((,v-sym (shape-vertices ,shape)))
      ,@body))
@@ -396,6 +402,14 @@
 (defmacro with-shape-tex-coords ((t-sym shape) &body body)
   `(let ((,t-sym (shape-tex-coords ,shape)))
      ,@body))
+
+(defun shape-get-vertex (shape index)
+  (values (aref (shape-vertices shape) (* index 3))
+          (aref (shape-vertices shape) (+ 1 (* index 3)))
+          (aref (shape-vertices shape) (+ 2 (* index 3)))))
+
+(defun shape-get-index (shape index)
+  (aref (shape-indices shape) index))
 
 (defun shape-set-vertex (shape index x y &optional (z 0.0))
   (setf (aref (shape-vertices shape) (* index 3)) x
@@ -413,7 +427,7 @@
         (aref (shape-tex-coords shape) (+ 1 (* index 2))) v))
 
 (defun translate-shape (shape dx dy &optional (dz 0.0))
-  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+  (loop for i from 0 below (length (shape-vertices shape)) by 3 do
        (incf (aref (shape-vertices shape) i) dx)
        (incf (aref (shape-vertices shape) (+ i 1)) dy)
        (incf (aref (shape-vertices shape) (+ i 2)) dz)))
@@ -421,7 +435,7 @@
 (defun rotate-shape-2d (shape angle &optional (center-x 0.0) (center-y 0.0))
   (unless (and (zerop center-x) (zerop center-y))
     (translate-shape shape (- center-x) (- center-y) 0.0))
-  (loop for i from 0 below (fill-pointer (shape-vertices shape)) by 3 do
+  (loop for i from 0 below (length (shape-vertices shape)) by 3 do
        (let ((x (aref (shape-vertices shape) i))
              (y (aref (shape-vertices shape) (+ i 1))))
          (setf (aref (shape-vertices shape) i)
@@ -433,7 +447,7 @@
 
 (defun render-shape (shape &optional (primitive (shape-primitive shape)))
   (gl:begin primitive)
-  (loop with dim = (fill-pointer (shape-indices shape))
+  (loop with dim = (length (shape-indices shape))
        for index below dim
        for i = (aref (shape-indices shape) index)
        when (shape-colors shape)
@@ -454,48 +468,62 @@
   (make-shape :primitive primitive
               :vertices (make-array (* nb-vertices 3)
                                     ;;:element-type 'single-float
+                                    :adjustable t
                                     :fill-pointer 0)
               :colors (when color
                         (make-array (* nb-vertices 4)
                                     ;;:element-type 'single-float
+                                    :adjustable t
                                     :fill-pointer 0))
               :tex-coords (when texture
                             (make-array (* nb-vertices 2)
                                         ;;:element-type 'single-float
+                                    :adjustable t
                                         :fill-pointer 0))
               :indices (make-array nb-indices
                                    :element-type 'unsigned-byte
+                                   :adjustable t
                                    :fill-pointer 0)))
+
+(defun shape-ensure-adjustable (shape)
+  (when (shape-vertices shape)
+    (setf (shape-vertices shape) (ensure-adjustable (shape-vertices shape))))
+  (when (shape-colors shape)
+    (setf (shape-colors shape) (ensure-adjustable (shape-colors shape))))
+  (when (shape-tex-coords shape)
+    (setf (shape-tex-coords shape) (ensure-adjustable (shape-tex-coords shape))))
+  (when (shape-indices shape)
+    (setf (shape-indices shape) (ensure-adjustable (shape-indices shape)))))
 
 (defun shape-add-vertex (shape x y &optional (z 0.0))
   ;;(declare (type single-float x y z))
-  (vector-push x (shape-vertices shape))
-  (vector-push y (shape-vertices shape))
-  (vector-push z (shape-vertices shape)))
+  (vector-push-extend x (shape-vertices shape))
+  (vector-push-extend y (shape-vertices shape))
+  (vector-push-extend z (shape-vertices shape)))
 
 (defun shape-add-color (shape color)
   ;;(declare (type color color))
-  (vector-push (color-r color) (shape-colors shape))
-  (vector-push (color-g color) (shape-colors shape))
-  (vector-push (color-b color) (shape-colors shape))
-  (vector-push (color-a color) (shape-colors shape)))
+  (vector-push-extend (color-r color) (shape-colors shape))
+  (vector-push-extend (color-g color) (shape-colors shape))
+  (vector-push-extend (color-b color) (shape-colors shape))
+  (vector-push-extend (color-a color) (shape-colors shape)))
 
 (defun shape-add-color/rgb (shape r g b &optional (a 1.0))
   ;;(declare (type single-float r g b a))
-  (vector-push r (shape-colors shape))
-  (vector-push g (shape-colors shape))
-  (vector-push b (shape-colors shape))
-  (vector-push a (shape-colors shape)))
+  (vector-push-extend r (shape-colors shape))
+  (vector-push-extend g (shape-colors shape))
+  (vector-push-extend b (shape-colors shape))
+  (vector-push-extend a (shape-colors shape)))
 
 (defun shape-add-tex-vertex (shape u v)
   ;;(declare (type single-float u v))
-  (vector-push u (shape-tex-coords shape))
-  (vector-push v (shape-tex-coords shape)))
+  (vector-push-extend u (shape-tex-coords shape))
+  (vector-push-extend v (shape-tex-coords shape)))
 
 (defun shape-add-indices (shape &rest indices)
   (dolist (i indices)
     (declare (type unsigned-byte i))
-    (vector-push i (shape-indices shape))))
+    (vector-push-extend i (shape-indices shape))))
 
 (defun shape-add-vertex/index (shape x y &optional (z 0.0))
   (shape-add-vertex shape x y z)
