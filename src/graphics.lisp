@@ -609,17 +609,21 @@
     (shape-add-vertex/index shape x (+ y size))
     shape))
 
-(defun create-rectangle-shape (left bottom right top &key (filled t))
+(defun create-rectangle-shape (left bottom right top &key (filled t)
+                                                          tex-width tex-height)
   (let ((shape (create-shape 4 5
                              :color nil
                              :texture t
-                             :primitive (if filled :quads :line-strip))))
+                             :primitive (if filled :quads :line-strip)))
+        (width (- right left))
+        (height (- top bottom)))
   (shape-add-vertex/index shape left bottom)
-  (shape-add-tex-vertex shape 0.0 1.0)
+  (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
   (shape-add-vertex/index shape right bottom)
-  (shape-add-tex-vertex shape 1.0 1.0)
+  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0)
+                              (if tex-height (/ height tex-height) 1.0))
   (shape-add-vertex/index shape right top)
-  (shape-add-tex-vertex shape 1.0 0.0)
+  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0) 0.0)
   (shape-add-vertex/index shape left top)
   (shape-add-tex-vertex shape 0.0 0.0)
   (shape-add-indices shape 0)
