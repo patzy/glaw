@@ -64,6 +64,9 @@
   (pop-screen stack)
   (push-screen screen stack))
 
+(defun empty-screen-stack (stack)
+  (loop while (screen-stack-screens stack) do (pop-screen stack)))
+
 (defun render-screens (stack)
   (dolist (scr (screen-stack-render stack))
     (render-screen scr)))

@@ -87,7 +87,8 @@
    #:input-handler #:make-input-repeat #:make-input-chord #:make-input-sequence
    #:input-processor-reset #:input-processor-valid-p
    ;; game screens
-   #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:render-screens #:update-screens
+   #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:empty-screen-stack
+   #:render-screens #:update-screens
    #:replace-screen #:suspend-screen #:resume-screen
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
    ;; sound
