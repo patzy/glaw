@@ -5,7 +5,7 @@
   (:documentation "Returns total time length of ANIM."))
 
 (defgeneric animation-apply (anim obj date)
-  (:documentation "Apply animation animation ANIM at DATE to OBJ."))
+  (:documentation "Apply animation ANIM at DATE to OBJ."))
 
 (defstruct anim-state
   animation
