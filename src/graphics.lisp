@@ -101,13 +101,17 @@
   (setf (2d-view-top view) (+ (2d-view-bottom view)
                                  value)))
 
-(defun zoom-2d-view (view dfactor)
+(defun zoom-2d-view (view dfactor &key lock-left lock-bottom lock-right lock-top)
   (let ((width-diff (* dfactor (2d-view-width view)))
         (height-diff (* dfactor (2d-view-height view))))
-    (decf (2d-view-left view) width-diff)
-    (incf (2d-view-right view) width-diff)
-    (decf (2d-view-bottom view) height-diff)
-    (incf (2d-view-top view) height-diff)
+    (unless lock-left
+      (decf (2d-view-left view) width-diff))
+    (unless lock-bottom
+      (decf (2d-view-bottom view) height-diff))
+    (unless lock-right
+      (incf (2d-view-right view) width-diff))
+    (unless lock-top
+      (incf (2d-view-top view) height-diff))
     (incf (2d-view-zoom view) dfactor)))
 
 (defun move-2d-view (view dx dy)
