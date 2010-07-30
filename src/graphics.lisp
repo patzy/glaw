@@ -308,7 +308,9 @@
   (mag-filter :linear)
   ;; min-lod max-lod
   ;; base-level max-level
-  ;; wrap-s wrap-t wrap-r
+  (wrap-s :repeat)
+  (wrap-t :repeat)
+  (wrap-r :repeat)
   priority)
 
 (defun create-texture (width height bpp data &rest args)
@@ -335,9 +337,9 @@
     ;; (gl:tex-parameter :texture-2d :texture-max-lod (texture-max-lod tex))
     ;; (gl:tex-parameter :texture-2d :texture-base-level (texture-base-level tex))
     ;; (gl:tex-parameter :texture-2d :texture-max-level (texture-max-level tex))
-    ;; (gl:tex-parameter :texture-2d :texture-wrap-s (texture-wrap-s tex))
-    ;; (gl:tex-parameter :texture-2d :texture-wrap-t (texture-wrap-t tex))
-    ;; (gl:tex-parameter :texture-2d :texture-wrap-r (texture-wrap-r tex))
+    (gl:tex-parameter :texture-2d :texture-wrap-s (texture-wrap-s tex))
+    (gl:tex-parameter :texture-2d :texture-wrap-t (texture-wrap-t tex))
+    (gl:tex-parameter :texture-2d :texture-wrap-r (texture-wrap-r tex))
     tex))
 
 (defun update-texture (tex data &optional (x 0) (y 0)
