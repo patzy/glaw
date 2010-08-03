@@ -196,3 +196,10 @@
         when (not (= (length (subseq string i j)) 0)) ;remove last elt
         collect (subseq string i j)
         while j))
+
+;; Conditions
+(define-condition glaw-error (error)
+  () (:documentation "Any glaw specific error should inherit this."))
+
+(define-condition not-implemented (glaw-error)
+  () (:documentation "Unimplemented."))
