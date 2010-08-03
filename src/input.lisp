@@ -145,13 +145,15 @@
   (input-processor-update proc keysym key-state)
   (when (input-processor-valid-p proc)
     (dolist (h *input-handlers*)
-      (on-input h (input-processor-output proc)))))
+      (unless (eq h proc)
+        (on-input h (input-processor-output proc))))))
 
 (defmethod on-button ((proc input-processor) device btn btn-state)
   (input-processor-update proc btn btn-state)
   (when (input-processor-valid-p proc)
     (dolist (h *input-handlers*)
-      (on-input h (input-processor-output proc)))))
+      (unless (eq h proc)
+        (on-input h (input-processor-output proc))))))
 
 ;; repeat
 (defstruct (input-repeat (:include input-processor)
@@ -160,17 +162,27 @@
                                             (max-delay (* delay internal-time-units-per-second)))))
   input
   max-delay
+  old-press
   last-press)
 
 (defmethod input-processor-reset ((it input-repeat))
-  (setf (input-repeat-last-press it) (-  (input-repeat-max-delay it))))
+  (setf (input-repeat-last-press it) (-  (input-repeat-max-delay it))
+        (input-repeat-old-press it) nil))
 
 (defmethod input-processor-update ((it input-repeat) input state)
-  (when (and (eq input (input-repeat-input it)) (eq state :press))
-    (setf (input-repeat-last-press it) (get-internal-real-time))))
+  (when (eq state :press)
+    (if (eq input (input-repeat-input it))
+        (let ((date (get-internal-real-time)))
+          (when (> (- date (input-repeat-last-press it)) (input-repeat-max-delay it))
+            (input-processor-reset it))
+          (unless (= (input-repeat-last-press it) (- (input-repeat-max-delay it)))
+            (setf (input-repeat-old-press it) (input-repeat-last-press it)))
+          (setf (input-repeat-last-press it) date))
+        (input-processor-reset it))))
 
 (defmethod input-processor-valid-p ((it input-repeat))
-  (< (- (get-internal-real-time) (input-repeat-last-press it)) (input-repeat-max-delay it)))
+  (and (input-repeat-input it) (input-repeat-old-press it)
+       (< (- (get-internal-real-time) (input-repeat-last-press it)) (input-repeat-max-delay it))))
 
 ;; sequence
 (defstruct (input-sequence (:include input-processor)
@@ -189,7 +201,7 @@
 
 (defmethod input-processor-update ((it input-sequence) input state)
   (when (and (input-sequence-remaining-inputs it) (eq state :press))
-    (if (eq (first (input-sequence-remaining-inputs it)) input)
+    (if (eq (first (input-sequence-remaining-inputs it)) input) ;; reset on bad key
         (progn (pop (input-sequence-remaining-inputs it))
                (setf (input-sequence-last-press it) (get-internal-real-time)))
         (input-processor-reset it))))
