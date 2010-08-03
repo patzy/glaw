@@ -4,7 +4,7 @@
   :license "MIT"
   :version "git"
   :description "Game programming utilities"
-  :depends-on (:cl-opengl :cl-openal)
+  :depends-on (:cl-opengl :cl-openal :cl-alc)
   :components
   ((:module "src"
             :serial t
