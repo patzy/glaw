@@ -140,7 +140,7 @@ wrapped text."
              (fnt nil))
           (loop for i below nb-chars do
                (let* ((ascii-code (read-integer in 1))
-                    (width (read-integer in 1))
+                      (width (read-integer in 1))
                       (x (read-integer in 2))
                       (y (read-integer in 2)))
                  (push (list ascii-code x y width) chars)))
