@@ -22,9 +22,12 @@
   "Return list of supported assets types."
   (loop for k being the hash-keys of *asset-loaders* collect k))
 
+;; TODO: handle file format with something else than defining a new asset type
 (defun load-asset (filename type &optional (identifier filename))
   (format t "Loading asset of type ~S from ~S~%" type filename)
   (with-resource-manager *content-manager*
+    (when (existing-resource-p identifier)
+      (warn "Asset already loaded or identifier conflict for ~A." identifier))
     (let ((loader (gethash type *asset-loaders* nil))
           (pathname (merge-pathnames filename *content-directory*)))
       (if loader

@@ -62,6 +62,10 @@
                 (resource-holder-data holder))
          (add-resource %resource-manager% ,id ,res ,finalizer))))
 
+(defun existing-resource-p (id)
+  "Returns T if there's a resource with the provided ID, NIL otherwise."
+  (if (get-resource-holder %resource-manager% id) t nil))
+
 (defun drop-resource (id)
   "Stop using the designated resource."
   (let ((holder (get-resource-holder %resource-manager% id)))
