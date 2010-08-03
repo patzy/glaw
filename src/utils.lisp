@@ -179,11 +179,13 @@
                               internal-time-units-per-second)))))
 
 ;; binary files (stolen from imago)
-(defun read-integer (stream size)
+(defun read-integer (stream size &optional big-endian)
   (loop with number = 0
         for i below size
         as byte = (read-byte stream)
-        do (incf number (ash byte (* i 8)))
+        do (if big-endian
+               (setf number (logior (ash number 8) byte))
+               (incf number (ash byte (* i 8))))
         finally (return number)))
 
 ;; string manipulation
