@@ -5,7 +5,7 @@
 
 (defstruct glyph
   u v du dv   ;; texture coords for the glyph
-  advance     ;; glyph width
+  (advance 0) ;; glyph width
   id          ;; char code
 )
 
