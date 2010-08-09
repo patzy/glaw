@@ -93,7 +93,8 @@
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
    ;; sound
    #:init-sound #:shutdown-sound #:update-sound #:sound-nb-channels #:sound-nb-free-channels
-   #:sound-nb-used-channels #:play-sound #:stop-sound
+   #:sound-nb-used-channels #:play-sound #:stop-sound #:play-channel #:stop-channel
+   #:channel-volume #:main-volume #:set-main-volume
    ;; gui
    #:init-gui #:shutdown-gui #:render-gui #:update-gui #:gui-view
    #:gui-focus #:gui-focus-next #:gui-focus-prev

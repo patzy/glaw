@@ -56,6 +56,12 @@
         (when (member src (sound-channels snd))
           (setf (sound-channels snd) (remove src (sound-channels snd))))))))
 
+(defun main-volume ()
+  (al:get-listener :gain))
+
+(defun set-main-volume (val)
+  (al:listener :gain val))
+
 (defun sound-find-channel ()
   (when *free-sources*
     (let ((chan (first *free-sources*)))
@@ -77,7 +83,23 @@
 (defun stop-channel (chan)
   (al:source-stop chan))
 
-(defun play-sound (snd &key loop (volume 1.0))
+(defun channel-volume (chan)
+  (al:get-source chan :gain))
+
+(defun set-channel-volume (chan value)
+  (al:source chan :gain value))
+
+(defsetf channel-volume set-channel-volume)
+
+(defun channel-pitch (chan)
+  (al:get-source :pitch))
+
+(defun set-channel-pitch (chan value)
+  (al:source chan :pitch value))
+
+(defsetf channel-pitch set-channel-pitch)
+
+(defun play-sound (snd &key loop (volume 1.0) (pitch 1.0))
   (let ((chan (sound-find-channel)))
     (when chan
       (al:source chan :buffer (sound-buffer-id snd))
@@ -87,6 +109,7 @@
       (al:source chan :source-relative (sound-relative-p snd))
       (al:source chan :looping loop)
       (al:source chan :gain volume)
+      (al:source chan :pitch pitch)
       (push chan (sound-channels snd))
       (push snd *sounds*)
       (play-channel chan)
@@ -154,3 +177,6 @@
     (lambda (snd)
       (al:delete-buffer (sound-buffer-id snd))))
 
+
+;; streaming: http://kcat.strangesoft.net/openal-tutorial.html
+;; synth: http://www.noeska.com/doal/lesson11.aspx
