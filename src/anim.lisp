@@ -66,6 +66,7 @@
        do (frame-apply-channel type obj frame-data))))
 
 (defmacro define-anim-channels (((obj-sym obj-type) data-sym) &rest channels)
+  "Define channels type and their apply-state code for a specific object."
   `(progn ,@(loop for ( type . body ) in channels
                  collect `(defmethod frame-apply-channel ((type (eql ,type))
                                                           (,obj-sym ,obj-type)
