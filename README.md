@@ -13,8 +13,8 @@ Description
 -----------
 Required dependencies:
 
- - [cl-opengl](http://github.com/3b/cl-opengl/)
- - [cl-openal](http://github.com/patzy/cl-openal).
+ - [cl-opengl](http://github.com/3b/cl-opengl/);
+ - [cl-openal](http://github.com/sykopomp/cl-openal).
 
 Extensions:
 
