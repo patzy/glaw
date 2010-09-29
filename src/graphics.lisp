@@ -1,41 +1,47 @@
 (in-package :glaw)
 
 ;; Framerate utils
-;; TODO: add min/avg/max
 (defstruct frame-counter
-  (nb-frames 0 :type fixnum)
-  (sample-size 10)
+  (sample-size 2.0) ;; seconds
   (min most-positive-single-float)
   (max most-negative-single-float)
   (sum 0.0)
-  (nb-samples 0)
-  (rate 0.0)
-  (last-render-time (get-internal-real-time)))
+  (nb-frames 0)
+  (average 0.0)
+  (time-ratio 0.5)
+  (last-render-time 1.0))
 
 (defvar *frame-counter* (make-frame-counter)
-  "Framerate counter.")
+  "Default framerate counter.")
 
-(defun update-fps ()
-  "Updates framerate informations."
-  (incf (frame-counter-nb-frames *frame-counter*))
-  (when (> (frame-counter-nb-frames *frame-counter*) (frame-counter-sample-size *frame-counter*))
-    (let* ((elapsed-time (- (get-internal-real-time)
-                            (frame-counter-last-render-time *frame-counter*)))
-           (fps (* (/ (frame-counter-nb-frames *frame-counter*)
-                      (/ elapsed-time internal-time-units-per-second)) 1.0)))
-      (incf (frame-counter-nb-samples *frame-counter*))
-      (incf (frame-counter-sum *frame-counter*) fps)
-      (when (< fps (frame-counter-min *frame-counter*))
-        (setf (frame-counter-min *frame-counter*) fps))
-      (when (> fps (frame-counter-max *frame-counter*))
-        (setf (frame-counter-max *frame-counter*) fps))
-      (setf (frame-counter-rate *frame-counter*) fps)
-      (setf (frame-counter-last-render-time *frame-counter*)
-            (get-internal-real-time))
-      (setf (frame-counter-nb-frames *frame-counter*) 0))))
+(defun frame-counter-update (counter dt)
+  "Updates framerate informations. DT is the elapsed time since last frame was rendered."
+  (setf (frame-counter-last-render-time counter) (+ (* dt (frame-counter-time-ratio counter))
+                                                    (* (frame-counter-last-render-time counter)
+                                                       (- 1.0 (frame-counter-time-ratio counter)))))
+  (incf (frame-counter-nb-frames counter))
+  (incf (frame-counter-sum counter) dt)
+  (when (>= (frame-counter-sum counter) (frame-counter-sample-size counter))
+    (let ((fps (/ (frame-counter-nb-frames counter) (frame-counter-sum counter))))
+      (when (< fps (frame-counter-min counter))
+        (setf (frame-counter-min counter) fps))
+      (when (> fps (frame-counter-max counter))
+        (setf (frame-counter-max counter) fps))
+      (setf (frame-counter-nb-frames counter) 0
+            (frame-counter-sum counter) 0.0
+            (frame-counter-average counter) fps))))
+
+(defun frame-counter-current (counter)
+  (/ 1.0 (frame-counter-last-render-time counter)))
+
+(let ((last-fps-update (get-internal-real-time)))
+  (defun update-fps ()
+    (let ((dt (/ (- (get-internal-real-time) last-fps-update) internal-time-units-per-second)))
+      (frame-counter-update *frame-counter* dt)
+      (setf last-fps-update (get-internal-real-time)))))
 
 (defun current-fps ()
-  (frame-counter-rate *frame-counter*))
+  (frame-counter-current *frame-counter*))
 
 (defun min-fps ()
   (frame-counter-min *frame-counter*))
@@ -44,10 +50,7 @@
   (frame-counter-max *frame-counter*))
 
 (defun avg-fps ()
-  (/ (frame-counter-sum *frame-counter*)
-     (if (zerop (frame-counter-nb-samples *frame-counter*))
-         1.0
-         (frame-counter-nb-samples *frame-counter*))))
+  (frame-counter-average *frame-counter*))
 
 ;;; General rendering
 (defvar *display-width* 0)
