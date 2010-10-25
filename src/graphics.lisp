@@ -81,6 +81,42 @@
   (update-fps)
   (gl:flush))
 
+;;; FBO
+(defun create-gl-buffer (width height)
+  (let ((w (min (nearest-power-of-two width)
+                (gl:get-integer :max-texture-size)))
+        (h (min (nearest-power-of-two height)
+                (gl:get-integer :max-texture-size)))
+        (framebuffer (first (gl:gen-framebuffers-ext 1)))
+        (depthbuffer (first (gl:gen-renderbuffers-ext 1)))
+        (texture (first (gl:gen-textures 1))))
+    (gl:bind-framebuffer-ext :framebuffer-ext framebuffer)
+    ;; setup and attach texture
+    (gl:bind-texture :texture-2d texture)
+    (gl:tex-parameter :texture-2d :texture-min-filter :linear-mipmap-linear)
+    (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
+    (gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte (cffi:null-pointer))
+    (gl:generate-mipmap-ext :texture-2d)
+    (gl:bind-texture :texture-2d 0)
+    (gl:framebuffer-texture-2d-ext :framebuffer-ext
+                                   :color-attachment0-ext
+                                   :texture-2d
+                                   texture
+                                   0)
+    ;; setup and attach depth buffer
+    (gl:bind-renderbuffer-ext :renderbuffer-ext depthbuffer)
+    (gl:renderbuffer-storage-ext :renderbuffer-ext :depth-component24 w h)
+    (gl:framebuffer-renderbuffer-ext :framebuffer-ext
+                                     :depth-attachment-ext
+                                     :renderbuffer-ext
+                                     depthbuffer)
+    ;; validate framebuffer
+    (let ((framebuffer-status (gl:check-framebuffer-status-ext :framebuffer-ext)))
+      (unless (gl::enum= framebuffer-status :framebuffer-complete-ext)
+        (error "Framebuffer not complete: ~A." framebuffer-status)))
+    framebuffer))
+
+
 ;;; 2D view
 (defstruct 2d-view
   left right bottom top
@@ -276,6 +312,8 @@
 
 ;;; Image
 (defstruct image
+  "Simple image structure. Origin is generally top-left but depends on the loader
+   you use."
   width height bpp data)
 
 (defun create-image (width height bpp)
@@ -301,6 +339,27 @@
                (aref (image-data image) (+ 2 (* index bpp))) b
                (aref (image-data image) (+ 3 (* index bpp))) a)))))
 
+(defun image-get-pixel (image x y)
+  (let ((index (+ x (* y (image-width image)))))
+    (image-get-pixel/index image index)))
+
+(defun image-get-pixel/index (image index)
+  (let ((bpp (image-bpp image)))
+    (ecase bpp
+      (1 (values (aref (image-data image) (* index bpp))
+                 0 0 0))
+      (2 (values (aref (image-data image) (* index bpp))
+                 (aref (image-data image) (+ 1 (* index bpp)))
+                 0 0))
+      (3 (values (aref (image-data image) (* index bpp))
+                 (aref (image-data image) (+ 1 (* index bpp)))
+                 (aref (image-data image) (+ 2 (* index bpp)))
+                 0))
+      (4 (values (aref (image-data image) (* index bpp))
+                 (aref (image-data image) (+ 1 (* index bpp)))
+                 (aref (image-data image) (+ 2 (* index bpp)))
+                 (aref (image-data image) (+ 3 (* index bpp))))))))
+
 ;;; 2D Texture
 (defstruct texture
   width height bpp
@@ -317,8 +376,7 @@
   priority)
 
 (defun create-texture (width height bpp data &rest args)
-  "Create a new GL texture. Pixels should be of the '(unsigned-byte 8)
-   type."
+  "Create a new GL texture. Texture's origin is bottom-left."
   (let ((tex (apply 'make-texture :index (first (gl:gen-textures 1))
                                   :width width :height height
                                   :bpp bpp
@@ -453,6 +511,13 @@
                (+ (* y (cos angle)) (* x (sin angle))))))
   (unless (and (zerop center-x) (zerop center-y))
     (translate-shape shape center-x center-y 0.0)))
+
+(defun scale-shape-2d (shape sx sy)
+  (loop for i from 0 below (length (shape-vertices shape)) by 3 do
+       (let ((x (aref (shape-vertices shape) i))
+             (y (aref (shape-vertices shape) (+ i 1))))
+         (setf (aref (shape-vertices shape) i) (* x sx)
+               (aref (shape-vertices shape) (+ i 1)) (* y sy)))))
 
 (defun render-shape (shape &optional (primitive (shape-primitive shape)))
   (gl:begin primitive)
@@ -621,14 +686,14 @@
         (width (- right left))
         (height (- top bottom)))
   (shape-add-vertex/index shape left bottom)
-  (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
+  (shape-add-tex-vertex shape 0.0 0.0)
   (shape-add-vertex/index shape right bottom)
+  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0) 0.0)
+  (shape-add-vertex/index shape right top)
   (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0)
                               (if tex-height (/ height tex-height) 1.0))
-  (shape-add-vertex/index shape right top)
-  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0) 0.0)
   (shape-add-vertex/index shape left top)
-  (shape-add-tex-vertex shape 0.0 0.0)
+  (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
   (shape-add-indices shape 0)
   shape))
 
@@ -653,6 +718,7 @@
 
 ;;; Bounding box
 (defstruct bbox
+  "Axis Aligned Bounding Box."
   valid
   x-min y-min z-min
   x-max y-max z-max)
