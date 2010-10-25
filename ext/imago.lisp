@@ -25,7 +25,7 @@
   ;; load
   (lambda (filename)
     (let ((img (imago:read-image (namestring filename))))
-      (make-image :data (imago:image-pixels img)
+      (make-image :data (translate-image-pixels img)
                   :bpp (imago::pixel-size img)
                   :width (imago:image-width img)
                   :height (imago:image-height img))))
@@ -37,8 +37,8 @@
 (defasset :texture
   ;; load
   (lambda (filename)
-    (let ((img (imago:read-image (namestring filename))))
-      (format t "Loaded: ~S~%" img)
+    ;; XXX: textures are bottom-left origin
+    (let ((img (imago:flip nil (imago:read-image (namestring filename)) :horizontal)))
       (create-texture (imago:image-width img) (imago:image-height img)
                       (imago::pixel-size img) (translate-image-pixels img))))
   ;; unload
