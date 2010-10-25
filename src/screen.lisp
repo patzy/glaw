@@ -10,6 +10,10 @@
   update-backup
   )
 
+(defun has-screens (stack)
+  (screen-stack-screens stack))
+
+;; screen interface
 (defgeneric init-screen (screen &rest initargs &key &allow-other-keys))
 (defgeneric shutdown-screen (screen))
 (defgeneric update-screen (screen dt))
@@ -17,6 +21,13 @@
 (defgeneric suspend-screen (screen))
 (defgeneric resume-screen (screen))
 
+;; default methods
+(defmethod init-screen (screen &key)
+  (glaw:push-input-handlers)
+  (glaw:add-input-handler screen))
+(defmethod shutdown-screen (screen)
+  (glaw:remove-input-handler screen)
+  (glaw:pop-input-handlers))
 (defmethod suspend-screen (screen)
   (declare (ignore screen)))
 (defmethod resume-screen (screen)
