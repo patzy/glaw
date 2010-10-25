@@ -6,7 +6,6 @@
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)))
 
 (defmethod init-example ((it console))
-  (glaw:init-content-manager "data/")
   (format t "Created console: ~S~%" (console-console it))
   (glaw:load-asset "dejavu-sans.fnt" :fonttool-bitmap-font "font")
   (setf (console-font it) (glaw:use-resource "font"))

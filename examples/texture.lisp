@@ -10,7 +10,6 @@
   (sprites '()))
 
 (defmethod init-example ((it texture))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (setf (texture-texture it) (glaw:create-texture-from-image (texture-image it)))
   (setf (texture-font it) (glaw:use-resource "font.png"))

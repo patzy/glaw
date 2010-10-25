@@ -25,7 +25,6 @@
    (format t "VB Chord !!!~%"))
 
 (defmethod init-example ((it input))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font "font")
   (setf (input-font it) (glaw:use-resource "font"))
   (glaw:add-input-handler it)

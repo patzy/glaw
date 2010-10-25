@@ -4,16 +4,16 @@
   (font1 nil)
   (font2 nil)
   (font3 nil)
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)))
+  (view nil))
 
 (defmethod init-example ((it text))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "dejavu-sans.fnt" :fonttool-bitmap-font)
   (glaw:load-asset "liberation-serif-italic.fnt" :fonttool-bitmap-font)
   (setf (text-font1 it) (glaw:use-resource "font.png"))
   (setf (text-font2 it) (glaw:use-resource "dejavu-sans.fnt"))
   (setf (text-font3 it) (glaw:use-resource "liberation-serif-italic.fnt"))
+  (setf (text-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (glaw:add-input-handler it))
 
 (defmethod shutdown-example ((it text))

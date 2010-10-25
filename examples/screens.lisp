@@ -59,7 +59,6 @@
 
 
 (defmethod init-example ((it screens))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (setf (screens-font it) (glaw:use-resource "font.png"))
   (glaw:add-input-handler it))

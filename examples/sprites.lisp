@@ -10,7 +10,6 @@
   (sprites '()))
 
 (defmethod init-example ((it sprites))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "lisplogo_alien_256.png" :texture)
   (glaw:load-asset "explosion-blue-1.png" :texture "expl0")

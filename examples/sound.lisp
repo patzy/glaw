@@ -10,7 +10,6 @@
    (glaw:play-sound (sound-snd it)))
 
 (defmethod init-example ((it sound))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:init-sound)
   (glaw:load-asset "pew.wav" :sound)

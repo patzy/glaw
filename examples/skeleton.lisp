@@ -7,7 +7,6 @@
   anim-state animation)
 
 (defmethod init-example ((it skeletons))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "font.png" :fixed-bitmap-font "font")
   (setf (skeletons-font it) (glaw:use-resource "font"))
   (let ((skel (skeletons-skeleton it)))

@@ -7,7 +7,6 @@
   tilemap)
 
 (defmethod init-example ((it tilemap))
-  (glaw:init-content-manager "data/")
   (glaw:load-asset "tileset3.png" :texture "tileset")
   (glaw:load-asset "font.png" :fixed-bitmap-font)
   (setf (tilemap-tileset it)
