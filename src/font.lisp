@@ -119,7 +119,6 @@ wrapped text."
 (defmacro format-at (x y fnt fmt &rest values)
   `(render-string ,x ,y ,fnt (format nil ,fmt ,@values)))
 
-
 ;; loader for fonttool generated fonts
 ;; see: http://gpwiki.org/index.php/C:OpenGL_Font_System
 ;; actually we use a slightly modified version using uint32_t instead of size_t which may change
