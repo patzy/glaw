@@ -103,6 +103,7 @@
   (sdl:with-init ()
     ;; how to get extensions
     (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl-cffi::sdl-gl-get-proc-address)
+    (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
     (sdl:window 1024 768
                 :bpp 32
                 :flags '(sdl:sdl-opengl sdl:sdl-resizable
@@ -153,4 +154,5 @@
         (:idle ()
                (update dt)
                (draw)
-               (sdl:update-display)))))))
+               (sdl:update-display)))))
+  (glaw:shutdown-content-manager)))
