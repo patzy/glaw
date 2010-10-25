@@ -193,9 +193,15 @@
   "Split the provided string and returns a list."
   (loop for i = 0 then (1+ j)
         as j = (position delim string :start i)
-        when (not (= (length (subseq string i j)) 0)) ;remove last elt
+        when (not (zerop (length (subseq string i j)))) ;remove last elt
         collect (subseq string i j)
         while j))
+
+(defun file->strings (path)
+  (with-open-file (s path)
+    (loop for line = (read-line s nil nil)
+         while line
+         collect line)))
 
 ;; Conditions
 (define-condition glaw-error (error)
