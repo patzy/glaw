@@ -25,9 +25,11 @@
 (defun remove-resource (mgr id)
   "Remove RESOURCE-HOLDER designated by ID from the manager calling associated finalizer if any."
   (let ((holder (gethash id (resource-manager-resources mgr))))
-    (when (resource-holder-finalizer holder)
-        (funcall (resource-holder-finalizer holder) (resource-holder-data holder)))
-    (remhash id (resource-manager-resources mgr))))
+    (if holder
+      (progn (when (resource-holder-finalizer holder)
+               (funcall (resource-holder-finalizer holder) (resource-holder-data holder)))
+             (remhash id (resource-manager-resources mgr)))
+      (error "Can't remove non-existing resource ~S~%" id))))
 
 (defun remove-all-resources (mgr)
   (when (resource-manager-resources mgr)
@@ -79,6 +81,11 @@
 
 (defun drop-resources (&rest res-ids)
   (loop for id in res-ids do (drop-resource id)))
+
+(defmacro with-resources (resources &body body)
+  `(let (,@(loop for (sym id) in resources collect `(,sym (use-resource ,id))))
+     ,@body
+     (drop-resources ,@(loop for r in resources collect (cadr r)))))
 
 (defun create-resource-manager (&optional (keep-current nil))
   "Make a new resource manager, maybe binds %RESOURCE-MANAGER% and returns it."
