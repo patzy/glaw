@@ -1,23 +1,54 @@
 (in-package #:glaw)
 
-;;; Some 2D stuff
+;;; 2D only functionalities
+
+;;; Sprite
 (defstruct sprite
+  "On screen image with transform and animation capabilities."
+  x y width height
+  (bbox (make-bbox))
   shape
   texture
-  (flip nil))      ;; :vertical, :horizontal or :both
+  (flip nil))      ;; TODO: handle :vertical, :horizontal or :both
 
 (defun create-sprite (x y width height texture)
-  (make-sprite :texture texture
-               :shape (create-rectangle-shape x y (+ x width) (+ y height))))
+  (let ((sp (make-sprite :texture texture
+                         :x x :y y :width width :height height
+                         :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
+    (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))
+    sp))
+
+(defmethod (setf flip) (value (it sprite))
+  (if flip
+      (setf (shape-tex-coords (sprite-shape it)) #(0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0))
+      (setf (shape-tex-coords (sprite-shape it)) #(0.0 0.0 1.0 0.0 1.0 1.0 0.0 1.0))))
 
 (defun render-sprite (sp)
-  (select-texture (sprite-texture sp) :env-mode :modulate)
+  (select-texture (sprite-texture sp) :env-mode :replace)
   (render-shape (sprite-shape sp)))
 
 (define-anim-channels ((it sprite) data)
     (:texture (setf (sprite-texture it) data))
     (:tex-coords (setf (shape-tex-coords (sprite-shape it)) data))
-    (:coords  (setf (shape-vertices (sprite-shape it)) data)))
+    (:position  (move-sprite it (first data) (second data)))
+    (:orientation (rotate-sprite it data)))
+
+(defun translate-sprite (sp dx dy)
+  (incf (sprite-x sp) dx)
+  (incf (sprite-x sp) dy)
+  (translate-shape (sprite-shape sp) dx dy)
+  (bbox-translate dx dy))
+
+(defun move-sprite (sp x y)
+  "Set sprite position."
+  (let ((dx (- x (sprite-x sp)))
+        (dy (- y (sprite-y sp))))
+    (translate-sprite sp dx dy)))
+
+(defun rotate-sprite (sp dangle)
+  (rotate-shape-2d (sprite-shape sp) dangle (sprite-x sp) (sprite-y sp))
+  (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
+
 
 ;;; Tilemap
 (defstruct tileset
