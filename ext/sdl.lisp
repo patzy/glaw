@@ -58,12 +58,16 @@
 (defasset :image
   ;; load
   (lambda (filename)
-    (let ((img-surf (sdl-image:load-image filename)))
-      (sdl-base::with-pixel (pix (sdl:fp img-surf))
-        (make-image :data (sdl-base::pixel-data pix)
-                    :bpp (sdl-base::pixel-bpp pix)
-                    :width (sdl:width img-surf)
-                    :height (sdl:height img-surf)))))
+    (sdl:with-init (sdl:sdl-init-video)
+      (let ((img-surf (sdl-image:load-image filename)))
+        (sdl-base::with-pixel (pix (sdl:fp img-surf))
+          (make-image :data (cffi::foreign-array-to-lisp (sdl-base::pixel-data pix)
+                                  (list :array :unsigned-char (* (sdl-base::pixel-bpp pix)
+                                                                 (sdl:width img-surf)
+                                                                 (sdl:height img-surf))))
+                      :bpp (sdl-base::pixel-bpp pix)
+                      :width (sdl:width img-surf)
+                      :height (sdl:height img-surf))))))
   ;; unload
   'sdl::free-surface)
 
@@ -72,10 +76,11 @@
 (defasset :texture
   ;; load
   (lambda (filename)
-    (let ((img-surf (sdl-image:load-image filename)))
-      (sdl-base::with-pixel (pix (sdl:fp img-surf))
-        (create-texture (sdl:width img-surf) (sdl:height img-surf)
-                        (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))))
+    (sdl:with-init (sdl:sdl-init-video)
+      (let ((img-surf (sdl-image:load-image filename)))
+        (sdl-base::with-pixel (pix (sdl:fp img-surf))
+          (create-texture (sdl:width img-surf) (sdl:height img-surf)
+                          (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix))))))
   ;; unload
   'glaw:destroy-texture)
 
@@ -85,17 +90,18 @@
 (defasset :fixed-bitmap-font
   ;; load
   (lambda (filename)
-    (let ((img-surf (sdl-image:load-image filename)))
-      (sdl-base::with-pixel (pix (sdl:fp img-surf))
-        (let* ((tex (create-texture (sdl:width img-surf) (sdl:height img-surf)
-                                    (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))
-               (fnt (create-font tex)))
-        (loop for i below 256
-             for cx = (/ (mod i 16.0) 16.0)
-             for cy = (/ (truncate (/ i 16)) 16.0) do
-             (font-set-glyph-data fnt i cx cy 0.0625 0.0625 16))
-        (font-build-cache fnt)
-        fnt))))
+    (sdl:with-init (sdl:sdl-init-video)
+      (let ((img-surf (sdl-image:load-image filename)))
+        (sdl-base::with-pixel (pix (sdl:fp img-surf))
+          (let* ((tex (create-texture (sdl:width img-surf) (sdl:height img-surf)
+                                      (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix)))
+                 (fnt (create-font tex)))
+            (loop for i below 256
+               for cx = (/ (mod i 16.0) 16.0)
+               for cy = (/ (truncate (/ i 16)) 16.0) do
+                 (font-set-glyph-data fnt i cx cy 0.0625 0.0625 16))
+            (font-build-cache fnt)
+            fnt)))))
   ;; unload
   (lambda (font)
     (glaw:destroy-texture (glaw::font-texture font))
