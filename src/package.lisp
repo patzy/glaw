@@ -15,7 +15,7 @@
    #:use-resource #:get-resource #:drop-resource
    #:use-resources #:drop-resources
    #:create-resource-manager #:destroy-resource-manager
-   #:with-resource-manager #:with-resource
+   #:with-resource-manager #:with-resources
    ;; assets
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
    #:supported-assets
@@ -27,7 +27,7 @@
    #:get-color-from-gradient/rgb
    ;; images
    #:create-image #:image-set-pixel #:image-set-pixel/index #:image-width #:image-height #:image-bpp
-   #:make-image
+   #:make-image #:image-get-pixel #:image-get-pixel/index
    ;; textures
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture #:update-texture #:update-texture-from-image
@@ -88,6 +88,7 @@
    #:input-processor-reset #:input-processor-valid-p
    ;; game screens
    #:make-screen-stack #:current-screen #:push-screen #:pop-screen #:empty-screen-stack
+   #:has-screens
    #:render-screens #:update-screens
    #:replace-screen #:suspend-screen #:resume-screen
    #:init-screen #:shutdown-screen #:render-screen #:update-screen
