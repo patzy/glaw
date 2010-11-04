@@ -209,23 +209,35 @@
               (float (+ (- *display-height* (* (- y) height-factor))
                         (* height-factor (2d-view-bottom view))))))))
 
-(defmacro with-2d-view-screen-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
+(defmacro with-2d-coords-from-screen (((x-sym x-val) (y-sym y-val)) to-view &body body)
   `(multiple-value-bind (,x-sym ,y-sym)
-       (screen-to-view ,x-val ,y-val ,view)
+       (screen-to-view ,x-val ,y-val ,to-view)
      ,@body))
 
-(defmacro with-2d-screen-view-coords (((x-sym x-val) (y-sym y-val)) view  &body body)
+(defmacro with-2d-coords-to-screen (((x-sym x-val) (y-sym y-val)) from-view &body body)
   `(multiple-value-bind (,x-sym ,y-sym)
-       (view-to-screen ,x-val ,y-val ,view)
+       (view-to-screen ,x-val ,y-val ,from-view)
      ,@body))
 
-(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) from-view to-view  &body body)
+(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) from-view to-view &body body)
   `(multiple-value-bind (,x-sym ,y-sym)
        (view-to-view ,x-val ,y-val ,from-view ,to-view)
      ,@body))
 
+(defmacro with-2d-view-deltas (((x-sym x-val) (y-sym y-val)) from-view to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val ,y-val ,from-view ,to-view nil)
+     ,@body))
+
+(defmacro with-2d-screen-deltas (((x-sym x-val) (y-sym y-val)) to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val (- ,y-val)
+                     (create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+                     ,to-view nil)
+     ,@body))
+
 ;;; Colors helpers
-(defstruct color
+(defstruct (color (:type (vector float)))
   (r 1.0)
   (g 1.0)
   (b 1.0)
@@ -603,7 +615,7 @@
   (shape-add-vertex shape x y z)
   (shape-add-indices shape (fill-pointer (shape-indices shape))))
 
-(defasset :glaw-shape
+(defasset :shape
     ;; load
     (lambda (filename)
       (with-open-file (in filename :direction :input)
@@ -613,7 +625,9 @@
     (lambda (shape)
       ;; nothing to do
       (declare (ignore shape))
-      (values)))
+      (values))
+    ;; extensions
+    '("shape"))
 
 
 (defun create-grid-shape (width height step-x step-y

@@ -151,7 +151,7 @@
            for edge in (edition-screen-edges it)
            when (and box (glaw:bbox-inside-p box glaw:*mouse-x*
                                              (- glaw:*display-height* glaw:*mouse-y*))) do
-             (glaw:with-2d-view-screen-coords ((x glaw:*mouse-x*) (y glaw:*mouse-y*))
+             (glaw:with-2d-coords-from-screen ((x glaw:*mouse-x*) (y glaw:*mouse-y*))
                (edition-screen-view it)
                (edition-screen-add-vertex it x y (car edge) (cdr edge)))
              (return)))))
@@ -221,7 +221,7 @@
 (defun init (shape-file data-dir)
   (glaw:init-content-manager data-dir)
   (glaw:load-asset "dejavu-sans.fnt" :fonttool-bitmap-font "font")
-  (glaw:load-asset shape-file :glaw-shape "shape")
+  (glaw:load-asset shape-file :shape "shape")
   (setf *font* (glaw:use-resource "font")
         *view* (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
         *screens* (glaw:make-screen-stack))

@@ -41,8 +41,8 @@
    ;; view
    #:*display-width* #:*display-height* #:set-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view
-   #:screen-to-view #:view-to-screen #:with-2d-view-screen-coords #:with-2d-screen-view-coords
-   #:view-to-view #:with-2d-view-coords
+   #:screen-to-view #:view-to-screen #:with-2d-coords-from-screen #:with-2d-coords-to-screen
+   #:view-to-view #:with-2d-view-coords #:with-2d-view-deltas #:with-2d-screen-deltas
    #:2d-view-left #:2d-view-bottom #:2d-view-right #:2d-view-top #:2d-view-width #:2d-view-height
    #:begin-draw #:end-draw #:reshape #:setup-gl-defaults
    ;; shapes
