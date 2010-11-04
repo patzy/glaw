@@ -29,7 +29,8 @@
 
 (defun asset-loader-extension-supported-p (loader extension)
   (or (eq :any (asset-loader-extensions loader))
-      (member (string-upcase extension) (asset-loader-extensions loader))))
+      (member (string-upcase extension) (asset-loader-extensions loader)
+              :test #'string-equal)))
 
 (defun make-asset-loader (&key (load nil) (unload nil) (extensions :any))
   (list load unload (if (listp extensions)
@@ -49,7 +50,7 @@
     loader))
 
 (defun load-asset (filename type &optional (identifier filename))
-  (format t "Loading asset of type ~S from ~S~%" type filename)
+  (format t "Loading asset of type ~S from ~S as ~S~%" type filename identifier)
   (with-resource-manager *content-manager*
     (when (existing-resource-p identifier)
       (warn "Asset already loaded or identifier conflict for ~A." identifier))
