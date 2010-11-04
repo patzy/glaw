@@ -1,7 +1,5 @@
 (in-package #:glaw)
 
-;;; 2D only functionalities
-
 ;;; Sprite
 (defstruct sprite
   "On screen image with transform and animation capabilities."
@@ -24,7 +22,7 @@
       (setf (shape-tex-coords (sprite-shape it)) #(0.0 0.0 1.0 0.0 1.0 1.0 0.0 1.0))))
 
 (defun render-sprite (sp)
-  (select-texture (sprite-texture sp) :env-mode :replace)
+  (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
 (define-anim-channels ((it sprite) data)
@@ -35,9 +33,9 @@
 
 (defun translate-sprite (sp dx dy)
   (incf (sprite-x sp) dx)
-  (incf (sprite-x sp) dy)
+  (incf (sprite-y sp) dy)
   (translate-shape (sprite-shape sp) dx dy)
-  (bbox-translate dx dy))
+  (bbox-translate (sprite-bbox sp) dx dy))
 
 (defun move-sprite (sp x y)
   "Set sprite position."
