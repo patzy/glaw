@@ -69,7 +69,7 @@
                       :width (sdl:width img-surf)
                       :height (sdl:height img-surf))))))
   ;; unload
-  'sdl::free-surface)
+)
 
 
 ;; texture asset
