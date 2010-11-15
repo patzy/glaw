@@ -77,7 +77,7 @@
    #:find-path/cells #:find-path #:make-navcell #:navcell-add-vertex #:make-navmesh
    #:navcells-connected-p #:navmesh-containing-cell #:navcell-center
    ;; particles
-   #:create-particle-system #:update-particles #:render-particles
+   #:create-particle-system #:particle-system-nb-particles #:update-particles #:render-particles
    ;; input management
    #:add-input-handler #:remove-input-handler #:push-input-handlers #:pop-input-handlers
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event

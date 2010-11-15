@@ -1,7 +1,5 @@
 (in-package #:glaw)
 
-(defvar *nb-particles* 0)
-
 (defstruct particle
   sprite
   (color (create-color 1.0 1.0 1.0))
@@ -38,6 +36,9 @@
     ;;                                                    :fill-pointer 0))
     syst))
 
+(defun particle-system-nb-particles (syst)
+  (length (particle-system-particles syst)))
+
 (defun add-particle (p syst)
   (push p (particle-system-particles syst)))
 
@@ -57,7 +58,6 @@
     (render-sprite (particle-sprite part))))
 
 (defun update-particles (s dt)
-  (setf *nb-particles* (length (particle-system-particles s)))
   ;; remove dead particles
   (map-particles (p s)
     (when (particle-dead-p p)
@@ -68,10 +68,10 @@
   ;; affect particles
   (dolist (a (particle-system-affectors s))
     (affect-particles a s dt))
-  ;; update particles position
+  ;; update particles position & orientation
   (map-particles (p s)
-     (translate-shape (sprite-shape (particle-sprite p)) (* (particle-vx p) dt)
-                      (* (particle-vy p) dt))))
+     (translate-sprite (particle-sprite p) (* (particle-vx p) dt) (* (particle-vy p) dt))
+     (rotate-sprite (particle-sprite p) (* (particle-spin p) dt))))
 
 ;; This is what creates particles
 (defstruct particle-emitter
@@ -111,15 +111,16 @@
                                    (float (range-or-value (particle-emitter-y em)))
                                    (float (range-or-value (particle-emitter-width em)))
                                    (float (range-or-value (particle-emitter-height em)))
-                                   (particle-emitter-texture em))
+                                   (particle-emitter-texture em)
+                                   :bbox nil)
                     (particle-blend-mode part) (particle-emitter-blend-mode em))
+              (rotate-sprite (particle-sprite part) (range-or-value (particle-emitter-angle em)))
               (color-copy (particle-emitter-color em) (particle-color part))
               ;; particle parameters init
               (setf (particle-lifetime part) (range-or-value (particle-emitter-lifetime em))
                     (particle-vx part) (range-or-value (particle-emitter-vx em))
                     (particle-vy part) (range-or-value (particle-emitter-vy em))
                     (particle-spin part)  (range-or-value (particle-emitter-spin em)))
-              ;;(particle-angle part) (range-or-value (particle-emitter-angle em)))
               (add-particle part s)))
       (setf (particle-emitter-time em) 0.0))))
 
