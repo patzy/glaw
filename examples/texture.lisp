@@ -25,7 +25,7 @@
   (dolist (sp (texture-sprites it))
     (glaw:render-sprite sp))
   (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100  (texture-font it) "FPS: ~a" (glaw:current-fps)))
+    (glaw:format-at 50 100  fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it texture) dt)
