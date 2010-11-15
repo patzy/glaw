@@ -7,20 +7,27 @@
   bbox
   shape
   texture
-  (flip nil))      ;; TODO: handle :vertical, :horizontal or :both
+  (flip :none))
 
-(defun create-sprite (x y width height texture &key (bbox (make-bbox)))
+(defun sprite-set-flip (it value)
+  (case value
+    (:vertical (setf (shape-tex-coords (sprite-shape it)) #(0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0)))
+    (:horizontal (setf (shape-tex-coords (sprite-shape it)) #(1.0 0.0 0.0 0.0 0.0 1.0 1.0 1.0)))
+    (:both (setf (shape-tex-coords (sprite-shape it)) #(1.0 1.0 0.0 1.0 0.0 0.0 1.0 0.0)))
+    (:none (setf (shape-tex-coords (sprite-shape it)) #(0.0 0.0 1.0 0.0 1.0 1.0 0.0 1.0)))))
+
+(defsetf sprite-flip sprite-set-flip)
+
+(defun create-sprite (x y width height texture &key (bbox (make-bbox)) (flip :none)
+                                                    (angle 0))
   (let ((sp (make-sprite :texture texture
                          :x x :y y :width width :height height
-                         :bbox bbox
+                         :bbox bbox :flip flip
                          :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
+    (setf (sprite-flip sp) flip)
+    (rotate-sprite sp angle)
     (when bbox (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
     sp))
-
-(defmethod (setf flip) (value (it sprite))
-  (if flip
-      (setf (shape-tex-coords (sprite-shape it)) #(0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0))
-      (setf (shape-tex-coords (sprite-shape it)) #(0.0 0.0 1.0 0.0 1.0 1.0 0.0 1.0))))
 
 (defun render-sprite (sp)
   (select-texture (sprite-texture sp) :env-mode :modulate)

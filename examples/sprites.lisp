@@ -9,7 +9,7 @@
   (sprites '()))
 
 (defmethod init-example ((it sprites))
-  (glaw:load-asset "lisplogo_alien_256.png" :texture)
+  (glaw:load-asset "lisplogo_alien_256.png" :texture "lisplogo")
   (glaw:load-asset "explosion-blue-1.png" :texture "expl0")
   (glaw:load-asset "explosion-blue-2.png" :texture "expl1")
   (glaw:load-asset "explosion-blue-3.png" :texture "expl2")
@@ -19,7 +19,6 @@
                                 :nb-frames 3
                                 :hints '((:texture . 0))
                                 :channels (list (glaw:use-resources "expl0" "expl1" "expl2"))))
-  (format t "Animation: ~S~%" (sprites-animation it))
   (setf (sprites-anim-state it) (glaw:make-anim-state :animation (sprites-animation it)
                                                      :time 0.0
                                                      :scale 1.0))
@@ -33,14 +32,15 @@
        (push (glaw:create-sprite (float (random glaw:*display-width*))
                                  (float (random glaw:*display-height*))
                            (+ 100.0 (random 100.0)) (+ 100.0 (random 100.0))
-                           (glaw:use-resource "lisplogo_alien_256.png"))
+                           (glaw:use-resource "lisplogo")
+                           :flip (glaw:random-nth '(:none :vertical :horizontal :both)))
              (sprites-sprites it))))
 
 (defmethod shutdown-example ((it sprites))
   (glaw:dispose-asset "expl0")
   (glaw:dispose-asset "expl1")
   (glaw:dispose-asset "expl2")
-  (glaw:dispose-asset "lisplogo_alien_256.png"))
+  (glaw:dispose-asset "lisplogo"))
 
 (defmethod render-example ((it sprites))
   (glaw:begin-draw)
