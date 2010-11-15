@@ -4,16 +4,17 @@
 (defstruct sprite
   "On screen image with transform and animation capabilities."
   x y width height
-  (bbox (make-bbox))
+  bbox
   shape
   texture
   (flip nil))      ;; TODO: handle :vertical, :horizontal or :both
 
-(defun create-sprite (x y width height texture)
+(defun create-sprite (x y width height texture &key (bbox (make-bbox)))
   (let ((sp (make-sprite :texture texture
                          :x x :y y :width width :height height
+                         :bbox bbox
                          :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
-    (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))
+    (when bbox (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
     sp))
 
 (defmethod (setf flip) (value (it sprite))
@@ -35,7 +36,7 @@
   (incf (sprite-x sp) dx)
   (incf (sprite-y sp) dy)
   (translate-shape (sprite-shape sp) dx dy)
-  (bbox-translate (sprite-bbox sp) dx dy))
+  (when (sprite-bbox sp) (bbox-translate (sprite-bbox sp) dx dy)))
 
 (defun move-sprite (sp x y)
   "Set sprite position."
@@ -45,8 +46,7 @@
 
 (defun rotate-sprite (sp dangle)
   (rotate-shape-2d (sprite-shape sp) dangle (sprite-x sp) (sprite-y sp))
-  (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
-
+  (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
 
 ;;; Tilemap
 (defstruct tileset
