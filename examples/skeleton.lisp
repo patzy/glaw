@@ -31,8 +31,7 @@
   (format t "Skeleton: ~S~%" (skeletons-skeleton it)))
 
 
-(defmethod shutdown-example ((it skeletons))
-  (glaw:dispose-asset "font"))
+(defmethod shutdown-example ((it skeletons)))
 
 (defmethod render-example ((it skeletons))
   (glaw:begin-draw)
