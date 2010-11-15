@@ -39,8 +39,9 @@
       (error "No asset loader defined for loading ~S as a ~S~%" filename type))
     loader))
 
-(defun defasset (asset-type (extensions :any) load &optional unload)
-  "Defines an asset loader for ASSET-TYPE."
+(defun defasset (asset-type extensions load &optional unload)
+  "Defines an asset loader for ASSET-TYPE. Extension check will be done upon loading
+against unless EXTENSIONS is :ANY."
   (push (make-asset-loader :load load :unload unload
                            :extensions extensions)
         (gethash asset-type *asset-loaders*)))
@@ -51,12 +52,14 @@
 (defvar *assets* nil)
 
 (defstruct asset
+  "Holds assets meta-data."
   type
   name
+  alias ;; if non-NIL, should contain the real asset name
   filename
   properties)
 
-(defun find-asset-declaration (name)
+(defun find-asset (name)
   (find-if (lambda (it)
              (equal (asset-name it) name))
            *assets*))
@@ -67,6 +70,7 @@
     (push (make-asset :type type
                       :name (key-value :name props)
                       :filename (key-value :file props)
+                      :alias (key-value :alias props)
                       :properties props)
           *assets*)))
 
@@ -101,22 +105,33 @@
   "Load the specified asset from disk using whatever valid loader exist.
 If the optional argument TYPE is provided then NAME is used as the filename to load from.
 Otherwise an asset declaration for the provided NAME is searched. If such a declaration
-exists then the corresponding asset is loaded, otherwise an error occurs."
-  (format t "Loading asset ~S~%" name)
-  (with-resource-manager *content-manager*
-    (when (existing-resource-p identifier)
-      (warn "Asset already loaded or identifier conflict for ~A." identifier))
-    (let* ((pathname (merge-pathnames (if type
-                                          name
-                                          (asset-filename (find-asset-declaration name)))
-                                      *content-directory*))
-           (loader (%asset-loader (if type type
-                                      (asset-type (find-asset-declaration name)))
-                                      pathname)))
-      (if loader
-          (use-resource identifier (funcall (asset-loader-load loader) pathname)
-                        (asset-loader-unload loader))
-          (error "No asset loader defined for ~S~%" type)))))
+exists then the corresponding asset is loaded, otherwise an error occurs.
+If load is called directly with a filename, a new ASSET is created and stored in *ASSETS*."
+  (let ((asset (if type
+                   (make-asset :type type :name identifier
+                               :filename name)
+                   (find-asset name))))
+    (unless asset
+      (error "Invalid asset, can't load."))
+    ;; FIXME: we need a better way to handle aliases, maybe have support for this
+    ;; directly at the resource level
+    (when (asset-alias asset)
+      (let ((alias (find-asset (asset-alias asset))))
+        (when alias
+          (return-from load-asset (load-asset (asset-filename alias)
+                                              (asset-type alias)
+                                              (asset-name asset))))))
+    (format t "Loading ~S asset from ~S as ~S~%" (asset-type asset) (asset-filename asset)
+            (asset-name asset))
+    (with-resource-manager *content-manager*
+      (when (existing-resource-p identifier)
+        (warn "Asset already loaded or identifier conflict for ~A." identifier))
+      (let* ((pathname (merge-pathnames (asset-filename asset) *content-directory*))
+             (loader (%asset-loader (asset-type asset) pathname)))
+        (if loader
+            (use-resource identifier (funcall (asset-loader-load loader) pathname)
+                          (asset-loader-unload loader))
+            (error "No asset loader defined for ~S~%" type))))))
 
 (defun dispose-asset (identifier)
   "Dispose designated asset regardless of its current users."
