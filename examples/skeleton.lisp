@@ -1,14 +1,11 @@
 (in-package #:glaw-examples)
 
 (defstruct skeletons
-  (font nil)
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (skeleton (glaw::make-skeleton))
   anim-state animation)
 
 (defmethod init-example ((it skeletons))
-  (glaw:load-asset "font.png" :fixed-bitmap-font "font")
-  (setf (skeletons-font it) (glaw:use-resource "font"))
   (let ((skel (skeletons-skeleton it)))
     (glaw::skeleton-add-bone skel (glaw::make-bone :length (random 100.0) :angle 10.0))
     (glaw::skeleton-add-bone skel (glaw::make-bone :length (random 100.0) :angle 20.0))
@@ -44,7 +41,8 @@
   (gl:with-pushed-matrix
       (gl:translate 300 300 0)
     (glaw::render-skeleton (skeletons-skeleton it)))
-  (glaw:format-at 50 100  (skeletons-font it) "FPS: ~a" (glaw:current-fps))
+  (glaw:with-resources ((fnt "default-font"))
+    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it skeletons) dt)

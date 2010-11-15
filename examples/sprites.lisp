@@ -2,7 +2,6 @@
 
 
 (defstruct sprites
-  (font nil)
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   animated-sprite
   anim-state
@@ -10,7 +9,6 @@
   (sprites '()))
 
 (defmethod init-example ((it sprites))
-  (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "lisplogo_alien_256.png" :texture)
   (glaw:load-asset "explosion-blue-1.png" :texture "expl0")
   (glaw:load-asset "explosion-blue-2.png" :texture "expl1")
@@ -31,7 +29,6 @@
                                                         (+ 100.0 (random 100.0))
                                                         nil))
   (glaw:anim-state-apply (sprites-anim-state it) (sprites-animated-sprite it))
-  (setf (sprites-font it) (glaw:use-resource "font.png"))
   (loop for i from 0 to 10 do
        (push (glaw:create-sprite (float (random glaw:*display-width*))
                                  (float (random glaw:*display-height*))
@@ -43,7 +40,6 @@
   (glaw:dispose-asset "expl0")
   (glaw:dispose-asset "expl1")
   (glaw:dispose-asset "expl2")
-  (glaw:dispose-asset "font.png")
   (glaw:dispose-asset "lisplogo_alien_256.png"))
 
 (defmethod render-example ((it sprites))
@@ -52,7 +48,8 @@
   (dolist (sp (sprites-sprites it))
     (glaw:render-sprite sp))
   (glaw:render-sprite (sprites-animated-sprite it))
-  (glaw:format-at 50 100  (sprites-font it) "FPS: ~a" (glaw:current-fps))
+  (glaw:with-resources ((fnt "default-font"))
+    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it sprites) dt)

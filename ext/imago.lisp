@@ -21,7 +21,7 @@
     res))
 
 ;; image asset
-(defasset :image
+(defasset :image '("png" "pnm" "tga")
   ;; load
   (lambda (filename)
     (let ((img (imago:read-image (namestring filename))))
@@ -34,7 +34,7 @@
 
 
 ;; texture asset
-(defasset :texture
+(defasset :texture '("png" "pnm" "tga")
   ;; load
   (lambda (filename)
     ;; XXX: textures are bottom-left origin
@@ -46,7 +46,7 @@
 
 
 ;; font asset
-(defasset :fixed-bitmap-font
+(defasset :font '("png" "pnm" "tga")
   ;; load
   (lambda (filename)
     (let ((img (imago:read-image (namestring filename))))

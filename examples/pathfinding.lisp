@@ -1,7 +1,6 @@
 (in-package #:glaw-examples)
 
 (defstruct pathfinding
-  (font nil)
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (navmesh (glaw:create-grid-navmesh 20 20 20))
   (selected-index 0)
@@ -13,8 +12,6 @@
 
 (defmethod init-example ((it pathfinding))
   (glaw:add-input-handler it)
-  (glaw:load-asset "font.png" :fixed-bitmap-font)
-  (setf (pathfinding-font it) (glaw:use-resource "font.png"))
   (setf (pathfinding-selected-cell it) (glaw:navmesh-cell (pathfinding-navmesh it) 0))
   (loop for y below 1000 by 10
      when (< 100 y 300)
@@ -24,8 +21,7 @@
   )
 
 (defmethod shutdown-example ((it pathfinding))
-  (glaw:remove-input-handler it)
-  (glaw:dispose-asset "font.png"))
+  (glaw:remove-input-handler it))
 
 (defmethod render-example ((it pathfinding))
   (glaw:begin-draw)
@@ -57,8 +53,8 @@
                do (gl:vertex (first v)
                              (second v))))))
   (glaw:set-color/rgb 1 1 1)
-  (glaw:format-at 50 100  (pathfinding-font it) "FPS: ~a/~a/~a"
-                  (glaw:min-fps) (glaw:current-fps) (glaw:max-fps))
+  (glaw:with-resources ((fnt "default-font"))
+    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it pathfinding) dt)

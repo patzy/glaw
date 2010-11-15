@@ -7,17 +7,15 @@
   (view nil))
 
 (defmethod init-example ((it text))
-  (glaw:load-asset "font.png" :fixed-bitmap-font)
-  (glaw:load-asset "dejavu-sans.fnt" :fonttool-bitmap-font)
-  (glaw:load-asset "liberation-serif-italic.fnt" :fonttool-bitmap-font)
-  (setf (text-font1 it) (glaw:use-resource "font.png"))
+  (glaw:load-asset "dejavu-sans.fnt" :font)
+  (glaw:load-asset "liberation-serif-italic.fnt" :font)
+  (setf (text-font1 it) (glaw:use-resource "default-font"))
   (setf (text-font2 it) (glaw:use-resource "dejavu-sans.fnt"))
   (setf (text-font3 it) (glaw:use-resource "liberation-serif-italic.fnt"))
   (setf (text-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (glaw:add-input-handler it))
 
 (defmethod shutdown-example ((it text))
-  (glaw:dispose-asset "font.png")
   (glaw:dispose-asset "dejavu-sans.fnt")
   (glaw:dispose-asset "liberation-serif-italic.fnt")
   (glaw:remove-input-handler it))
@@ -57,7 +55,8 @@
     (glaw:format-at 250 line (text-font3 it)
                     "Hello world...This system works, and is quite easy to use. The reason the tool to create font files is a separate program is that this way you won't have to link FreeType with your main program, and loading a font is very fast. If you want your program to be able to load and use arbitrary true type fonts you will have to integrate the functionality of fonttool into your main program."))
 
-  (glaw:format-at 50 100 (text-font2 it) "FPS: ~a" (glaw:current-fps))
+  (glaw:with-resources ((fnt "default-font"))
+    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it text) dt)

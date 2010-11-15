@@ -55,7 +55,8 @@
     (:sdl-key-9 :9)))
 
 ;; image asset
-(defasset :image
+(defasset :image '("png" "jpg" "bmp" "gif" "tga" "pnm" "pbm"
+                   "pgm" "ppm" "xpm" "xcf" "pcx" "tif" "lbm")
   ;; load
   (lambda (filename)
     (sdl:with-init (sdl:sdl-init-video)
@@ -73,7 +74,8 @@
 
 
 ;; texture asset
-(defasset :texture
+(defasset :texture '("png" "jpg" "bmp" "gif" "tga" "pnm" "pbm"
+                     "pgm" "ppm" "xpm" "xcf" "pcx" "tif" "lbm")
   ;; load
   (lambda (filename)
     (sdl:with-init (sdl:sdl-init-video)
@@ -105,7 +107,8 @@
 
 ;; font asset
 ;; XXX: assumes 256x256 image
-(defasset :fixed-bitmap-font
+(defasset :font '("png" "jpg" "bmp" "gif" "tga" "pnm" "pbm"
+                  "pgm" "ppm" "xpm" "xcf" "pcx" "tif" "lbm")
   ;; load
   (lambda (filename)
     (sdl:with-init (sdl:sdl-init-video)

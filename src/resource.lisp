@@ -14,14 +14,14 @@
   "Value holder for an actual resource object."
   data finalizer (users 1))
 
-;; TODO: add some conditions/restarts when overwriting an existing resource
 (defun add-resource (mgr id res &optional finalizer)
   "Create a new RESOURCE-HOLDER for RES designated by ID."
-  (setf (gethash id (resource-manager-resources mgr))
-        (make-resource-holder :data res :finalizer finalizer))
+  (if (get-resource-holder mgr id)
+      (error "Resource ~S already exist~%" id)
+      (setf (gethash id (resource-manager-resources mgr))
+            (make-resource-holder :data res :finalizer finalizer)))
   res)
 
-;; TODO: add some conditions/restarts when trying to remove a non-existing resource
 (defun remove-resource (mgr id)
   "Remove RESOURCE-HOLDER designated by ID from the manager calling associated finalizer if any."
   (let ((holder (gethash id (resource-manager-resources mgr))))

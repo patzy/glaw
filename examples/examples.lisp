@@ -74,10 +74,12 @@
 (defun run-example (example-name)
   ;; how to get extensions
   (setf cl-opengl-bindings:*gl-get-proc-address* 'glop:gl-get-proc-address)
-  (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
+  (glaw:init-content-manager :root (asdf:system-relative-pathname :glaw "data/")
+                             :config (asdf:system-relative-pathname :glaw "data/examples.assets"))
   (glop:with-window (win "Glaw examples" 800 600)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)
+    (glaw:load-asset "default-font")
     (start-example example-name)
     (let ((last-update-time (get-internal-real-time)))
       (loop while (glop:dispatch-events win :blocking nil) do
@@ -90,6 +92,7 @@
                (update dt)
                (draw)
                (glop:swap-buffers win))))))
+  (glaw:dispose-asset "default-font")
   (glaw:shutdown-content-manager))
 
 ;; Using SDL
@@ -103,7 +106,8 @@
   (sdl:with-init ()
     ;; how to get extensions
     (setf cl-opengl-bindings:*gl-get-proc-address* #'sdl-cffi::sdl-gl-get-proc-address)
-    (glaw:init-content-manager (asdf:system-relative-pathname :glaw "data/"))
+    (glaw:init-content-manager :root (asdf:system-relative-pathname :glaw "data/")
+                               :config (asdf:system-relative-pathname :glaw "data/examples.assets"))
     (sdl:window 1024 768
                 :bpp 32
                 :flags '(sdl:sdl-opengl sdl:sdl-resizable
@@ -116,6 +120,7 @@
     (sdl:enable-key-repeat nil nil)
     (glaw:setup-gl-defaults)
     (glaw:reshape 800 600)
+    (glaw:load-asset "default-font")
     (start-example example-name)
     (let ((last-update-time (get-internal-real-time)))
       (let* ((elapsed-time (- (get-internal-real-time)
@@ -155,4 +160,5 @@
                (update dt)
                (draw)
                (sdl:update-display)))))
+  (glaw:dispose-asset "default-font")
   (glaw:shutdown-content-manager)))

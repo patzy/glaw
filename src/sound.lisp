@@ -133,7 +133,7 @@
          (t (error "Extended formats unsupported."))))
     (t (error "Unhandled bit depth."))))
 
-(defasset :sound
+(defasset :sound '("wav")
     ;; load
     (lambda (filename)
       (with-open-file (in filename :direction :input :element-type '(unsigned-byte 8))

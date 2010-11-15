@@ -1,16 +1,13 @@
 (in-package #:glaw-examples)
 
 (defstruct particles
-  (font nil)
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (systems '())
   (emitters '()))
 
 (defmethod init-example ((it particles))
-  (glaw:load-asset "font.png" :fixed-bitmap-font)
   (glaw:load-asset "particle.png" :texture)
   (glaw:load-asset "fire-particle.png" :texture)
-  (setf (particles-font it) (glaw:use-resource "font.png"))
   (loop for i below 10
        do (if (oddp i)
               ;; water thing
@@ -41,14 +38,17 @@
                 (glaw::add-particle-emitter syst
                                             (glaw::make-particle-emitter
                                              :delay 0.05
+                                             :spin (list 0 (glaw:deg->rad 60))
+                                             :angle (list 0 (glaw:deg->rad 60))
                                              :rate '(1.0 10.0)
                                              :vx 0.0
-                                             :vy '(-20.0 40.0)
+                                             :vy '(100 200.0)
                                              :lifetime 2.0
                                              :color (glaw:create-color 1.0 0.4 0.15 1.0)
-                                             :width 50.0
-                                             :height 50.0
-                                             :x (random glaw:*display-width*)
+                                             :width 30.0
+                                             :height 30.0
+                                             :x (let ((x (random glaw:*display-width*)))
+                                                  (list (- x 20) (+ x 20)))
                                              :y (random glaw:*display-height*)
                                              :texture (glaw:use-resource "fire-particle.png")))
                 (glaw::add-particle-affector syst
@@ -59,19 +59,20 @@
                                               :rate 2.0))))))
 
 (defmethod shutdown-example ((it particles))
-  (glaw:dispose-asset "font.png")
   (glaw:dispose-asset "particle.png")
   (glaw:dispose-asset "fire-particle.png"))
 
 (defmethod render-example ((it particles))
   (glaw:begin-draw)
   (glaw:set-view-2d (particles-view it))
-  (dolist (syst (particles-systems it))
-    (glaw:render-particles syst))
-  (glaw:set-color/rgb 1 1 1)
-  (glaw:format-at 50 80  (particles-font it) "Particles: ~a" glaw::*nb-particles*)
-  (glaw:format-at 50 100  (particles-font it) "FPS: ~a/~a/~a"
-                  (glaw:min-fps) (glaw:current-fps) (glaw:max-fps))
+  (let ((nb-particles 0))
+    (dolist (syst (particles-systems it))
+      (glaw:render-particles syst)
+      (incf nb-particles (glaw:particle-system-nb-particles syst)))
+    (glaw:set-color/rgb 1 1 1)
+    (glaw:with-resources ((fnt "default-font"))
+      (glaw:format-at 50 80 fnt "Particles: ~a" nb-particles)
+      (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps))))
   (glaw:end-draw))
 
 (defmethod update-example ((it particles) dt)

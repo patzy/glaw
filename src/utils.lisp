@@ -203,9 +203,46 @@
          while line
          collect line)))
 
+;; pathnames (from PCL: http://gigamonkeys.com/book/practical-a-portable-pathname-library.html)
+(defun component-present-p (value)
+  (and value (not (eql value :unspecific))))
+
+(defun directory-pathname-p  (p)
+  (and
+   (not (component-present-p (pathname-name p)))
+   (not (component-present-p (pathname-type p)))
+   p))
+
+(defun pathname-as-directory (name)
+  (let ((pathname (pathname name)))
+    (when (wild-pathname-p pathname)
+      (error "Can't reliably convert wild pathnames."))
+    (if (not (directory-pathname-p name))
+      (make-pathname
+       :directory (append (or (pathname-directory pathname) (list :relative))
+                          (list (file-namestring pathname)))
+       :name      nil
+       :type      nil
+       :defaults pathname)
+      pathname)))
+
+;; misc.
+(defun key-value (key lst)
+  (cadr (member key lst)))
+
 ;; Conditions
 (define-condition glaw-error (error)
   () (:documentation "Any glaw specific error should inherit this."))
 
 (define-condition not-implemented (glaw-error)
   () (:documentation "Unimplemented."))
+
+;; Executable creation
+(defun make-executable (name startup-fun &optional (documentation name))
+  #+clisp
+  (ext:saveinitmem name :init-function startup-fun :executable t
+                   :keep-global-handlers t :norc t :documentation documentation)
+  #+sbcl
+  (sb-ext:save-lisp-and-die name :toplevel startup-fun :executable t)
+  #-(or clisp sbcl)(error 'not-implemented)
+)

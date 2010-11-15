@@ -123,7 +123,7 @@ wrapped text."
 ;; see: http://gpwiki.org/index.php/C:OpenGL_Font_System
 ;; actually we use a slightly modified version using uint32_t instead of size_t which may change
 ;; see tools/fonttool.c
-(defasset :fonttool-bitmap-font
+(defasset :font '("fnt")
   ;; load
   (lambda (filename)
     (with-open-file (in filename :direction :input :element-type '(unsigned-byte 8))

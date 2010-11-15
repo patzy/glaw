@@ -2,7 +2,6 @@
 
 
 (defstruct input
-  (font nil)
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (strings (list "'g' repeat" "x-c-v-b sequence" "vb chord"))
   (processors (list (glaw:make-input-repeat :input :g
@@ -25,8 +24,6 @@
    (format t "VB Chord !!!~%"))
 
 (defmethod init-example ((it input))
-  (glaw:load-asset "font.png" :fixed-bitmap-font "font")
-  (setf (input-font it) (glaw:use-resource "font"))
   (glaw:add-input-handler it)
   (dolist (proc (input-processors it))
     (glaw:input-processor-reset proc)
@@ -35,20 +32,20 @@
 (defmethod shutdown-example ((it input))
   (glaw:remove-input-handler it)
   (dolist (proc (input-processors it))
-    (glaw:remove-input-handler proc))
-  (glaw:dispose-asset "font"))
+    (glaw:remove-input-handler proc)))
 
 (defmethod render-example ((it input))
   (glaw:begin-draw)
   (glaw:set-view-2d (input-view it))
-  (loop for str in (input-strings it)
+  (glaw:with-resources ((fnt "default-font"))
+    (loop for str in (input-strings it)
        for proc in (input-processors it)
        with y = 130 do
-       (glaw:format-at 50 y  (input-font it) "~a: ~a"
-                       str
-                       (glaw:input-processor-valid-p proc))
-       (incf y (glaw::font-line-height (input-font it))))
-  (glaw:format-at 50 100  (input-font it) "FPS: ~a" (glaw:current-fps))
+         (glaw:format-at 50 y fnt "~a: ~a"
+                         str
+                         (glaw:input-processor-valid-p proc))
+         (incf y (glaw::font-line-height fnt)))
+    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it input) dt)
