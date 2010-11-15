@@ -1,0 +1,3 @@
+;;;; -*- Mode: Lisp; Syntax: ANSI-Common-Lisp; Base: 10; indent-tabs-mode: nil -*-
+;; Glaw examples assets declaration
+((:font :name "default-font" :file "dejavu-sans.fnt"))
