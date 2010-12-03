@@ -23,11 +23,9 @@
 
 ;; default methods
 (defmethod init-screen (screen &key)
-  (glaw:push-input-handlers)
-  (glaw:add-input-handler screen))
+  (declare (ignore screen)))
 (defmethod shutdown-screen (screen)
-  (glaw:remove-input-handler screen)
-  (glaw:pop-input-handlers))
+  (declare (ignore screen)))
 (defmethod suspend-screen (screen)
   (declare (ignore screen)))
 (defmethod resume-screen (screen)

@@ -64,7 +64,7 @@
    #:bbox-x-min #:bbox-x-max #:bbox-y-min #:bbox-y-max #:render-bbox
    #:create-bbox-from-shape
    ;; sprites
-   #:create-sprite #:render-sprite
+   #:create-sprite #:render-sprite #:move-sprite #:translate-sprite #:rotate-sprite
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset
    #:tileset-pixel-width #:tileset-pixel-height #:tileset-tiles-width #:tileset-tiles-height
    #:tileset-spacing #:tileset-margin #:tileset-start-index
@@ -80,6 +80,7 @@
    #:create-particle-system #:particle-system-nb-particles #:update-particles #:render-particles
    ;; input management
    #:add-input-handler #:remove-input-handler #:push-input-handlers #:pop-input-handlers
+   #:clear-input-handlers
    #:dispatch-key-event #:dispatch-button-event #:dispatch-motion-event
    #:key-handler #:button-handler #:motion-handler
    #:*mouse-x* #:*mouse-y* #:update-mouse-position
