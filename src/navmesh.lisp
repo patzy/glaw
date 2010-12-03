@@ -252,10 +252,6 @@
 
 (defun adjacent-neighbor (cell)
   (loop for c in (navcell-neighbors cell)
-;;;        do (progn (format t "Testing neighbor: ~S -> ~S~%"
-;;;                          c (adjacent-p cell c))
-;;;                  (format t "~S~%" (edge-list cell))
-;;;                  (format t "~S~%" (edge-list c)))
          when (adjacent-p cell c)
          return c))
 
