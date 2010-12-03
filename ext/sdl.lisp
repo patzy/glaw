@@ -100,7 +100,11 @@
                          (incf start)
                          (decf end)))
           (create-texture (sdl:width img-surf) (sdl:height img-surf)
-                          (sdl-base::pixel-bpp pix) (sdl-base::pixel-data pix))))))
+                          (sdl-base::pixel-bpp pix)
+                          (cffi::foreign-array-to-lisp (sdl-base::pixel-data pix)
+                                (list :array :unsigned-char (* (sdl-base::pixel-bpp pix)
+                                                               (sdl:width img-surf)
+                                                               (sdl:height img-surf)))))))))
   ;; unload
   'glaw:destroy-texture)
 

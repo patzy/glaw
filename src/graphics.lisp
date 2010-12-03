@@ -374,7 +374,7 @@
 
 ;;; 2D Texture
 (defstruct texture
-  width height bpp
+  width height bpp data
   index ;; GL texture index
   ;; GL texture parameters
   (internal-format :rgba)
@@ -391,7 +391,7 @@
   "Create a new GL texture. Texture's origin is bottom-left."
   (let ((tex (apply 'make-texture :index (first (gl:gen-textures 1))
                                   :width width :height height
-                                  :bpp bpp
+                                  :bpp bpp :data data
                                   args)))
     (select-texture tex)
     (gl:tex-image-2d :texture-2d 0 (texture-internal-format tex)
@@ -417,6 +417,7 @@
 
 (defun update-texture (tex data &optional (x 0) (y 0)
                        (width (texture-width tex)) (height (texture-height tex)))
+  (setf (texture-data tex) data)
   (select-texture tex)
   (gl:tex-sub-image-2d :texture-2d 0 x y width height
                    (ecase (texture-bpp tex)
