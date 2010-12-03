@@ -46,12 +46,18 @@
       (< c a d b) (< a c b d)
       (< a c d b) (< c a b d)))
 
-;;; Random numbers
+;;; Random
 (defun random-between (min max)
   (+ min (random (- max min))))
 
-(defun random-nth (lst)
-  (nth (random-between 0 (length lst)) lst))
+(defun random-nth (seq)
+  (elt seq (random-between 0 (length seq))))
+
+(defun shuffle (seq)
+  (loop for i downfrom (1- (length seq)) to 1
+        do (rotatef (elt seq (random (1+ i)))
+                    (elt seq i)))
+  seq)
 
 ;;; List manipulation
 (defun rotate-list-right (lst n)
@@ -225,6 +231,25 @@
        :type      nil
        :defaults pathname)
       pathname)))
+
+(defun file-exists-p (pathname)
+  #+(or sbcl lispworks openmcl)
+  (probe-file pathname)
+
+  #+(or allegro cmu)
+  (or (probe-file (pathname-as-directory pathname))
+      (probe-file pathname))
+
+  #+clisp
+  (or (ignore-errors
+        (probe-file (pathname-as-file pathname)))
+      (ignore-errors
+        (let ((directory-form (pathname-as-directory pathname)))
+          (when (ext:probe-directory directory-form)
+            directory-form))))
+
+  #-(or sbcl cmu lispworks openmcl allegro clisp)
+  (error "file-exists-p not implemented"))
 
 ;; misc.
 (defun key-value (key lst)
