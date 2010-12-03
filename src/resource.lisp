@@ -83,9 +83,11 @@
   (loop for id in res-ids do (drop-resource id)))
 
 (defmacro with-resources (resources &body body)
-  `(let (,@(loop for (sym id) in resources collect `(,sym (use-resource ,id))))
-     ,@body
-     (drop-resources ,@(loop for r in resources collect (cadr r)))))
+  (let ((res (gensym)))
+    `(let (,@(loop for (sym id) in resources collect `(,sym (use-resource ,id))))
+       (let ((,res (progn ,@body)))
+         (drop-resources ,@(loop for r in resources collect (cadr r)))
+         ,res))))
 
 (defun create-resource-manager (&optional (keep-current nil))
   "Make a new resource manager, maybe binds %RESOURCE-MANAGER% and returns it."

@@ -84,7 +84,7 @@ against unless EXTENSIONS is :ANY."
 
 (defun init-content-manager (&key (root (pathname-as-directory #P".")) config)
   (when *content-manager*
-    (error "Content manager already initialized.~%"))
+    (warn "Content manager already initialized, replacing instance.~%"))
   (format t "Initializing content manager with ~S~%" root)
   (when config
     (format t "Using content manager config: ~S~%" config))
