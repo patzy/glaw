@@ -53,11 +53,15 @@
 (defun random-nth (seq)
   (elt seq (random-between 0 (length seq))))
 
-(defun shuffle (seq)
+(defun nshuffle (seq)
   (loop for i downfrom (1- (length seq)) to 1
         do (rotatef (elt seq (random (1+ i)))
                     (elt seq i)))
   seq)
+
+(defun shuffle (seq)
+  (let ((seq-copy (subseq seq 0)))
+    (nshuffle seq-copy)))
 
 ;;; List manipulation
 (defun rotate-list-right (lst n)

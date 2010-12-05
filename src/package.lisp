@@ -2,7 +2,7 @@
   (:use #:cl)
   (:export
    ;; utils
-   #:random-between #:random-nth #:shuffle
+   #:random-between #:random-nth #:nshuffle #:shuffle
    #:make-vector-2d #:vec-from-lst #:vec-from-coords #:vec-slope #:vec-dot-product
    #:vec-perp-dot-product #:vec-mag #:vec-normalize #:vec-null-p
    #:ver-perp #:vec-opposite #:vec-rotate #:vec-angle #:vec-add #:vec-sum #:vec-sub #:vec-diff

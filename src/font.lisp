@@ -7,14 +7,14 @@
   u v du dv   ;; texture coords for the glyph
   (advance 0) ;; glyph width
   id          ;; char code
-)
+  )
 
 (defstruct font
   texture
   (base -1)   ;; display list base
   glyphs      ;; array of all glyphs
   line-height ;; height for all glyphs
-)
+  )
 
 (defun char-width (fnt char)
   (glyph-advance (aref (font-glyphs fnt) (char-code char))))
