@@ -115,16 +115,16 @@
 (defun edge-vectors (vertices)
   (let ((edge-vectors (loop for v1 in vertices by #'cdr
                          for v2 in (cdr vertices) by #'cdr
-                         collect (vec-diff (vec-from-lst v1)
-                                       (vec-from-lst v2)))))
-    (push (vec-diff (vec-from-lst (first (last vertices)))
-                (vec-from-lst (first vertices))) edge-vectors)
+                         collect (vector-2d-diff (make-vector-2d-from-list v1)
+                                       (make-vector-2d-from-list v2)))))
+    (push (vector-2d-diff (make-vector-2d-from-list (first (last vertices)))
+                (make-vector-2d-from-list (first vertices))) edge-vectors)
     edge-vectors))
 
 (defun edges-perp-products (edge-vectors)
   (loop for v1 in edge-vectors by #'cdr
      for v2 in (rotate-list edge-vectors)
-     collect (vec-perp-dot-product v1 v2)))
+     collect (vector-2d-perp-dot-product v1 v2)))
 
 (defun simplify-vertices (vertices)
   (let* ((vecs (edge-vectors vertices))

@@ -29,14 +29,6 @@
   "Converts realtime to seconds with optional scale factor."
   (/ (/ time internal-time-units-per-second) resolution-unit))
 
-(declaim (inline deg->rad))
-(defun rad->deg (angle)
-  (* angle (/ 180.0 pi)))
-
-(declaim (inline deg->rad))
-(defun deg->rad (angle)
-  (* angle (/ pi 180.0)))
-
 (defun sqr-dist (x0 y0 x1 y1)
   (+ (* (- x1 x0) (- x1 x0))
      (* (- y1 y0) (- y1 y0))))
@@ -106,80 +98,6 @@
   (if (>= nb 0)
       :positive
       :negative))
-
-;;; 2D vectors manipulation
-(defstruct (vector-2d (:type (vector float)))
-  (x 0.0)
-  (y 0.0))
-
-(defun vec-from-lst (coords)
-  (make-vector-2d :x (first coords)
-                  :y (second coords)))
-
-(defun vec-from-coords (&rest coords)
-  (vec-from-lst coords))
-
-(defun vec-slope (v)
-  (/ (vector-2d-y v)
-     (vector-2d-x v)))
-
-(defun vec-dot-product (v1 v2)
-  (+ (* (vector-2d-x v1) (vector-2d-x v2))
-     (* (vector-2d-y v1) (vector-2d-y v2))))
-
-(defun vec-perp-dot-product (v1 v2)
-  (vec-dot-product (vec-perp v1) v2))
-
-(defun vec-mag (v)
-  (sqrt (vec-dot-product v v)))
-
-(defun vec-normalize (v)
-  (vec-scale v (/ 1.0 (vec-mag v))))
-
-(defun vec-null-p (v)
-  (and (zerop (vector-2d-x v))
-       (zerop (vector-2d-y v))))
-
-(defun vec-perp (v)
-  "Returns V rotated by +pi/2."
-  (make-vector-2d :x (- (vector-2d-y v))
-                  :y (vector-2d-x v)))
-
-(defun vec-opposite (v)
-  (make-vector-2d :x (- (vector-2d-x v))
-                  :y (- (vector-2d-y v))))
-
-(defun vec-rotate (v angle)
-  (make-vector-2d :x (- (* (vector-2d-x v) (cos angle))
-                        (* (vector-2d-y v) (sin angle)))
-                  :y (+ (* (vector-2d-x v) (sin angle))
-                        (* (vector-2d-y v) (cos angle)))))
-
-(defun vec-angle (v1 &optional (v2 (make-vector-2d :x 1 :y 0)))
-  "Returns angle between vector v1 taking v2 as the origin."
-  (atan (vec-dot-product (vec-perp v2) v1) (vec-dot-product v2 v1)))
-
-(defun vec-sum (v1 v2)
-  (make-vector-2d :x (+ (vector-2d-x v1) (vector-2d-x v2))
-                  :y (+ (vector-2d-y v1) (vector-2d-y v2))))
-
-(defun vec-add (v1 v2)
-  (incf (vector-2d-x v1) (vector-2d-x v2))
-  (incf (vector-2d-y v1) (vector-2d-y v2))
-  v1)
-
-(defun vec-diff (v1 v2)
-  (make-vector-2d :x (- (vector-2d-x v2) (vector-2d-x v1))
-                  :y (- (vector-2d-y v2) (vector-2d-y v1))))
-
-(defun vec-sub (v1 v2)
-  (decf (vector-2d-x v2) (vector-2d-x v1))
-  (decf (vector-2d-y v2) (vector-2d-y v1))
-  v2)
-
-(defun vec-scale (v factor)
-  (make-vector-2d :x (* factor (vector-2d-x v))
-                  :y (* factor (vector-2d-y v))))
 
 ;; profiling
 (defmacro with-profiling (fmt &body body)

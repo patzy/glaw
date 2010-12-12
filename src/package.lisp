@@ -3,11 +3,18 @@
   (:export
    ;; utils
    #:random-between #:random-nth #:nshuffle #:shuffle
-   #:make-vector-2d #:vec-from-lst #:vec-from-coords #:vec-slope #:vec-dot-product
-   #:vec-perp-dot-product #:vec-mag #:vec-normalize #:vec-null-p
-   #:ver-perp #:vec-opposite #:vec-rotate #:vec-angle #:vec-add #:vec-sum #:vec-sub #:vec-diff
-   #:vec-scale #:vector-2d-x #:vector-2d-y
+   ;; math
    #:deg->rad #:rad->deg #:coords-overlap-p
+   #:make-vector-2d #:vector-2d-slope #:vector-2d-dot-product
+   #:vector-2d-perp-dot-product #:vector-2d-mag #:vector-2d-normalize
+   #:vector-2d-null-p #:vector-2d-perp #:vector-2d-opposite #:vector-2d-rotate
+   #:vector-2d-angle #:vector-2d-add #:vector-2d-sum #:vector-2d-sub #:vector-2d-diff
+   #:vector-2d-scale #:vector-2d-x #:vector-2d-y
+   #:make-vector-3d #:vector-3d-dot-product
+   #:vector-3d-mag #:vector-3d-normalize
+   #:vector-3d-null-p #:vector-3d-opposite
+   #:vector-3d-add #:vector-3d-sum #:vector-3d-sub #:vector-3d-diff
+   #:vector-3d-scale #:vector-3d-x #:vector-3d-y #:vector-3d-z
    ;; timing
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    #:with-timestep
