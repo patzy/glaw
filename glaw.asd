@@ -11,6 +11,7 @@
             :components
             ((:file "package")
              (:file "utils")
+             (:file "math")
              (:file "resource")
              (:file "assets")
              (:file "input")
