@@ -9,17 +9,48 @@ Basic ideas are:
  - do *not* force the user to a specific game genre
  - independent of windowing API (i.e. not tied to sdl or glut)
 
-Description
+Quickstart
 -----------
-Required dependencies:
+
+### Using Quicklisp
+
+You can get glaw directly from quicklisp by just doing:
+
+    (ql:quickload "glaw")
+
+This may not be the latest git version depending on when I pushed changes.
+
+If you want the latest git version first clone this repository:
+
+    git clone git://github.com/patzy/glaw.git
+    
+Then change to the new `glaw` directory and issue the `quickload` call from here.
+    
+If you want to use the examples just do:
+
+    (ql:quickload "glaw-examples")
+
+### Manual install
+
+Get the following required dependencies (and their respective dependencies):
 
  - [cl-opengl](http://github.com/3b/cl-opengl/);
  - [cl-openal](http://github.com/sykopomp/cl-openal).
 
-Extensions:
+If you want to use the included extension you may need:
 
- - glaw-imago: `:texture` assets loading using [imago](http://common-lisp.net/project/imago/)
- - glaw-sdl: `:texture` assets loading using lispbuilder-sdl-image and lispbuilder-sdl helpers for integration
+ - [imago](http://common-lisp.net/project/imago/): `glaw-imago` for image based assets loading
+ - lispbuilder-sdl and lispbuilder-sdl-image: `glaw-sdl` for image based assets loading
+
+Get ASDF and configure it so glaw's `.asd` are in the search path and then run:
+
+    (asdf:operate 'asdf:load-op :glaw)
+
+for the lib itself, or:
+
+    (asdf:operate 'asdf:load-op :glaw-examples)
+    
+for the examples.
 
 Examples
 --------
@@ -36,12 +67,8 @@ To do so:
  - use `:glaw-examples-sdl` in `*features*` instead of `:glaw-examples-glop`
  
 Note that I don't test often with lb-sdl and it may not work/compile properly.
- 
-To load the examples do:
- 
-     (asdf:operate 'asdf:load-op :glaw-examples)
      
-Then to run an example:
+To run an example:
  
      (glaw-examples:run-example 'glaw-examples:example-name)
      
