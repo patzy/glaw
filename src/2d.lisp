@@ -1,5 +1,133 @@
 (in-package #:glaw)
 
+;;; 2D view
+(defstruct 2d-view
+  left right bottom top
+  (zoom 1.0)
+  mtx)
+
+(defun %2d-view-update-matrix (view)
+  (matrix-set-ortho (2d-view-mtx view)
+                    (2d-view-left view)
+                    (2d-view-right view)
+                    (2d-view-bottom view)
+                    (2d-view-top view)
+                    -1.0 1.0))
+
+(defun create-2d-view (x y width height)
+  (let ((view (make-2d-view :left x :right (+ x width)
+                            :bottom y :top (+ y height)
+                            :mtx (make-matrix))))
+    (%2d-view-update-matrix view)
+    view))
+
+(defun 2d-view-width (view)
+  (- (2d-view-right view) (2d-view-left view)))
+
+(defmethod (setf 2d-view-width) (value (view 2d-view))
+  (setf (2d-view-right view) (+ (2d-view-left view) value))
+  (%2d-view-update-matrix view))
+
+(defun 2d-view-height (view)
+  (- (2d-view-top view) (2d-view-bottom view)))
+
+(defmethod (setf 2d-view-height) (value (view 2d-view))
+  (setf (2d-view-top view) (+ (2d-view-bottom view) value))
+  (%2d-view-update-matrix view))
+
+(defun zoom-2d-view (view dfactor &key lock-left lock-bottom lock-right lock-top)
+  (let ((width-diff (* dfactor (2d-view-width view)))
+        (height-diff (* dfactor (2d-view-height view))))
+    (unless lock-left
+      (decf (2d-view-left view) width-diff))
+    (unless lock-bottom
+      (decf (2d-view-bottom view) height-diff))
+    (unless lock-right
+      (incf (2d-view-right view) width-diff))
+    (unless lock-top
+      (incf (2d-view-top view) height-diff))
+    (incf (2d-view-zoom view) dfactor))
+    (%2d-view-update-matrix view))
+
+(defun move-2d-view (view dx dy)
+  (incf (2d-view-left view) dx)
+  (incf (2d-view-right view) dx)
+  (incf (2d-view-bottom view) dy)
+  (incf (2d-view-top view) dy)
+  (%2d-view-update-matrix view))
+
+(defun update-2d-view (view x y width height)
+  (setf (2d-view-left view) x)
+  (setf (2d-view-bottom view) y)
+  (setf (2d-view-right view) (+ x width))
+  (setf (2d-view-top view) (+ y height))
+  (%2d-view-update-matrix view))
+
+(defun set-view-2d (view)
+  (set-viewpoint (2d-view-mtx view) +matrix-identity+))
+
+(defun view-to-view (x y from-view to-view &optional (absolute t))
+  (unless (or (zerop (2d-view-width from-view)) (zerop (2d-view-height from-view))
+              (zerop (2d-view-width to-view)) (zerop (2d-view-height to-view)))
+    (let ((width-factor (/ (2d-view-width to-view) (2d-view-width from-view)))
+          (height-factor (/ (2d-view-height to-view) (2d-view-height from-view))))
+      (if absolute
+          (values (float (+ (2d-view-left to-view)
+                            (* x width-factor)))
+                  (float (+ (2d-view-bottom to-view)
+                            (* y height-factor))))
+          (values (float (* x width-factor))
+                  (float (* y height-factor)))))))
+
+;; special screen case for coords
+;; handle inverted Y axis
+;; for screen/view deltas just use view-to-view with NIL absolute argument
+(defun screen-to-view (x y view)
+  (unless (or (zerop (2d-view-width view)) (zerop (2d-view-height view))
+              (zerop *display-width*) (zerop *display-height*))
+    (let ((width-factor (/ (2d-view-width view) *display-width*))
+          (height-factor (/ (2d-view-height view) *display-height*)))
+      (values (float (+ (2d-view-left view)
+                        (* x width-factor)))
+              (float (+ (2d-view-bottom view)
+                        (* (- *display-height* y) height-factor)))))))
+
+(defun view-to-screen (x y view)
+  (unless (or (zerop (2d-view-width view)) (zerop (2d-view-height view))
+              (zerop *display-width*) (zerop *display-height*))
+    (let ((width-factor (/ *display-width* (2d-view-width view)))
+          (height-factor (/ *display-height* (2d-view-height view))))
+      (values (float (- (* x width-factor) (* (2d-view-left view) width-factor)))
+              (float (+ (- *display-height* (* (- y) height-factor))
+                        (* height-factor (2d-view-bottom view))))))))
+
+(defmacro with-2d-coords-from-screen (((x-sym x-val) (y-sym y-val)) to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (screen-to-view ,x-val ,y-val ,to-view)
+     ,@body))
+
+(defmacro with-2d-coords-to-screen (((x-sym x-val) (y-sym y-val)) from-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-screen ,x-val ,y-val ,from-view)
+     ,@body))
+
+(defmacro with-2d-view-coords (((x-sym x-val) (y-sym y-val)) from-view to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val ,y-val ,from-view ,to-view)
+     ,@body))
+
+(defmacro with-2d-view-deltas (((x-sym x-val) (y-sym y-val)) from-view to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val ,y-val ,from-view ,to-view nil)
+     ,@body))
+
+(defmacro with-2d-screen-deltas (((x-sym x-val) (y-sym y-val)) to-view &body body)
+  `(multiple-value-bind (,x-sym ,y-sym)
+       (view-to-view ,x-val (- ,y-val)
+                     (create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+                     ,to-view nil)
+     ,@body))
+
 ;;; Sprite
 (defstruct sprite
   "On screen image with transform and animation capabilities."
