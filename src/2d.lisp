@@ -64,7 +64,7 @@
   (%2d-view-update-matrix view))
 
 (defun set-view-2d (view)
-  (set-viewpoint (2d-view-mtx view) +matrix-identity+))
+  (set-view (2d-view-mtx view) +matrix-identity+))
 
 (defun view-to-view (x y from-view to-view &optional (absolute t))
   (unless (or (zerop (2d-view-width from-view)) (zerop (2d-view-height from-view))
@@ -135,6 +135,7 @@
   bbox
   shape
   texture
+  color
   (flip :none))
 
 (defun sprite-set-flip (it value)
@@ -147,8 +148,9 @@
 (defsetf sprite-flip sprite-set-flip)
 
 (defun create-sprite (x y width height texture &key (bbox (make-bbox)) (flip :none)
-                                                    (angle 0))
+                                                    (angle 0) (color #(1.0 1.0 1.0 1.0)))
   (let ((sp (make-sprite :texture texture
+                         :color color
                          :x x :y y :width width :height height
                          :bbox bbox :flip flip
                          :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
@@ -158,6 +160,7 @@
     sp))
 
 (defun render-sprite (sp)
+  (set-color (sprite-color sp))
   (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
