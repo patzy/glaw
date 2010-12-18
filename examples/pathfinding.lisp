@@ -14,7 +14,7 @@
   (glaw:add-input-handler it)
   (setf (pathfinding-view it)
         (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
-        (pathinding-navmesh it)
+        (pathfinding-navmesh it)
         (glaw:create-grid-navmesh 20 20 20))
   (setf (pathfinding-selected-cell it) (glaw:navmesh-cell (pathfinding-navmesh it) 0))
   (loop for y below 1000 by 10
