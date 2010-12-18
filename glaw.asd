@@ -18,6 +18,7 @@
              (:file "graphics")
              (:file "anim")
              (:file "2d")
+             (:file "3d")
              (:file "gui")
              (:file "font")
              (:file "particles")

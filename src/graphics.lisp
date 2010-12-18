@@ -56,16 +56,51 @@
 (defvar *display-width* 0)
 (defvar *display-height* 0)
 
-(defun setup-gl-defaults ()
+(defun setup-3d-defaults ()
   (gl:clear-color 0.3 0.3 0.3 0)
-  (gl:disable :depth-test)
+  (gl:enable :depth-test)
+  (gl:depth-func :lequal)
+  (gl:depth-mask :enable)
   (gl:disable :cull-face)
-  (gl:disable :lighting)
+  (gl:cull-face :back)
+  (gl:enable :lighting)
+  (gl:enable :light0)
   (gl:enable :blend)
   (gl:blend-func :src-alpha :one-minus-src-alpha)
   (gl:enable :normalize)
   (gl:shade-model :smooth)
+  (gl:enable :texture-2d)
+  ;; some default head light
+  (gl:matrix-mode :projection)
+  (gl:load-identity)
+  (gl:matrix-mode :modelview)
+  (gl:load-identity)
+  (gl:light :light0 :position #(0.0 0.0 0.0 1.0))
+  (gl:light :light0 :diffuse #(1.0 1.0 1.0 1.0))
+  (gl:light :light0 :specular #(1.0 1.0 1.0 1.0))
+  (gl:light :light0 :ambient #(1.0 1.0 1.0 1.0)))
+
+(defun setup-2d-defaults ()
+  (gl:clear-color 0.3 0.3 0.3 0)
+  (gl:disable :depth-test)
+  (gl:disable :cull-face)
+  (gl:disable :lighting)
+  (gl:disable :light0)
+  (gl:enable :blend)
+  (gl:blend-func :src-alpha :one-minus-src-alpha)
   (gl:enable :texture-2d))
+
+(defun draw-origin (&optional (scale 20.0))
+  (gl:with-primitive :lines
+    (gl:color 1.0 0.0 0.0 1.0)
+    (gl:vertex 0.0 0.0 0.0)
+    (gl:vertex scale 0.0 0.0)
+    (gl:color 0.0 1.0 0.0 1.0)
+    (gl:vertex 0.0 0.0 0.0)
+    (gl:vertex 0.0 scale 0.0)
+    (gl:color 0.0 0.0 1.0 1.0)
+    (gl:vertex 0.0 0.0 0.0)
+    (gl:vertex 0.0 0.0 scale)))
 
 (defun reshape (width height)
   ;; set viewport to full window
@@ -73,14 +108,14 @@
   (setf *display-width* width)
   (setf *display-height* height))
 
-(defun set-viewpoint (proj-mtx view-mtx)
+(defun set-view (proj-mtx view-mtx)
   (gl:matrix-mode :projection)
   (gl:load-matrix proj-mtx)
   (gl:matrix-mode :modelview)
   (gl:load-matrix view-mtx))
 
 (defun begin-draw ()
-  (gl:clear :color-buffer))
+  (gl:clear :color-buffer :depth-buffer))
 
 (defun end-draw ()
   (update-fps)
@@ -346,6 +381,7 @@
 (defstruct shape
   (primitive :triangle-strip)
   vertices   ;; x,y,z
+  normals    ;; x y z
   colors     ;; r,g,b,a
   tex-coords ;; u,v
   indices)
@@ -435,13 +471,18 @@
                      (aref (shape-vertices shape) (+ 2 (* i 3)))))
   (gl:end))
 
-(defun create-shape (nb-vertices nb-indices &key color texture
+(defun create-shape (nb-vertices nb-indices &key color texture normals
                                              (primitive :triangles))
   (make-shape :primitive primitive
               :vertices (make-array (* nb-vertices 3)
                                     ;;:element-type 'single-float
                                     :adjustable t
                                     :fill-pointer 0)
+              :normals (when normals
+                         (make-array (* nb-vertices 3)
+                                     ;;:element-type 'single-float
+                                     :adjustable t
+                                     :fill-pointer 0))
               :colors (when color
                         (make-array (* nb-vertices 4)
                                     ;;:element-type 'single-float
@@ -460,6 +501,8 @@
 (defun shape-ensure-adjustable (shape)
   (when (shape-vertices shape)
     (setf (shape-vertices shape) (ensure-adjustable (shape-vertices shape))))
+  (when (shape-normals shape)
+    (setf (shape-normals shape) (ensure-adjustable (shape-normals shape))))
   (when (shape-colors shape)
     (setf (shape-colors shape) (ensure-adjustable (shape-colors shape))))
   (when (shape-tex-coords shape)
@@ -472,6 +515,11 @@
   (vector-push-extend x (shape-vertices shape))
   (vector-push-extend y (shape-vertices shape))
   (vector-push-extend z (shape-vertices shape)))
+
+(defun shape-add-normal (shape x y z)
+  (vector-push-extend x (shape-normals shape))
+  (vector-push-extend y (shape-normals shape))
+  (vector-push-extend z (shape-normals shape)))
 
 (defun shape-add-color (shape color)
   ;;(declare (type color color))
@@ -614,6 +662,102 @@
          do (shape-add-vertex/index shape (first v) (second v)))
     shape))
 
+(defun create-box-shape (size-x size-y size-z)
+  (let ((shape (create-shape 24 36
+                             :normals t
+                             :texture t
+                             :primitive :triangles))
+        (sx (* 0.5 size-x))
+        (sy (* 0.5 size-y))
+        (sz (* 0.5 size-z)))
+    ;; Y-
+    (shape-add-vertex shape (- sx) (- sy) (- sz))
+    (shape-add-normal shape 0.0 -1.0 0.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape sx (- sy) (- sz))
+    (shape-add-normal shape 0.0 -1.0 0.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape sx (- sy) sz)
+    (shape-add-normal shape 0.0 -1.0 0.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape (- sx) (- sy) sz)
+    (shape-add-normal shape 0.0 -1.0 0.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 0 1 2 0 2 3)
+    ;; X+
+    (shape-add-vertex shape sx (- sy) (- sz))
+    (shape-add-normal shape 1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape sx sy (- sz))
+    (shape-add-normal shape 1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape sx sy sz)
+    (shape-add-normal shape 1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape sx (- sy) sz)
+    (shape-add-normal shape 1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 4 5 6 4 6 7)
+    ;; Y+
+    (shape-add-vertex shape sx sy (- sz))
+    (shape-add-normal shape 0.0 1.0 0.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape (- sx) sy (- sz))
+    (shape-add-normal shape 0.0 1.0 0.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape (- sx) sy sz)
+    (shape-add-normal shape 0.0 1.0 0.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape sx sy sz)
+    (shape-add-normal shape 0.0 1.0 0.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 8 9 10 8 10 11)
+    ;; X-
+    (shape-add-vertex shape (- sx) sy (- sz))
+    (shape-add-normal shape -1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape (- sx) (- sy) (- sz))
+    (shape-add-normal shape -1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape (- sx) (- sy) sz)
+    (shape-add-normal shape -1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape (- sx) sy sz)
+    (shape-add-normal shape -1.0 0.0 0.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 12 13 14 12 14 15)
+    ;; Z+
+    (shape-add-vertex shape sx (- sy) sz)
+    (shape-add-normal shape 0.0 0.0 1.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape sx sy sz)
+    (shape-add-normal shape 0.0 0.0 1.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape (- sx) sy sz)
+    (shape-add-normal shape 0.0 0.0 1.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape (- sx) (- sy) sz)
+    (shape-add-normal shape 0.0 0.0 1.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 16 17 18 16 18 19)
+    ;; Z-
+    (shape-add-vertex shape (- sx) (- sy) (- sz))
+    (shape-add-normal shape 0.0 0.0 -1.0)
+    (shape-add-tex-vertex shape 0.0 0.0)
+    (shape-add-vertex shape (- sx) sy (- sz))
+    (shape-add-normal shape 0.0 0.0 -1.0)
+    (shape-add-tex-vertex shape 1.0 0.0)
+    (shape-add-vertex shape sx sy (- sz))
+    (shape-add-normal shape 0.0 0.0 -1.0)
+    (shape-add-tex-vertex shape 1.0 1.0)
+    (shape-add-vertex shape sx (- sy) (- sz))
+    (shape-add-normal shape 0.0 0.0 -1.0)
+    (shape-add-tex-vertex shape 0.0 1.0)
+    (shape-add-indices shape 20 21 22 20 22 23)
+
+    shape))
+
+
 ;;; Bounding box
 (defstruct bbox
   "Axis Aligned Bounding Box."
@@ -643,6 +787,7 @@
   (and (< (bbox-x-min bbox) x (bbox-x-max bbox))
        (< (bbox-y-min bbox) y (bbox-y-max bbox))))
 
+;; TODO: have this for both 2D and 3D views
 (defun bbox-visible-p (bbox view)
   (let ((view-box (make-bbox :valid t
                              :z-min 0.0 :z-max 0.0

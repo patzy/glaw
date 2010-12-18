@@ -97,6 +97,10 @@
 (defun vector-2d-scale (v factor)
   (vector-scale v factor))
 
+(defun vector-2d-nscale (v factor)
+  (setf (vector-2d-x v) (* (vector-2d-x v) factor)
+        (vector-2d-y v) (* (vector-2d-y v) factor)))
+
 ;;;; 2D points
 (defstruct (point-2d (:type (vector float))
                      (:include vector-2d)))
@@ -126,6 +130,14 @@
 
 (defun make-vector-3d-from-coords (&rest coords)
   (make-vector-3d-from-list coords))
+
+(defun vector-3d-cross-product (v1 v2)
+  (make-vector-3d :x (- (* (vector-3d-y v1) (vector-3d-z v2))
+                        (* (vector-3d-y v2) (vector-3d-z v1)))
+                  :y (- (* (vector-3d-z v1) (vector-3d-x v2))
+                        (* (vector-3d-z v2) (vector-3d-x v1)))
+                  :z (- (* (vector-3d-x v1) (vector-3d-y v2))
+                        (* (vector-3d-x v2) (vector-3d-y v1)))))
 
 (defun vector-3d-dot-product (v1 v2)
   (+ (* (vector-3d-x v1) (vector-3d-x v2))
@@ -172,6 +184,11 @@
 (defun vector-3d-scale (v factor)
   (vector-scale v factor))
 
+(defun vector-3d-nscale (v factor)
+  (setf (vector-3d-x v) (* (vector-3d-x v) factor)
+        (vector-3d-y v) (* (vector-3d-y v) factor)
+        (vector-3d-z v) (* (vector-3d-z v) factor)))
+
 (defun vector-3d-project-xy (v)
   (make-vector-2d :x (vector-3d-x v)
                   :y (vector-3d-y v)))
@@ -199,6 +216,25 @@
                    :z (* (- distance) sp))))
 
 
+(defun point-3d-distance (p)
+  (vector-3d-mag p))
+
+(defun point-3d-angles (p)
+  (let ((orientation (make-orientation-from-vector-3d p)))
+    (values (orientation-yaw orientation)
+            (orientation-pitch orientation))))
+
+;;; 4D vector
+(defstruct (vector-4d (:type (vector float))
+                      (:include vector-3d))
+  (w 0.0))
+
+(defun make-vector-4d-from-3d (vec &optional (w 0.0))
+  (make-vector-4d :x (vector-3d-x vec)
+                  :y (vector-3d-y vec)
+                  :z (vector-3d-z vec)
+                  :w w))
+
 ;;; Orientation
 (defstruct (orientation (:type (vector float)))
   (roll 0.0)
@@ -206,13 +242,12 @@
   (yaw 0.0))
 
 (defun make-orientation-from-vector-3d (v)
-  (let ((dxy (sqrt (* (vector-3d-x v) (vector-3d-x v))
-                   (* (vector-3d-y v) (vector-3d-y v)))))
-    (if (zerop dxy)
-        (make-orientation)
-        (make-orientation :yaw (atan (vector-3d-x v) (vector-3d-y v))
-                          :pitch (atan (vector-3d-z v) dxy)
-                          :roll 0.0))))
+  (let ((dxy (sqrt (+ (* (vector-3d-x v) (vector-3d-x v))
+                      (* (vector-3d-y v) (vector-3d-y v))))))
+    (make-orientation :yaw (if (zerop dxy) 0.0 (atan (vector-3d-y v) (vector-3d-x v)))
+                      :pitch (if (and (zerop dxy) (zerop (vector-3d-z v)))
+                                 0.0 (- (atan (vector-3d-z v) dxy)))
+                      :roll 0.0)))
 
 ;;; Axis
 (defstruct (axis (:type (vector float))
@@ -222,10 +257,9 @@
 (defconstant +y-axis+ #(0.0 1.0 0.0))
 (defconstant +z-axis+ #(0.0 0.0 1.0))
 
-
 ;;; Quaternions
-(defstruct (quaternion (:type (vector float)))
-  (x 0.0) (y 0.0) (z 0.0) (w 0.0))
+(defstruct (quaternion (:type (vector float))
+                       (:include vector-4d)))
 
 (defun make-quaternion-from-axis-angle (&key (axis +x-axis+) (angle 0.0))
   (make-quaternion :x (* (sin (/ angle 2.0)) (axis-x axis))
@@ -246,17 +280,23 @@
                      :w (+ (* cr cp cy) (* sr sp sy)))))
 
 (defun make-quaternion-from-orientation (orientation)
-  (make-quaternion-from-angles (orientation-roll orientation)
-                               (orientation-pitch orientation)
-                               (orientation-yaw orientation)))
+  (make-quaternion-from-angles :roll (orientation-roll orientation)
+                               :pitch (orientation-pitch orientation)
+                               :yaw (orientation-yaw orientation)))
 
 (defun quaternion-mag (q)
-  (sqrt (* (quaternion-x q) (quaternion-x q))
-        (* (quaternion-y q) (quaternion-y q))
-        (* (quaternion-z q) (quaternion-z q))
-        (* (quaternion-w q) (quaternion-w q))))
+  (sqrt (+ (* (quaternion-x q) (quaternion-x q))
+           (* (quaternion-y q) (quaternion-y q))
+           (* (quaternion-z q) (quaternion-z q))
+           (* (quaternion-w q) (quaternion-w q)))))
 
 (defun quaternion-scale (q factor)
+  (make-quaternion :x (* (quaternion-x q) factor)
+                   :y (* (quaternion-y q) factor)
+                   :z (* (quaternion-z q) factor)
+                   :w (* (quaternion-w q) factor)))
+
+(defun quaternion-nscale (q factor)
   (setf (quaternion-x q) (* (quaternion-x q) factor)
         (quaternion-y q) (* (quaternion-y q) factor)
         (quaternion-z q) (* (quaternion-z q) factor)
@@ -327,15 +367,36 @@
              :y (basis-r10 basis)
              :z (basis-r20 basis)))
 
+(defun basis-set-local-x (basis axis)
+  (setf (basis-r00 basis) (axis-x axis)
+        (basis-r10 basis) (axis-y axis)
+        (basis-r20 basis) (axis-z axis)))
+
+(defsetf basis-local-x basis-set-local-x)
+
 (defun basis-local-y (basis)
   (make-axis :x (basis-r01 basis)
              :y (basis-r11 basis)
              :z (basis-r21 basis)))
 
+(defun basis-set-local-y (basis axis)
+  (setf (basis-r01 basis) (axis-x axis)
+        (basis-r11 basis) (axis-y axis)
+        (basis-r21 basis) (axis-z axis)))
+
+(defsetf basis-local-y basis-set-local-y)
+
 (defun basis-local-z (basis)
   (make-axis :x (basis-r02 basis)
              :y (basis-r12 basis)
              :z (basis-r22 basis)))
+
+(defun basis-set-local-z (basis axis)
+  (setf (basis-r02 basis) (axis-x axis)
+        (basis-r12 basis) (axis-y axis)
+        (basis-r22 basis) (axis-z axis)))
+
+(defsetf basis-local-z basis-set-local-z)
 
 (defun basis-position (basis)
   (make-point-3d :x (basis-tx basis)
@@ -360,16 +421,89 @@
                             (* dy (basis-r21 basis))
                             (* dz (basis-r22 basis)))))
 
+(defun basis-axis-angle (basis)
+  (error 'not-implemented))
+
+(defun basis-set-axis-angle (basis axis angle)
+  (let ((r (vector-3d-mag axis))
+        (x (axis-x axis))
+        (y (axis-y axis))
+        (z (axis-z axis)))
+    (unless (zerop r)
+      (let* ((s (sin angle))
+             (c (cos angle))
+             (tr (- 1.0 c)))
+        (setf x (/ x r)
+              y (/ y r)
+              z (/ z r))
+        (setf (basis-r00 basis) (+ (* tr x x) c)
+              (basis-r10 basis) (+ (* tr x y) (* s z))
+              (basis-r20 basis) (- (* tr x z) (* s y))
+              (basis-r01 basis) (- (* tr x y) (* s z))
+              (basis-r11 basis) (+ (* tr y y) c)
+              (basis-r21 basis) (+ (* tr y z) (* s x))
+              (basis-r02 basis) (+ (* tr x z) (* s y))
+              (basis-r12 basis) (- (* tr y z) (* s x))
+              (basis-r22 basis) (+ (* tr z z) c))))))
+
+(defun basis-roll (basis droll)
+  (let* ((s (sin droll))
+         (c (cos droll))
+         (r01 (+ (* c (basis-r01 basis)) (* s (basis-r02 basis))))
+         (r02 (- (* c (basis-r02 basis)) (* s (basis-r01 basis))))
+         (r11 (+ (* c (basis-r11 basis)) (* s (basis-r12 basis))))
+         (r12 (- (* c (basis-r12 basis)) (* s (basis-r11 basis))))
+         (r21 (+ (* c (basis-r21 basis)) (* s (basis-r22 basis))))
+         (r22 (- (* c (basis-r22 basis)) (* s (basis-r21 basis)))))
+    (setf (basis-r01 basis) r01
+          (basis-r02 basis) r02
+          (basis-r11 basis) r11
+          (basis-r12 basis) r12
+          (basis-r21 basis) r21
+          (basis-r22 basis) r22)))
+
+(defun basis-pitch (basis dpitch)
+  (let* ((s (sin dpitch))
+         (c (cos dpitch))
+         (r00 (- (* c (basis-r00 basis)) (* s (basis-r02 basis))))
+         (r02 (+ (* c (basis-r02 basis)) (* s (basis-r00 basis))))
+         (r10 (- (* c (basis-r10 basis)) (* s (basis-r12 basis))))
+         (r12 (+ (* c (basis-r12 basis)) (* s (basis-r10 basis))))
+         (r20 (- (* c (basis-r20 basis)) (* s (basis-r22 basis))))
+         (r22 (+ (* c (basis-r22 basis)) (* s (basis-r20 basis)))))
+    (setf (basis-r00 basis) r00
+          (basis-r02 basis) r02
+          (basis-r10 basis) r10
+          (basis-r12 basis) r12
+          (basis-r20 basis) r20
+          (basis-r22 basis) r22)))
+
+(defun basis-yaw (basis dyaw)
+  (let* ((s (sin dyaw))
+         (c (cos dyaw))
+         (r00 (+ (* c (basis-r00 basis)) (* s (basis-r01 basis))))
+         (r01 (- (* c (basis-r01 basis)) (* s (basis-r00 basis))))
+         (r10 (+ (* c (basis-r10 basis)) (* s (basis-r11 basis))))
+         (r11 (- (* c (basis-r11 basis)) (* s (basis-r10 basis))))
+         (r20 (+ (* c (basis-r20 basis)) (* s (basis-r21 basis))))
+         (r21 (- (* c (basis-r21 basis)) (* s (basis-r20 basis)))))
+    (setf (basis-r00 basis) r00
+          (basis-r01 basis) r01
+          (basis-r10 basis) r10
+          (basis-r11 basis) r11
+          (basis-r20 basis) r20
+          (basis-r21 basis) r21)))
+
 (defun basis-cancel-rotation (basis)
-  (setf (basis-r00) 1.0
-        (basis-r11) 1.0
-        (basis-r22) 1.0
-        (basis-r01) 0.0
-        (basis-r02) 0.0
-        (basis-r10) 0.0
-        (basis-r12) 0.0
-        (basis-r20) 0.0
-        (basis-r21) 0.0))
+  (setf (basis-r00 basis) 1.0
+        (basis-r11 basis) 1.0
+        (basis-r22 basis) 1.0
+        (basis-r01 basis) 0.0
+        (basis-r02 basis) 0.0
+        (basis-r10 basis) 0.0
+        (basis-r12 basis) 0.0
+        (basis-r20 basis) 0.0
+        (basis-r21 basis) 0.0))
 
 (defconstant +basis-sin-precision+ 0.999999999) ;; 1.0-1.0e-9
 
@@ -481,10 +615,10 @@
         (matrix-r12 mtx) (/ (+ top bottom) (- top bottom))
         (matrix-r20 mtx) 0.0
         (matrix-r21 mtx) 0.0
-        (matrix-r22 mtx) (/ (+ near far) (- near far))
+        (matrix-r22 mtx) (/ (+ far near) (- near far))
         (matrix-tx mtx) 0.0
         (matrix-ty mtx) 0.0
-        (matrix-tz mtx) (/ (* 2.0 near far) (- near far))
+        (matrix-tz mtx) (/ (* 2.0 far near) (- near far))
         (matrix-z0 mtx) 0.0
         (matrix-z1 mtx) 0.0
         (matrix-z2 mtx) -1.0
@@ -494,7 +628,7 @@
   (matrix-set-frustum (make-matrix) left right bottom top near far))
 
 
-;;; 3D Perspective
+;;; 3D perspective
 (defstruct (perspective (:constructor %make-perspective))
   fov
   ratio
@@ -521,7 +655,8 @@
                                   :ratio ratio
                                   :near near
                                   :far far)))
-    (%perspective-update-slopes persp)))
+    (%perspective-update-slopes persp)
+    persp))
 
 (defun perspective-set-fov (p fov)
   (setf (perspective-fov p) fov)
@@ -547,7 +682,7 @@
 (defun perspective-top (p)
   (* (perspective-near p) (perspective-up-slope p)))
 
-(defun apply-perspective (p mtx)
+(defun perspective-apply (p mtx)
   (matrix-set-frustum mtx (perspective-left p)
                           (perspective-right p)
                           (perspective-bottom p)
