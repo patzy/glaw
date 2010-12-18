@@ -2,8 +2,8 @@
 
 
 (defstruct sound
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
-  (snd nil))
+  view
+  snd)
 
 (glaw:key-handler (it sound) (:space :press)
    (glaw:play-sound (sound-snd it)))
@@ -11,7 +11,8 @@
 (defmethod init-example ((it sound))
   (glaw:init-sound)
   (glaw:load-asset "pew.wav" :sound)
-  (setf (sound-snd it) (glaw:use-resource "pew.wav"))
+  (setf (sound-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+        (sound-snd it) (glaw:use-resource "pew.wav"))
   (format t "Nb channels: ~S~%" (glaw:sound-nb-channels))
   (glaw:add-input-handler it))
 

@@ -2,17 +2,19 @@
 
 
 (defstruct sprites
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
+  view
   animated-sprite
   anim-state
   animation
-  (sprites '()))
+  sprites)
 
 (defmethod init-example ((it sprites))
   (glaw:load-asset "lisplogo_alien_256.png" :texture "lisplogo")
   (glaw:load-asset "explosion-blue-1.png" :texture "expl0")
   (glaw:load-asset "explosion-blue-2.png" :texture "expl1")
   (glaw:load-asset "explosion-blue-3.png" :texture "expl2")
+  (setf (sprites-view it)
+        (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (setf (sprites-animation it) (glaw:make-keyframe-anim
                                 :frame-time 0.2
                                 :start-frame 0

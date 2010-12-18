@@ -3,8 +3,8 @@
 
 (defstruct screens
   (nb 0)
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
-  (stack (glaw:make-screen-stack)))
+  view
+  stack)
 
 (defstruct test-screen
   (id 0)
@@ -58,6 +58,8 @@
 
 
 (defmethod init-example ((it screens))
+  (setf (screens-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+        (screens-stack it) (glaw:make-screen-stack))
   (glaw:add-input-handler it))
 
 (defmethod shutdown-example ((it screens))

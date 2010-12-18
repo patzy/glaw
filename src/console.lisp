@@ -1,7 +1,6 @@
 (in-package #:glaw)
 
 ;;; In-game console
-
 (defun char-list->string (char-list)
   (apply #'concatenate 'string (reverse char-list)))
 
@@ -12,7 +11,7 @@
 (defstruct console
   (input '())
   (prompt "> ")
-  (buffer '("Input console:"))
+  (buffer '("Eval some lisp here:"))
   (parser (lambda (text)
             (handler-case (format nil "~S" (eval (read-from-string text)))
               (error (e) (format nil "ERROR" e))))))

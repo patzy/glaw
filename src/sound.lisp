@@ -141,7 +141,7 @@
               (total-length (read-integer in 4)) ;; total data length
               (wave-header (read-integer in 4 t)))
           (unless (and (= riff-header #x52494646) (= wave-header #x57415645)) ;; "RIFF" & "WAVE"
-            (error "Not a valid wave file."))
+            (error "Not a valid riff/wave file."))
           ;; proper riff/wave file, going on...
           (let ((magic (read-integer in 4 t))
                 (chunk-length (read-integer in 4)))

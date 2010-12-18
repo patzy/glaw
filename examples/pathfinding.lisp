@@ -1,8 +1,8 @@
 (in-package #:glaw-examples)
 
 (defstruct pathfinding
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
-  (navmesh (glaw:create-grid-navmesh 20 20 20))
+  view
+  navmesh
   (selected-index 0)
   selected-cell
   (moving :start)
@@ -12,13 +12,15 @@
 
 (defmethod init-example ((it pathfinding))
   (glaw:add-input-handler it)
+  (setf (pathfinding-view it)
+        (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+        (pathinding-navmesh it)
+        (glaw:create-grid-navmesh 20 20 20))
   (setf (pathfinding-selected-cell it) (glaw:navmesh-cell (pathfinding-navmesh it) 0))
   (loop for y below 1000 by 10
      when (< 100 y 300)
      do (glaw:navmesh-remove-cell-at (pathfinding-navmesh it) 50 (1+ y)))
-  (glaw:connect-grid-navmesh (pathfinding-navmesh it) 20)
-  ;;(glaw:simplify-navmesh (pathfinding-navmesh it))
-  )
+  (glaw:connect-grid-navmesh (pathfinding-navmesh it) 20))
 
 (defmethod shutdown-example ((it pathfinding))
   (glaw:remove-input-handler it))

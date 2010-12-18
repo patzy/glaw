@@ -1,8 +1,10 @@
 (defpackage :glaw-examples
   (:use #:cl)
   (:export #:run-example
-           #:gui #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
-           #:sound #:skeletons #:console #:input #:views))
+           #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
+           #:sound #:skeletons #:input #:views
+           ;; TODO: those need some work
+           #:gui #:console))
 
 (in-package #:glaw-examples)
 
@@ -118,7 +120,7 @@
     (setf (sdl:frame-rate) (/ 1.0 *max-frame-time*))
     (sdl:enable-unicode)
     (sdl:enable-key-repeat nil nil)
-    (glaw:setup-gl-defaults)
+    (glaw:setup-2d-defaults)
     (glaw:reshape 800 600)
     (glaw:load-asset "default-font")
     (start-example example-name)

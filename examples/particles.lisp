@@ -1,13 +1,14 @@
 (in-package #:glaw-examples)
 
 (defstruct particles
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
-  (systems '())
-  (emitters '()))
+  view
+  systems
+  emitters)
 
 (defmethod init-example ((it particles))
   (glaw:load-asset "particle.png" :texture)
   (glaw:load-asset "fire-particle.png" :texture)
+  (setf (particles-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (loop for i below 10
        do (if (oddp i)
               ;; water thing

@@ -1,13 +1,14 @@
 (in-package #:glaw-examples)
 
 (defstruct tilemap
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
+  view
   tileset
   tilemap)
 
 (defmethod init-example ((it tilemap))
   (glaw:load-asset "tileset3.png" :texture "tileset")
-  (setf (tilemap-tileset it)
+  (setf (tilemap-view it) (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+        (tilemap-tileset it)
         (glaw:make-tileset :texture (glaw:use-resource "tileset")
                            :tile-width 32 :tile-height 32
                            :spacing 2 :margin 0 :start-index 0)
