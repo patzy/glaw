@@ -148,7 +148,7 @@
 (defsetf sprite-flip sprite-set-flip)
 
 (defun create-sprite (x y width height texture &key (bbox (make-bbox)) (flip :none)
-                                                    (angle 0) (color #(1.0 1.0 1.0 1.0)))
+                                                    (angle 0) color)
   (let ((sp (make-sprite :texture texture
                          :color color
                          :x x :y y :width width :height height
@@ -160,7 +160,8 @@
     sp))
 
 (defun render-sprite (sp)
-  (set-color (sprite-color sp))
+  (when (sprite-color sp)
+    (set-color (sprite-color sp)))
   (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
