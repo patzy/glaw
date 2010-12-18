@@ -2,7 +2,7 @@
   (:use #:cl)
   (:export #:run-example
            #:gui #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
-           #:sound #:skeletons #:console #:input))
+           #:sound #:skeletons #:console #:input #:views))
 
 (in-package #:glaw-examples)
 
@@ -77,7 +77,7 @@
   (glaw:init-content-manager :root (asdf:system-relative-pathname :glaw "data/")
                              :config (asdf:system-relative-pathname :glaw "data/examples.assets"))
   (glop:with-window (win "Glaw examples" 800 600)
-    (glaw:setup-gl-defaults)
+    (glaw::setup-2d-defaults)
     (glaw:reshape 800 600)
     (glaw:load-asset "default-font")
     (start-example example-name)

@@ -12,6 +12,7 @@
   ((:module "examples"
             :serial t
             :components ((:file "examples")
+                         (:file "views")
                          (:file "gui")
                          (:file "sprites")
                          (:file "texture")
