@@ -116,10 +116,12 @@
    #:make-anim-state #:make-keyframe-anim #:animation-apply
    #:anim-state-update #:anim-state-apply
    ;; pathfinding
-   #:create-grid-navmesh #:navmesh-cell #:navmesh-remove-cell-at #:connect-grid-navmesh
-   #:simplify-navmesh #:render-navmesh #:navcell-vertices #:navmesh-nb-cells
-   #:find-path/cells #:find-path #:make-navcell #:navcell-add-vertex #:make-navmesh
-   #:navcells-connected-p #:navmesh-containing-cell #:navcell-center
+   #:find-path/nodes #:find-path
+   #:make-navmesh
+   #:navmesh-cells #:make-navmesh-cell #:navmesh-cell-add-vertex
+   #:navmesh-remove-cell-at #:navmesh-cell
+   #:simplify-navmesh #:render-navmesh #:navmesh-cell-vertices #:navmesh-nb-cells
+   #:create-grid-navmesh #:connect-grid-navmesh
    ;; particles
    #:create-particle-system #:particle-system-nb-particles #:update-particles #:render-particles
    ;; input management
