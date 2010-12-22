@@ -68,7 +68,6 @@
        (rotate-list-left (append (rest lst) (list (first lst)))
                          (- n 1))))
 
-
 (defun rotate-list (lst &key (direction :left) (distance 1))
   ;; check distance is positive
   (when (< distance 0)
@@ -81,7 +80,6 @@
       (rotate-list-left  lst distance)
       (rotate-list-right lst distance)))
 
-
 (defun list-insert (lst1 lst2 insert-pos)
   (let ((lst-start (butlast lst1 (- (length lst1) insert-pos)))
         (lst-end (nthcdr insert-pos lst1)))
@@ -92,12 +90,6 @@
 (defun list-from (item nb-items)
   (loop for i from 0 to nb-items
        collect item))
-
-(defun sign-of (nb)
-  (declare (inline sign-of))
-  (if (>= nb 0)
-      :positive
-      :negative))
 
 ;; profiling
 (defmacro with-profiling (fmt &body body)
@@ -176,6 +168,12 @@
 ;; misc.
 (defun key-value (key lst)
   (cadr (member key lst)))
+
+;; Debugging
+(defvar *debug-stream* *standard-output*)
+
+(defun dformat (fmt &rest args)
+  (apply #'format *debug-stream* fmt args))
 
 ;; Conditions
 (define-condition glaw-error (error)
