@@ -1,5 +1,12 @@
 (in-package #:glaw)
 
+;;; Misc.
+(defun sign-of (nb)
+  (declare (inline sign-of))
+  (if (>= nb 0)
+      :positive
+      :negative))
+
 ;;; Angles
 (declaim (inline deg->rad))
 (defun rad->deg (angle)
@@ -117,10 +124,182 @@
 (defun point-2d-distance (p)
   (vector-2d-mag p))
 
+;;; Polygons
+(defstruct polygon
+  vertices
+  centroid
+  edges
+  edge-vectors)
+
+(defun polygon-nb-vertices (p)
+  (length (polygon-vertices p)))
+
+(defun polygon-nb-edges (p)
+  (length (polygon-edges p)))
+
+(defun polygon-edges-equal-p (edge-1 edge-2)
+  "Compare contents of edges regardless of the vertices order."
+  (or (and (equalp (first edge-1) (first edge-2))
+           (equalp (second edge-1) (second edge-2)))
+      (and (equalp (first edge-1) (second edge-2))
+           (equalp (second edge-1) (first edge-2)))))
+
+(defun polygon-valid-p (p)
+  (> (polygon-nb-vertices p) 2))
+
+(defun %polygon-update-edges (p)
+  (when (polygon-valid-p p)
+    (with-slots (vertices) p
+      (setf (polygon-edges p) '()
+            (polygon-edge-vectors p) '())
+      (loop for v1 in vertices
+         for v2 in (cdr vertices)
+         do (push (list v1 v2) (polygon-edges p))
+            (push (vector-2d-diff v2 v1) (polygon-edge-vectors p)))
+      (push (list (first (last vertices))
+                  (first vertices))
+            (polygon-edges p))
+      (push (vector-2d-diff (first vertices)
+                            (first (last vertices)))
+            (polygon-edge-vectors p)))
+    (setf (polygon-edges p) (reverse (polygon-edges p))
+          (polygon-edge-vectors p) (reverse (polygon-edge-vectors p)))))
+
+(defun %polygon-update-centroid (p)
+  (when (polygon-valid-p p)
+    (setf (polygon-centroid p)
+          (make-vector-2d :x (/ (reduce #'+ (mapcar #'vector-2d-x (polygon-vertices p)))
+                                (polygon-nb-vertices p))
+                          :y (/ (reduce #'+ (mapcar #'vector-2d-y (polygon-vertices p)))
+                                (polygon-nb-vertices p))))))
+
+(defun %polygon-update-internal (p)
+  (%polygon-update-edges p)
+  (%polygon-update-centroid p))
+
+(defun polygon-edges-perp-products (poly)
+  "Returns perp product for every edges and its successor."
+  (loop for v1 in (polygon-edge-vectors poly)
+        for v2 in (rotate-list (polygon-edge-vectors poly))
+        collect (vector-2d-perp-dot-product v1 v2)))
+
+(defun polygon-add-vertex (p v)
+  (push v (polygon-vertices p))
+  (%polygon-update-internal p))
+
+(defun polygon-add-vertices (p &rest verts)
+  (dolist (v verts)
+    (push v (polygon-vertices p)))
+  (%polygon-update-internal p))
+
+;; http://mathworld.wolfram.com/ConvexPolygon.html
+;; tests (NIL T):
+;; '((100 100) (100 200) (200 300) (300 200) (200 200) (200 100))
+;; '((100 100) (100 200) (200 300) (300 200) (200 100))
+(defun polygon-convex-p (p)
+  (let ((first-sign (sign-of (vector-2d-perp-dot-product (first (polygon-edge-vectors p))
+                                                         (second (polygon-edge-vectors p))))))
+    (loop for e1 in (polygon-edge-vectors p)
+         for e2 in (rotate-list (polygon-edge-vectors p))
+         for prod = (vector-2d-perp-dot-product e1 e2)
+         when (not (or (eq first-sign (sign-of prod))
+                       (zerop prod)))
+         do (return-from polygon-convex-p))
+    t))
+
+;; http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
+;; http://erich.realtimerendering.com/ptinpoly/
+(defun polygon-point-inside-p (poly p)
+  (let ((inside nil))
+    (loop for e in (polygon-edges poly)
+       when (and (not (eq (> (point-2d-y (first e)) (point-2d-y p))
+                          (> (point-2d-y (second e)) (point-2d-y p))))
+                 (< (point-2d-x p) (+ (point-2d-x (first e))
+                                      (* (- (point-2d-x (second e))
+                                            (point-2d-x (first e)))
+                                         (/ (- (point-2d-y p) (point-2d-y (first e)))
+                                            (- (point-2d-y (second e))
+                                               (point-2d-y (first e))))))))
+       do (setf inside (not inside)))
+    inside))
+
+;; Tests:
+;; (#(10.0 10.0) #(10.0 20.0) #(10.0 40.0) #(40.0 40.0) #(40.0 10.0))
+;; (#(10 30) #(20 40) #(30 40) #(40 30) #(40 20) #(40 10) #(30 10) #(20 20))
+(defun polygon-nsimplify (poly)
+  (let ((keep-vertices '()))
+    (loop for p in (polygon-edges-perp-products poly)
+          for e in (polygon-edges poly)
+         do (unless  (zerop p)
+              (push (second e) keep-vertices)))
+    (setf (polygon-vertices poly) (rotate-list (reverse keep-vertices)
+                                               :direction :right))
+    (%polygon-update-edges poly)) ;; XXX: centroid unchanged
+  poly)
+
+(defun polygon-simplify (poly)
+  (let ((res (copy-polygon poly)))
+    (polygon-nsimplify res)))
+
+(defun polygons-shared-edges (poly-1 poly-2)
+  "Returns a list of all identical edges in both polygons."
+  (let ((edges1 (polygon-edges poly-1))
+        (edges2 (polygon-edges poly-2)))
+    (loop for e1 in edges1
+       when (find-if (lambda (item)
+                       (polygon-edges-equal-p e1 item))
+                     edges2)
+       collect e1)))
+
+(defun polygons-adjacent-p (poly-1 poly-2)
+  "Returns NIL if there's no identical edges between POLY-1 and POLY-2."
+  (let ((edges1 (polygon-edges poly-1))
+        (edges2 (polygon-edges poly-2)))
+    (loop for e1 in edges1
+       when (find-if (lambda (item)
+                       (polygon-edges-equal-p e1 item))
+                     edges2)
+       do (return-from polygons-adjacent-p t)))
+  nil)
+
+;; AI Game Programming Wisdom (section 4)
+;; TODO: add 3->2 merges
+;; Test with those:
+;; '((10 30) (20 40) (30 40) (40 30) (40 20) (20 20))
+;; '((20 20) (40 20) (40 10) (30 10))
+(defun polygons-merge (poly-1 poly-2)
+  "Merge the two polygons and returns the new combined polygon.
+Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
+  (when (polygons-adjacent-p poly-1 poly-2)
+    (let ((shared-edge (first (polygons-shared-edges poly-1 poly-2))))
+      (let ((merged-poly (copy-polygon poly-1))
+            (first-vertex (first shared-edge))
+            (last-vertex (second shared-edge)))
+      ;; shared edge is from poly-1 (see polygons-shared-edges)
+      ;; this means we just have to insert all vertices from poly-2
+      ;; to merged-cell (poly-1's copy) right after last-vertex
+      ;; except for vertices in shared-edge
+      (let ((vertices-to-add (rotate-list (polygon-vertices poly-2)
+                                    :distance (1- (position first-vertex
+                                                           (polygon-vertices poly-2)
+                                                           :test #'equalp)))))
+        ;; remove the common vertices from vertices-to-add
+        (setf vertices-to-add (cddr vertices-to-add))
+        ;; merge the right vertices at the right place
+        (setf (polygon-vertices merged-poly)
+              (list-insert (polygon-vertices merged-poly)
+                           vertices-to-add
+                           (position last-vertex (polygon-vertices merged-poly)
+                                     :test #'equalp)))
+        (%polygon-update-internal merged-poly)
+        ;; remove vertices on straight lines etc...
+        (polygon-nsimplify merged-poly)
+      merged-poly)))))
+
+
 ;;; 3D vectors
-(defstruct (vector-3d (:type (vector float)))
-  (x 0.0)
-  (y 0.0)
+(defstruct (vector-3d (:type (vector float))
+                      (:include vector-2d))
   (z 0.0))
 
 (defun make-vector-3d-from-list (coord-list)
