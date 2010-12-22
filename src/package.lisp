@@ -13,6 +13,7 @@
    #:vector-2d-angle #:vector-2d-add #:vector-2d-sum #:vector-2d-sub #:vector-2d-diff
    #:vector-2d-scale #:vector-3d-nscale #:vector-2d-x #:vector-2d-y
    #:make-point-2d #:make-point-2d-from-polar #:point-2d-angle #:point-2d-distance
+   #:point-2d-x #:point-2d-y
    #:make-vector-3d #:make-vector-3d-from-list #:make-vector-3d-from-coords
    #:vector-3d-x #:vector-3d-y #:vector-3d-z
    #:vector-3d-dot-product #:vector-3d-cross-product
@@ -22,6 +23,7 @@
    #:vector-3d-scale #:vector-3d-nscale #:vector-3d-x #:vector-3d-y #:vector-3d-z
    #:vector-3d-project-xy #:vector-3d-project-xz #:vector-3d-project-yz
    #:make-point-3d-from-spherical #:point-3d-distance #:point-3d-angles
+   #:point-3d-x #:point-3d-y #:point-3d-z
    #:make-vector-4d #:make-vector-4d-from-3d
    #:vector-4d-x #:vector-4d-y #:vector-4d-z #:vector-4d-w
    #:make-orientation #:orientation-roll #:orientation-pitch #:orientation-yaw
