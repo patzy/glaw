@@ -1,5 +1,24 @@
 (in-package #:glaw-examples)
 
+(defun render-navmesh-cell (c)
+  (glaw:select-texture nil)
+  (glaw:set-color #(1.0 1.0 1.0 1.0))
+  (gl:with-primitive :line-loop
+    (loop for v in (glaw::polygon-vertices (glaw::navmesh-cell-polygon c))
+       do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v))))
+  (let ((center (glaw::navmesh-cell-center c)))
+    ;; WTF? :line works on the laptop but not on the desktop !!!
+    (gl:with-primitive :lines
+      (loop for n in (glaw::navmesh-cell-neighbors c)
+         do (let ((center-2 (glaw::navmesh-cell-center n)))
+              (gl:color 1 0 0)
+              (gl:vertex (glaw:point-2d-x center) (glaw:point-2d-y center))
+              (gl:vertex (glaw:point-2d-x center-2) (glaw:point-2d-y center-2)))))))
+
+(defun render-navmesh (nv)
+  (loop for c in (glaw:navmesh-cells nv)
+       do (render-navmesh-cell c)))
+
 (defstruct pathfinding
   view
   navmesh
@@ -21,6 +40,7 @@
      when (< 100 y 300)
      do (glaw:navmesh-remove-cell-at (pathfinding-navmesh it) 50 (1+ y)))
   (glaw:connect-grid-navmesh (pathfinding-navmesh it) 20))
+;;  (glaw::simplify-navmesh (pathfinding-navmesh it)))
 
 (defmethod shutdown-example ((it pathfinding))
   (glaw:remove-input-handler it))
@@ -28,32 +48,32 @@
 (defmethod render-example ((it pathfinding))
   (glaw:begin-draw)
   (glaw:set-view-2d (pathfinding-view it))
-  (glaw:render-navmesh (pathfinding-navmesh it))
+  (render-navmesh (pathfinding-navmesh it))
   (glaw:set-color/rgb 0 0 1)
   (glaw:select-texture nil)
   (gl:with-primitive :line-loop
-    (loop for v in (glaw:navmesh-cell-vertices (pathfinding-selected-cell it))
-       do (gl:vertex (first v)
-                     (second v))))
+    (loop for v in (glaw::polygon-vertices
+                    (glaw:navmesh-cell-polygon (pathfinding-selected-cell it)))
+       do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v))))
   (when (pathfinding-start-cell it)
     (glaw:set-color/rgb 0 1 0)
     (gl:with-primitive :line-loop
-      (loop for v in (glaw:navmesh-cell-vertices (pathfinding-start-cell it))
-         do (gl:vertex (first v)
-                       (second v)))))
+      (loop for v in (glaw::polygon-vertices
+                      (glaw:navmesh-cell-polygon (pathfinding-start-cell it)))
+         do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v)))))
   (when (pathfinding-end-cell it)
     (glaw:set-color/rgb 1 0 0)
     (gl:with-primitive :line-loop
-      (loop for v in (glaw:navmesh-cell-vertices (pathfinding-end-cell it))
-         do (gl:vertex (first v)
-                       (second v)))))
+      (loop for v in (glaw::polygon-vertices
+                      (glaw:navmesh-cell-polygon (pathfinding-end-cell it)))
+         do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v)))))
   (when (pathfinding-path it)
     (glaw:set-color/rgb 0 0 1)
     (loop for c in (pathfinding-path it)
        do (gl:with-primitive :polygon
-            (loop for v in (glaw:navmesh-cell-vertices c)
-               do (gl:vertex (first v)
-                             (second v))))))
+            (loop for v in (glaw::polygon-vertices
+                            (glaw:navmesh-cell-polygon c))
+               do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v))))))
   (glaw:set-color/rgb 1 1 1)
   (glaw:with-resources ((fnt "default-font"))
     (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
@@ -111,7 +131,7 @@
       (otherwise (error "Should be :start or :end~%")))
     (when (and (pathfinding-start-cell it) (pathfinding-end-cell it))
       (setf (pathfinding-path it) (glaw:find-path/nodes (pathfinding-navmesh it)
-                                                         (pathfinding-start-cell it)
-                                                         (pathfinding-end-cell it)))))
+                                                        (pathfinding-start-cell it)
+                                                        (pathfinding-end-cell it)))))
 
 

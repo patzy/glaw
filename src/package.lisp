@@ -120,9 +120,9 @@
    ;; pathfinding
    #:find-path/nodes #:find-path
    #:make-navmesh
-   #:navmesh-cells #:make-navmesh-cell #:navmesh-cell-add-vertex
+   #:navmesh-cells #:make-navmesh-cell #:navmesh-cell-add-vertex #:navmesh-cell-polygon
    #:navmesh-remove-cell-at #:navmesh-cell
-   #:simplify-navmesh #:render-navmesh #:navmesh-cell-vertices #:navmesh-nb-cells
+   #:simplify-navmesh #:render-navmesh #:navmesh-nb-cells
    #:create-grid-navmesh #:connect-grid-navmesh
    ;; particles
    #:create-particle-system #:particle-system-nb-particles #:update-particles #:render-particles
