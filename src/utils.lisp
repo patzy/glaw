@@ -189,5 +189,8 @@
                    :keep-global-handlers t :norc t :documentation documentation)
   #+sbcl
   (sb-ext:save-lisp-and-die name :toplevel startup-fun :executable t)
-  #-(or clisp sbcl)(error 'not-implemented)
+  #+ccl
+  (ccl:save-application name :toplevel-function startup-fun
+                        :prepend-kernel t)
+  #-(or clisp sbcl ccl)(error 'not-implemented)
 )
