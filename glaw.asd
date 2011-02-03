@@ -16,6 +16,7 @@
              (:file "assets")
              (:file "input")
              (:file "graphics")
+             (:file "shape")
              (:file "anim")
              (:file "2d")
              (:file "3d")
