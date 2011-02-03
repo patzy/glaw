@@ -15,6 +15,8 @@
                          (:file "views")
                          (:file "gui")
                          (:file "sprites")
+                         (:file "framebuffer")
+                         (:file "mesh")
                          (:file "texture")
                          (:file "screens")
                          (:file "text")

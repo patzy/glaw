@@ -4,7 +4,7 @@
            #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
            #:sound #:skeletons #:input #:views
            ;; TODO: those need some work
-           #:gui #:console))
+           #:mesh-viewer #:framebuffer #:gui #:console))
 
 (in-package #:glaw-examples)
 
