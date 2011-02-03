@@ -61,7 +61,7 @@
   (gl:enable :depth-test)
   (gl:depth-func :lequal)
   (gl:depth-mask :enable)
-  (gl:disable :cull-face)
+  (gl:enable :cull-face)
   (gl:cull-face :back)
   (gl:enable :lighting)
   (gl:enable :light0)
@@ -76,9 +76,9 @@
   (gl:matrix-mode :modelview)
   (gl:load-identity)
   (gl:light :light0 :position #(0.0 0.0 0.0 1.0))
-  (gl:light :light0 :diffuse #(1.0 1.0 1.0 1.0))
-  (gl:light :light0 :specular #(1.0 1.0 1.0 1.0))
-  (gl:light :light0 :ambient #(1.0 1.0 1.0 1.0)))
+  (gl:light :light0 :ambient #(0.2 0.2 0.2 1.0))
+  (gl:light :light0 :diffuse #(0.8 0.8 0.8 1.0))
+  (gl:light :light0 :specular #(0.5 0.5 0.5 1.0)))
 
 (defun setup-2d-defaults ()
   (gl:clear-color 0.3 0.3 0.3 0)
@@ -103,7 +103,7 @@
     (gl:vertex 0.0 0.0 scale)))
 
 (defun reshape (width height)
-  ;; set viewport to full window
+  ;; set viewport to full screen
   (gl:viewport 0 0 width height)
   (setf *display-width* width)
   (setf *display-height* height))
@@ -120,41 +120,6 @@
 (defun end-draw ()
   (update-fps)
   (gl:flush))
-
-;;; FBO
-(defun create-gl-buffer (width height)
-  (let ((w (min (nearest-power-of-two width)
-                (gl:get-integer :max-texture-size)))
-        (h (min (nearest-power-of-two height)
-                (gl:get-integer :max-texture-size)))
-        (framebuffer (first (gl:gen-framebuffers-ext 1)))
-        (depthbuffer (first (gl:gen-renderbuffers-ext 1)))
-        (texture (first (gl:gen-textures 1))))
-    (gl:bind-framebuffer-ext :framebuffer-ext framebuffer)
-    ;; setup and attach texture
-    (gl:bind-texture :texture-2d texture)
-    (gl:tex-parameter :texture-2d :texture-min-filter :linear-mipmap-linear)
-    (gl:tex-parameter :texture-2d :texture-mag-filter :linear)
-    (gl:tex-image-2d :texture-2d 0 :rgba w h 0 :rgba :unsigned-byte (cffi:null-pointer))
-    (gl:generate-mipmap-ext :texture-2d)
-    (gl:bind-texture :texture-2d 0)
-    (gl:framebuffer-texture-2d-ext :framebuffer-ext
-                                   :color-attachment0-ext
-                                   :texture-2d
-                                   texture
-                                   0)
-    ;; setup and attach depth buffer
-    (gl:bind-renderbuffer-ext :renderbuffer-ext depthbuffer)
-    (gl:renderbuffer-storage-ext :renderbuffer-ext :depth-component24 w h)
-    (gl:framebuffer-renderbuffer-ext :framebuffer-ext
-                                     :depth-attachment-ext
-                                     :renderbuffer-ext
-                                     depthbuffer)
-    ;; validate framebuffer
-    (let ((framebuffer-status (gl:check-framebuffer-status-ext :framebuffer-ext)))
-      (unless (gl::enum= framebuffer-status :framebuffer-complete-ext)
-        (error "Framebuffer not complete: ~A." framebuffer-status)))
-    framebuffer))
 
 ;;; Colors helpers
 (defstruct (color (:type (vector float)))
@@ -323,7 +288,7 @@
                        (3 :rgb)
                        (4 :rgba))
                      :unsigned-byte
-                     data)
+                     (if data data (cffi::null-pointer)))
     (gl:tex-parameter :texture-2d :texture-min-filter (texture-min-filter tex))
     (gl:tex-parameter :texture-2d :texture-mag-filter (texture-mag-filter tex))
     ;; (gl:tex-parameter :texture-2d :texture-min-lod (texture-min-lod tex))
@@ -362,8 +327,10 @@
 (defvar *selected-texture-index* nil
   "Current texture in GL context.")
 
-(defun select-texture (tex &key (env-mode :replace))
+(defun select-texture (tex &key (env-mode :replace)
+                                (unit :texture0))
   "Set TEX as the current gl texture if necessary."
+  (gl:active-texture unit)
   (if tex
       (progn (unless *selected-texture-index*
                (gl:enable :texture-2d)
