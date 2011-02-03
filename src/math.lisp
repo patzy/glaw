@@ -7,6 +7,11 @@
       :positive
       :negative))
 
+(defconstant +epsilon+ 0.0000001)
+
+(defun roughly-equal (number-1 number-2)
+  (< (abs (- number-1 number-2)) +epsilon+))
+
 ;;; Angles
 (declaim (inline deg->rad))
 (defun rad->deg (angle)
@@ -330,7 +335,10 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
   (sqrt (vector-3d-dot-product v v)))
 
 (defun vector-3d-normalize (v)
-  (vector-3d-scale v (/ 1.0 (vector-3d-mag v))))
+  (let ((mag (vector-3d-mag v)))
+    (vector-3d-scale v (if (zerop mag)
+                           1.0
+                           (/ 1.0 mag)))))
 
 (defun vector-3d-null-p (v)
   (and (zerop (vector-3d-x v))
