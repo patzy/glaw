@@ -24,7 +24,7 @@
   (setf (edition-screen-selection-boxes scr) '())
   (loop for i below (glaw:shape-nb-vertices (edition-screen-shape scr)) do
        (let ((box (glaw:create-bbox-from-shape (edition-screen-selection-shape scr))))
-         (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) i)
+         (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) i)
            (declare (ignore z))
            (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
              (glaw:bbox-translate box scr-x scr-y)))
@@ -40,11 +40,11 @@
          ;; i-j edge
          (let ((box (glaw:create-bbox-from-shape (edition-screen-selection-shape scr)))
                x1 y1 x2 y2)
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) i)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) i)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x1 scr-x y1 scr-y)))
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) j)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) j)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x2 scr-x y2 scr-y)))
@@ -54,11 +54,11 @@
          ;; j-k edge
          (let ((box (glaw:create-bbox-from-shape (edition-screen-selection-shape scr)))
                x1 y1 x2 y2)
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) j)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) j)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x1 scr-x y1 scr-y)))
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) k)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) k)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x2 scr-x y2 scr-y)))
@@ -68,11 +68,11 @@
          ;; k-i edge
          (let ((box (glaw:create-bbox-from-shape (edition-screen-selection-shape scr)))
                x1 y1 x2 y2)
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) k)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) k)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x1 scr-x y1 scr-y)))
-           (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) i)
+           (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) i)
              (declare (ignore z))
              (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
                (setf x2 scr-x y2 scr-y)))
@@ -83,7 +83,7 @@
   (setf (edition-screen-edges scr) (reverse (edition-screen-edges scr))))
 
 (defun edition-screen-render-selection-shape (scr index)
-  (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape scr) index)
+  (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape scr) index)
     (declare (ignore z))
     (multiple-value-bind (scr-x scr-y) (glaw:view-to-screen x y (edition-screen-view scr))
       (if (= (edition-screen-selection scr) index)
@@ -100,7 +100,7 @@
 
 (defun edition-screen-translate-vertex (scr index dx dy)
   (let ((shape (edition-screen-shape scr)))
-    (multiple-value-bind (x y z) (glaw:shape-get-vertex shape index)
+    (multiple-value-bind (x y z) (glaw:shape-get-vertex/values shape index)
       (glaw:shape-set-vertex shape index (+ x dx) (+ y dy) z)))
   (edition-screen-update-boxes scr))
 
@@ -213,7 +213,7 @@
   (loop for i in (edition-screen-creation-boxes it) do
        (glaw:render-bbox i))
   (glaw:set-color/rgb 1.0 1.0 1.0 1.0)
-  (multiple-value-bind (x y z) (glaw:shape-get-vertex (edition-screen-shape it)
+  (multiple-value-bind (x y z) (glaw:shape-get-vertex/values (edition-screen-shape it)
                                                       (edition-screen-selection it))
     (glaw:format-at 100 160 *font* "Selection: ~A;~A;~A" x y z)))
 
