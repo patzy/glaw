@@ -504,3 +504,127 @@
     (gl:material :front-and-back :specular (material-specular mat))
     (gl:material :front-and-back :shininess (material-shininess mat))
     (gl:material :front-and-back :emission (material-emissive mat))))
+
+;;; Shaders
+(defstruct shader
+  source
+  id ;; GL id
+  programs ;; programs this shader is attached to
+  (needs-compile t))
+
+(defun %shader-add-program (shader prg)
+  (push prg (shader-programs shader)))
+
+(defun %shader-remove-program (shader prg)
+  (setf (shader-programs shader) (remove prg (shader-programs shader))))
+
+(defun shader-compile (shader)
+  (assert (and (shader-source shader)
+               (shader-id shader)))
+  (dformat "Compiling shader.~%")
+  (gl:compile-shader (shader-id shader))
+  (dformat "Shader compile log:~%~S~%" (gl:get-shader-info-log (shader-id shader)))
+  (setf (shader-needs-compile shader) nil))
+
+(defun %shader-set-source (shader source)
+  (setf (shader-source shader) source
+        (shader-needs-compile shader) t)
+  (gl:shader-source (shader-id shader) (shader-source shader)))
+
+(defun shader-set-source (shader source &optional compile)
+  (%shader-set-source shader source)
+  (when compile
+    (shader-compile shader)))
+
+(defun create-shader (type &optional source compile)
+  (assert (or (eq type :vertex-shader) (eq type :fragment-shader)))
+  (let ((sh (make-shader)))
+    (setf (shader-id sh) (gl:create-shader type))
+    (when source
+      (shader-set-source sh source))
+    (when compile
+      (shader-compile sh))
+    (dformat "Created shader: ~S~%" sh)
+    sh))
+
+(defun create-shader-from-file (type file &optional compile)
+  (create-shader type (file->strings file) compile))
+
+(defun create-vertex-shader (&optional source compile)
+  (create-shader :vertex-shader source compile))
+
+(defun create-vertex-shader-from-file (file &optional compile)
+  (create-shader-from-file :vertex-shader file compile))
+
+(defun create-fragment-shader (&optional source compile)
+  (create-shader :fragment-shader source compile))
+
+(defun create-fragment-shader-from-file (file &optional compile)
+  (create-shader-from-file :fragment-shader file compile))
+
+;; FIXME: detach before delete?
+(defun destroy-shader (sh)
+  (gl:delete-shader (shader-id sh)))
+
+(defstruct shader-program
+  vertex
+  fragment
+  id
+  uniforms ;; TODO
+  attribs
+  (needs-link t))
+
+(defun shader-program-attach-vertex (prg vtx-shader)
+  (setf (shader-program-vertex prg) vtx-shader
+        (shader-program-needs-link prg) t)
+  (gl:attach-shader (shader-program-id prg) (shader-id vtx-shader))
+  (%shader-add-program vtx-shader prg))
+
+(defun shader-program-detach-vertex (prg)
+  (gl:detach-shader (shader-program-id prg) (shader-id (shader-program-vertex prg)))
+  (%shader-remove-program (shader-program-vertex prg) prg)
+  (setf (shader-program-vertex prg) nil))
+
+(defun shader-program-attach-fragment (prg frag-shader)
+  (setf (shader-program-fragment prg) frag-shader
+        (shader-program-needs-link prg) t)
+  (gl:attach-shader (shader-program-id prg) (shader-id frag-shader))
+  (%shader-add-program frag-shader prg))
+
+(defun shader-program-detach-fragment (prg)
+  (gl:detach-shader (shader-program-id prg) (shader-id (shader-program-fragment prg)))
+  (%shader-remove-program (shader-program-fragment prg) prg)
+  (setf (shader-program-fragment prg) nil))
+
+(defun shader-program-link (prg)
+  (assert (shader-program-id prg))
+  (dformat "Linking shader program.~%")
+  (setf (shader-program-needs-link prg) nil)
+  (gl:link-program (shader-program-id prg))
+  (dformat "Program info log:~%~S~%" (gl:get-program-info-log (shader-program-id prg))))
+
+(defun set-shader-program (prg)
+  (if prg
+      (gl:use-program (shader-program-id prg))
+      (gl:use-program 0)))
+
+(setf *print-circle* t)
+
+(defun create-shader-program (&optional vertex fragment link)
+  (let ((prg (make-shader-program)))
+    (setf (shader-program-id prg) (gl:create-program))
+    (dformat "Created program with id: ~S~%" (shader-program-id prg))
+    (when (and vertex fragment)
+      (shader-program-attach-vertex prg vertex)
+      (shader-program-attach-fragment prg fragment))
+    (when (and vertex fragment link)
+      (shader-program-link prg))
+    (dformat "Created shader program: ~S~%" prg)
+    prg))
+
+(defun destroy-shader-program (prg)
+  (when (shader-program-vertex prg)
+    (shader-program-detach-vertex prg))
+  (when (shader-program-fragment prg)
+    (shader-program-detach-fragment prg))
+  (gl:delete-program (shader-program-id prg)))

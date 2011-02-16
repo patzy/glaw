@@ -6,6 +6,7 @@
 ;; You may use different resources managers at the same time.
 ;; Create or retrieve a resource with USE-RESOURCE
 ;; when you don't need the resource anymore call DROP-RESOURCE
+;; Make resource aliases using ALIAS-RESOURCE
 
 (defstruct resource-manager
   (resources (make-hash-table :test 'equal)))
@@ -44,10 +45,11 @@
   "Returns the actual resource and its associated value-holder as values."
   (gethash id (resource-manager-resources mgr) nil))
 
-;; Some funcs to help working with a resource-manager
+;; Some funcs to help working with a current resource-manager
 (defvar %resource-manager% nil)
 
 (defmacro with-resource-manager (mgr &body body)
+  "Bind MGR as the current resource manager."
   `(let ((%resource-manager% ,mgr))
      ,@body))
 

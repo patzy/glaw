@@ -17,6 +17,7 @@
                          (:file "sprites")
                          (:file "framebuffer")
                          (:file "mesh")
+                         (:file "shaders")
                          (:file "texture")
                          (:file "screens")
                          (:file "text")

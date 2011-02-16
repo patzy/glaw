@@ -6,7 +6,7 @@
 
 (defmethod init-example ((it mesh-viewer))
   (glaw:setup-3d-defaults)
-  (glaw:load-asset "monkey_smooth.obj" :mesh "mesh")
+  (glaw:load-asset "gourd.obj" :mesh "mesh")
   (setf (mesh-viewer-camera it) (glaw:make-3d-view :fov (/ pi 3.0)
                                                    :near 1.0
                                                    :far 1000.0))
