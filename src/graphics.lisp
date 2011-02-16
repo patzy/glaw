@@ -61,7 +61,7 @@
   (gl:enable :depth-test)
   (gl:depth-func :lequal)
   (gl:depth-mask :enable)
-  (gl:enable :cull-face)
+  (gl:disable :cull-face)
   (gl:cull-face :back)
   (gl:enable :lighting)
   (gl:enable :light0)
@@ -470,7 +470,7 @@
                        (aref vertices (+ 2 (* i 3)))))))
 
 
-;;; Material
+;;; Basic material
 (defstruct material
   (ambient #(0.3 0.3 0.3 1.0))
   diffuse ;; nil means same as diffuse
@@ -478,16 +478,20 @@
   (shininess 1.0)
   (emissive #(0.0 0.0 0.0 1.0)))
 
-;; (defun material-nb-textures (mat)
-;;   (length (material-textures mat)))
-
-;; (defun material-texture (mat tex-unit)
-;;   (when (> tex-unit (material-nb-textures mat))
-;;     (error "No texture for unit ~S" tex-unit))
-;;   (nth tex-unit (material-textures mat)))
-
 (defvar +default-material+
   (make-material))
+
+(defun material-set-alpha (mat alpha)
+  "Set material transparency."
+  (setf (color-a (material-ambient mat)) alpha
+        (color-a (material-diffuse mat)) alpha
+        (color-a (material-specular mat)) alpha
+        (color-a (material-emissive mat)) alpha))
+
+(defun material-alpha (mat)
+  (color-a (material-ambient mat)))
+
+(defsetf material-alpha material-set-alpha)
 
 ;;; FIXME: check if material is not already set
 ;;; FIXME: use color material (supposed to be faster)

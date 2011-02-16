@@ -4,6 +4,9 @@
 (setf custom:*merge-pathnames-ansi* t)
 
 ;;; Asset loaders
+;; An asset loader is required to load any resource from disk
+;; It should provide functions for load and unload as well
+;; as a list of supported extensions (or :any)
 (defvar *asset-loaders* (make-hash-table))
 
 (defun make-asset-loader (&key (load nil) (unload nil) (extensions :any))
@@ -64,15 +67,25 @@ against unless EXTENSIONS is :ANY."
              (equal (asset-name it) name))
            *assets*))
 
+(defun %register-asset (asset)
+  (push asset *assets*))
+
+(defun declare-asset (type name file props)
+  (dformat "Registering asset ~S of type ~S located at ~S: ~S~%" name type file props)
+  (%register-asset (make-asset :type type
+                              :name name
+                              :filename file
+                              :alias (key-value :alias props)
+                              :properties props)))
+
 (defun content-manager-parse-asset (decl)
   (let ((type (first decl))
         (props (rest decl)))
-    (push (make-asset :type type
-                      :name (key-value :name props)
-                      :filename (key-value :file props)
-                      :alias (key-value :alias props)
-                      :properties props)
-          *assets*)))
+    (%register-asset (make-asset :type type
+                                 :name (or (key-value :name props) (key-value :file props))
+                                 :filename (key-value :file props)
+                                 :alias (key-value :alias props)
+                                 :properties props))))
 
 (defun configure-content-manager (assets-lst)
   (loop for it in assets-lst
@@ -112,7 +125,7 @@ If load is called directly with a filename, a new ASSET is created and stored in
                                :filename name)
                    (find-asset name))))
     (unless asset
-      (error "Invalid asset, can't load."))
+      (error "Invalid asset, can't load ~S." name))
     ;; FIXME: we need a better way to handle aliases, maybe have support for this
     ;; directly at the resource level
     (when (asset-alias asset)
@@ -132,6 +145,12 @@ If load is called directly with a filename, a new ASSET is created and stored in
             (use-resource identifier (funcall (asset-loader-load loader) pathname)
                           (asset-loader-unload loader))
             (error "No asset loader defined for ~S~%" type))))))
+
+(defun use-asset (identifier &optional res)
+  (with-resource-manager *content-manager*
+    (unless (or res (existing-resource-p identifier))
+      (load-asset identifier))
+    (use-resource identifier res)))
 
 (defun dispose-asset (identifier)
   "Dispose designated asset regardless of its current users."
