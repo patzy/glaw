@@ -1,7 +1,7 @@
 (in-package #:glaw-examples)
 
 (defstruct console
-  (console (glaw::make-console))
+  (console (glaw::make-graphic-console))
   (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)))
 
 (defmethod init-example ((it console))
