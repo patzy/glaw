@@ -2,7 +2,7 @@
 
 ;; Abstract layer for different input handling methods (events, state-based)
 ;; Different methods should be usable together
-;; Note that the actual input values (keysym, keycoe, buttons, state etc) depend on the application
+;; Note that the actual input values (keysym, keycode, buttons, state etc) depend on the application
 ;; and the windowing framework used, here we only provide different input handling methods and
 ;; helpers.
 
