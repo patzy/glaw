@@ -1,5 +1,18 @@
 (in-package #:glaw)
 
+
+ ;; ease(x) = 3 * x^2 - 2 * x^3
+ ;; sin(x) = x - (1/6) * x^3 + (1/120) * x^5 - (1/5040) * x^7 + (1/362880) * x^9
+ ;; cos(x) = 1 - (1/2) * x^2 + (1/24) * x^4 - (1/720) * x^6 + (1/40320) * x^8
+ ;; tan(x) = x + (1/3) * x^3 + (2/15) * x^5 - (17/315) * x^7 + (62/2835) * x^9
+ ;; asin(x) = x + (1/6) * x^3 + (3/40) * x^5 + (5/112) * x^7 + (35/1152) * x^9
+ ;; acos(x) = (1/2) * PI - x - (1/6) * x^3 - (3/40) * x^5 - (5/112) * x^7 - (35/1152) * x^9
+ ;; atan(x) = x - (1/3) * x^3 + (1/5) * x^5 - (1/7) * x^7 + (1/9) * x^9
+ ;; sinh(x) = x + (1/6) * x^3 + (1/120) * x^5 + (1/5040) * x^7 + (1/362880) * x^9
+ ;; cosh(x) = 1 + (1/2) * x^2 + (1/24) * x^4 + (1/720) * x^6 + (1/40320) * x^8
+ ;; tanh(x) = x - (1/3) * x^3 + (2/15) * x^5 - (17/315) * x^7 + (62/2835) * x^9
+
+
 ;;; Misc.
 (defun sign-of (nb)
   (declare (inline sign-of))
@@ -11,6 +24,16 @@
 
 (defun roughly-equal (number-1 number-2)
   (< (abs (- number-1 number-2)) +epsilon+))
+
+(defun linear-interpolation (start end end-ratio)
+  (+ start (* end-ratio (- end start))))
+
+(defun bilinear-interpolation (lower-left lower-right upper-left upper-right
+                               right-ratio upper-ratio)
+  (linear-interpolation
+   (linear-interpolation lower-left lower-right right-ratio)
+   (linear-interpolation upper-left upper-right right-ratio)
+   upper-ratio))
 
 ;;; Angles
 (declaim (inline deg->rad))
