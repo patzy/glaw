@@ -56,39 +56,32 @@
 (defvar *display-width* 0)
 (defvar *display-height* 0)
 
+(defun set-background-color (color)
+  (gl:clear-color (color-r color)
+                  (color-g color)
+                  (color-b color)
+                  0))
+
+(defun set-background-color/rgb (r g b)
+  (gl:clear-color r g b 0))
+
 (defun setup-3d-defaults ()
-  (gl:clear-color 0.3 0.3 0.3 0)
-  (gl:enable :depth-test)
-  (gl:depth-func :lequal)
-  (gl:depth-mask :enable)
-  (gl:disable :cull-face)
-  (gl:cull-face :back)
-  (gl:enable :lighting)
-  (gl:enable :light0)
-  (gl:enable :blend)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:enable :normalize)
-  (gl:shade-model :smooth)
-  (gl:enable :texture-2d)
+  (set-background-color #(0.3 0.3 0.3 0.0))
+  (set-render-state +default-3d-render-state+)
   ;; some default head light
   (gl:matrix-mode :projection)
   (gl:load-identity)
   (gl:matrix-mode :modelview)
   (gl:load-identity)
+  (gl:enable :light0)
   (gl:light :light0 :position #(0.0 0.0 0.0 1.0))
   (gl:light :light0 :ambient #(0.2 0.2 0.2 1.0))
   (gl:light :light0 :diffuse #(0.8 0.8 0.8 1.0))
   (gl:light :light0 :specular #(0.5 0.5 0.5 1.0)))
 
 (defun setup-2d-defaults ()
-  (gl:clear-color 0.3 0.3 0.3 0)
-  (gl:disable :depth-test)
-  (gl:disable :cull-face)
-  (gl:disable :lighting)
-  (gl:disable :light0)
-  (gl:enable :blend)
-  (gl:blend-func :src-alpha :one-minus-src-alpha)
-  (gl:enable :texture-2d))
+  (set-background-color #(0.3 0.3 0.3 0.0))
+  (set-render-state +default-2d-render-state+))
 
 (defun draw-origin (&optional (scale 20.0))
   (gl:with-primitive :lines
@@ -448,28 +441,27 @@
 ;;; Primitive rendering
 ;; TODO: use vertex arrays etc
 (defun render-primitive (indices vertices &key (primitive :triangles)
-                                                colors tex-coords normals)
+                                                colors tex-coords normals
+                                                (start 0) (end (length indices)))
   (gl:with-primitive primitive
-      (loop with dim = (length indices)
-         for index below dim
-         for i = (aref indices index)
-         when colors
-         do (gl:color (aref colors (* i 4))
-                      (aref colors (+ 1 (* i 4)))
-                      (aref colors (+ 2 (* i 4)))
-                      (aref colors (+ 3 (* i 4))))
-         when tex-coords
-         do (gl:tex-coord  (aref tex-coords (* i 2))
-                           (aref tex-coords (+ 1 (* i 2))))
-         when normals
-         do (gl:normal (aref normals (* i 3))
-                       (aref normals (+ 1 (* i 3)))
-                       (aref normals (+ 2 (* i 3))))
-         do (gl:vertex (aref vertices (* i 3))
-                       (aref vertices (+ 1 (* i 3)))
-                       (aref vertices (+ 2 (* i 3)))))))
-
-
+    ;; immediate mode
+    (loop for index from start below end
+       for i = (aref indices index)
+       when colors
+       do (gl:color (aref colors (* i 4))
+                    (aref colors (+ 1 (* i 4)))
+                    (aref colors (+ 2 (* i 4)))
+                    (aref colors (+ 3 (* i 4))))
+       when tex-coords
+       do (gl:tex-coord  (aref tex-coords (* i 2))
+                         (aref tex-coords (+ 1 (* i 2))))
+       when normals
+       do (gl:normal (aref normals (* i 3))
+                     (aref normals (+ 1 (* i 3)))
+                     (aref normals (+ 2 (* i 3))))
+       do (gl:vertex (aref vertices (* i 3))
+                     (aref vertices (+ 1 (* i 3)))
+                     (aref vertices (+ 2 (* i 3)))))))
 ;;; Basic material
 (defstruct material
   (ambient #(0.3 0.3 0.3 1.0))
@@ -628,3 +620,68 @@
   (when (shader-program-fragment prg)
     (shader-program-detach-fragment prg))
   (gl:delete-program (shader-program-id prg)))
+
+;;; Render state
+(defstruct render-state
+  (depth-func :lequal)
+  (depth-write t)
+  (cull-face :back)
+  (blend-func '(:src-alpha :one-minus-src-alpha))
+  (shade-model :smooth)
+  (wireframe nil)
+  (lighting t)
+  (texturing t))
+
+(defvar +default-3d-render-state+
+  (make-render-state :depth-func :lequal
+                     :depth-write t
+                     :cull-face :back
+                     :blend-func nil
+                     :shade-model :smooth
+                     :wireframe nil
+                     :lighting t
+                     :texturing nil))
+(defvar +default-2d-render-state+
+  (make-render-state :depth-func nil
+                     :depth-write nil
+                     :cull-face nil
+                     :blend-func '(:src-alpha :one-minus-src-alpha)
+                     :shade-model :smooth
+                     :wireframe nil
+                     :lighting nil
+                     :texturing nil))
+
+;; TODO: only apply differences from *current-render-state*
+(defun set-render-state (rs)
+  (if (render-state-depth-func rs)
+      (progn (gl:enable :depth-test)
+             (gl:depth-func (render-state-depth-func rs)))
+      (gl:disable :depth-test))
+  (gl:depth-mask (if (render-state-depth-write rs) :enable :disable))
+  (if (render-state-cull-face rs)
+      (progn (gl:enable :cull-face)
+             (gl:cull-face (render-state-cull-face rs)))
+      (gl:disable :cull-face))
+  (if (render-state-blend-func rs)
+      (progn (gl:enable :blend)
+             (gl:blend-func (first (render-state-blend-func rs))
+                           (second (render-state-blend-func rs))))
+      (gl:disable :blend))
+  (gl:shade-model (render-state-shade-model rs))
+  (if (render-state-wireframe rs)
+      (gl:polygon-mode :front-and-back :line)
+      (gl:polygon-mode :front-and-back :fill))
+  (if (render-state-lighting rs)
+      (gl:enable :lighting)
+      (gl:disable :lighting))
+  (if (render-state-texturing rs)
+      (gl:enable :texture-2d)
+      (gl:disable :texture-2d)))
+
+;;; Appearance
+(defstruct appearance
+  (material +default-material+)
+  (textures '())
+  (shader nil)
+  (render-state +default-3d-render-state+)
+  (next nil))

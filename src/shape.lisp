@@ -1,8 +1,6 @@
 (in-package :glaw)
 
-
 ;;; Shapes management
-;; (OpenGL VA format)
 (defstruct shape
   (primitive :triangle-strip)
   vertices   ;; x,y,z
