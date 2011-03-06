@@ -387,7 +387,7 @@
 (defun select-framebuffer (fb)
   (gl:bind-framebuffer-ext :framebuffer-ext (if fb (framebuffer-index fb) 0)))
 
-;;; Primitive rendering
+;;; Vertex Buffer
 (defstruct buffer
   index)
 
@@ -396,6 +396,12 @@
           (if colors     #x02 #x00)
           (if tex-coords #x04 #x00)
           (if normals    #x08 #x00)))
+
+(defun vertex-size (fmt)
+  (+ (if (vertex-has-vertices fmt) 3 0)
+     (if (vertex-has-colors fmt) 4 0)
+     (if (vertex-has-tex-coords fmt) 2 0)
+     (if (vertex-has-normals fmt) 3 0)))
 
 (defun vertex-has-vertices (fmt)
   (logbitp 0 fmt))
@@ -429,7 +435,7 @@
                  (gl:enable-client-state :color-array)
                  (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
                (when (vertex-has-tex-coords (vertex-buffer-format vb))
-                 (gl:active-texture 0)
+                 (gl:active-texture :texture0)
                  (%gl:tex-coord-pointer 2 :float 0 (cffi:make-pointer (* offset elem-size)))
                  (gl:enable-client-state :texture-coord-array)
                  (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
@@ -442,14 +448,13 @@
              (gl:disable-client-state :texture-coord-array)
              (gl:disable-client-state :normal-array))))
 
-
-(defun create-vertex-buffer (vertices &key colors tex-coords normals (usage :stream-draw))
-  (let* ((buff (car (gl:gen-buffers 1)))
-         (float-size 4)
-         (size (+ (* (length vertices) 3 float-size)
-                  (* (length colors) 4 float-size)
-                  (* (length tex-coords) 2 float-size)
-                  (* (length normals) 3 float-size))))
+(defun create-empty-vertex-buffer (nb-vertices &key (usage :stream-draw)
+                                   (format (make-vertex-format :vertices t :normals t)))
+    (let* ((buff (car (gl:gen-buffers 1)))
+           (float-size 4)
+           (size (* (vertex-size format) nb-vertices float-size)))
+    (dformat "Creating vertex buffer: ~S~%" size)
+    (dformat "Recommended # of vertices: ~S~%" (gl:get-integer :max-elements-vertices))
     (gl:bind-buffer :array-buffer buff)
     (%gl:buffer-data :array-buffer
                      size
@@ -458,34 +463,51 @@
     (assert (= (gl::get-buffer-parameter :array-buffer :buffer-size :int)
                size))
     (let ((vb (make-vertex-buffer :index buff
-                                  :nb-vertices (/ (length vertices) 3)
-                                  :format (make-vertex-format :vertices vertices
-                                                              :colors colors
-                                                              :tex-coords tex-coords
-                                                              :normals normals))))
-      (vertex-buffer-update vb vertices 0)
-      (let ((offset (* (vertex-buffer-nb-vertices vb) 3)))
-        (when colors
-          (vertex-buffer-update vb colors offset)
-          (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
-        (when tex-coords
-          (vertex-buffer-update vb tex-coords offset)
-          (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
-        (when normals
-          (vertex-buffer-update vb normals offset)
-          (incf offset (* (vertex-buffer-nb-vertices vb) 3))))
+                                  :nb-vertices nb-vertices
+                                  :format format)))
       vb)))
 
 
+(defun create-vertex-buffer (vertices &key colors tex-coords normals (usage :stream-draw))
+  (let* ((fmt (make-vertex-format :vertices vertices :colors colors :tex-coords tex-coords
+                                  :normals normals))
+          (vb (create-empty-vertex-buffer (/ (length vertices) 3) :usage usage
+                                          :format fmt)))
+    (vertex-buffer-update-components vb 0 vertices :colors colors
+                                      :tex-coords tex-coords :normals normals)
+    vb))
+
 (defun vertex-buffer-update (vb array &optional (offset 0))
+  (assert (< (+ offset (length array)) (vertex-buffer-nb-vertices vb)))
   (gl:bind-buffer :array-buffer (vertex-buffer-index vb))
   (gl:with-mapped-buffer (p :array-buffer :write-only)
     (loop for i below (length array)
          do (setf (cffi:mem-aref p :float (+ offset i)) (float (aref array i) 0.0)))))
 
-(defun destroy-vertex-buffer (vb)
-  (gl:delete-buffers (vertex-buffer-index vb)))
+(defun vertex-buffer-update-components (vb offset vertices &key colors tex-coords normals)
+  (assert (= (vertex-buffer-format vb)
+             (make-vertex-format :vertices vertices
+                                 :colors colors
+                                 :tex-coords tex-coords
+                                 :normals normals)))
+  (vertex-buffer-update vb vertices offset)
+  (incf offset (* (vertex-buffer-nb-vertices vb) 3))
+  (when colors
+    (vertex-buffer-update vb colors offset)
+    (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
+  (when tex-coords
+    (vertex-buffer-update vb tex-coords offset)
+    (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
+  (when normals
+    (vertex-buffer-update vb normals offset)
+    (incf offset (* (vertex-buffer-nb-vertices vb) 3)))
+  vb)
 
+
+(defun destroy-vertex-buffer (vb)
+  (gl:delete-buffers (list (vertex-buffer-index vb))))
+
+;;; Index Buffer
 (defstruct (index-buffer (:include buffer))
   nb-indices)
 
@@ -500,23 +522,28 @@
              (gl:enable-client-state :index-array))
       (gl:disable-client-state :index-array)))
 
-
-(defun create-index-buffer (indices &key (usage :static-draw))
-  (let* ((buff (car (gl:gen-buffers 1))))
-    (dformat "Creating index buffer: ~S~%" (length indices))
+(defun create-empty-index-buffer (nb-indices &key (usage :static-draw))
+  (let ((buff (car (gl:gen-buffers 1))))
+    (dformat "Creating index buffer: ~S~%" nb-indices)
+    (dformat "Recommended # of indices: ~S~%" (gl:get-integer :max-elements-indices))
     (gl:bind-buffer :element-array-buffer buff)
     (%gl:buffer-data :element-array-buffer
-                     (* (length indices) 2) ;; unsigned short
+                     (* nb-indices 2) ;; unsigned short
                      (cffi:null-pointer) ;; just allocating space
                      usage)
     (assert (= (gl::get-buffer-parameter :element-array-buffer :buffer-size :int)
-               (* (length indices) 2)))
+               (* nb-indices 2)))
     (let ((ib (make-index-buffer :index buff
-                                 :nb-indices (length indices))))
-      (index-buffer-update ib indices 0)
+                                 :nb-indices nb-indices)))
       ib)))
 
+(defun create-index-buffer (indices &key (usage :static-draw))
+  (let ((ib (create-empty-index-buffer (length indices) :usage usage)))
+    (index-buffer-update ib indices 0)
+    ib))
+
 (defun index-buffer-update (ib array &optional (offset 0))
+  (assert (< (+ offset (length array)) (index-buffer-nb-indices ib)))
   (gl:bind-buffer :element-array-buffer (index-buffer-index ib))
   (gl:with-mapped-buffer (p :element-array-buffer :write-only)
     (loop for i below (length array)
@@ -524,13 +551,14 @@
 
 
 (defun destroy-index-buffer (ib)
-  (gl:delete-buffers (index-buffer-index ib)))
+  (gl:delete-buffers (list (index-buffer-index ib))))
 
+;;; Primitive rendering
 (defun render-primitive (indices vertices &key (primitive :triangles)
                                                 colors tex-coords normals
                                                 (start 0) (end (length indices)))
+  "Immediate mode rendering."
   (gl:with-primitive primitive
-    ;; immediate mode
     (loop for index from start below end
        for i = (aref indices index)
        when colors
@@ -550,10 +578,16 @@
                      (aref vertices (+ 2 (* i 3)))))))
 
 (defstruct display-list
-  (index -1)
-  primitive
+  (index -1) ;; GL display list index
+  (primitive :triangles)
   start end
   vb ib)
+
+(defun destroy-display-list (dl)
+  (if (display-list-vb dl)
+      (progn (destroy-vertex-buffer (display-list-vb dl))
+             (destroy-index-buffer (display-list-ib dl)))
+      (gl:delete-lists (display-list-index dl) 1)))
 
 (defun load-primitive (indices vertices &key (primitive :triangles)
                                              colors tex-coords normals
@@ -592,6 +626,50 @@
              (set-index-buffer nil)
              (%index-buffer-setup-arrays nil))
       (gl:call-list (display-list-index dl))))
+
+;;; Batching
+(defstruct (primitive-batch (:include display-list))
+  (vb-offset 0)
+  (ib-offset 0)
+  items)
+
+(defun create-primitive-batch (primitive vfmt &key (max-vertices 10000)
+                                                   (max-indices 10000)
+                                                   (vertex-usage :stream-draw)
+                                                   (index-usage :stream-draw))
+  (let ((batch (make-primitive-batch :vb-offset 0 :ib-offset 0 :primitive primitive
+                                     :items '() :start 0 :end 0)))
+    (setf (primitive-batch-vb batch) (create-empty-vertex-buffer max-vertices :usage vertex-usage
+                                                           :format vfmt)
+          (primitive-batch-ib batch) (create-empty-index-buffer max-indices :usage index-usage))
+    batch))
+
+(defun destroy-primitive-batch (batch)
+  (destroy-display-list batch))
+
+(defun primitive-batch-append (batch indices vertices &key colors tex-coords normals)
+  (vertex-buffer-update-components (primitive-batch-vb batch)
+                                    (primitive-batch-vb-offset batch)
+                                    vertices :colors colors :tex-coords tex-coords :normals normals)
+  (incf (primitive-batch-vb-offset batch)
+        (* (vertex-size (vertex-buffer-format (primitive-batch-vb batch))) (/ (length vertices) 3)))
+  (index-buffer-update (primitive-batch-ib batch) indices (primitive-batch-ib-offset batch))
+  (incf (primitive-batch-ib-offset batch) (length indices))
+  (let ((item (cons (primitive-batch-end batch)
+                    (length indices))))
+    (incf (primitive-batch-end batch) (length indices))
+    (setf (primitive-batch-items batch) (append (primitive-batch-items batch)
+                                                (list item)))))
+
+(defun primitive-batch-clear (batch)
+  (setf (primitive-batch-items batch) (list)
+        (primitive-batch-vb-offset batch) 0
+        (primitive-batch-ib-offset batch) 0
+        (primitive-batch-start batch) 0
+        (primitive-batch-end batch) 0))
+
+(defun primitive-batch-render (batch)
+  (call-primitive batch))
 
 ;;; Basic material
 (defstruct material
