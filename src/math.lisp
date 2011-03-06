@@ -20,7 +20,7 @@
       :positive
       :negative))
 
-(defconstant +epsilon+ 0.0000001)
+(define-constant +epsilon+ 0.0000001)
 
 (defun roughly-equal (number-1 number-2)
   (< (abs (- number-1 number-2)) +epsilon+))
@@ -463,9 +463,9 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
 (defstruct (axis (:type (vector float))
                  (:include vector-3d)))
 
-(defconstant +x-axis+ #(1.0 0.0 0.0))
-(defconstant +y-axis+ #(0.0 1.0 0.0))
-(defconstant +z-axis+ #(0.0 0.0 1.0))
+(define-constant +x-axis+ #(1.0 0.0 0.0))
+(define-constant +y-axis+ #(0.0 1.0 0.0))
+(define-constant +z-axis+ #(0.0 0.0 1.0))
 
 ;;; Quaternions
 (defstruct (quaternion (:type (vector float))
@@ -561,7 +561,7 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
   (r02 0.0) (r12 0.0) (r22 1.0) (z2 0.0)
   (tx 0.0) (ty 0.0) (tz 0.0) (one 1.0))
 
-(defconstant +matrix-identity+
+(define-constant +matrix-identity+
   #(1.0 0.0 0.0 0.0
     0.0 1.0 0.0 0.0
     0.0 0.0 1.0 0.0
@@ -715,7 +715,7 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
         (basis-r20 basis) 0.0
         (basis-r21 basis) 0.0))
 
-(defconstant +basis-sin-precision+ 0.999999999) ;; 1.0-1.0e-9
+(define-constant +basis-sin-precision+ 0.999999999) ;; 1.0-1.0e-9
 
 ;;      _                                _
 ;;     |  c2c3  s1s2c3-c1s3  s1s3+c1s2c3  |  s1,c1 : roll
