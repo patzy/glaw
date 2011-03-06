@@ -1,5 +1,9 @@
 (in-package #:glaw)
 
+(defmacro define-constant (name value &optional doc)
+  `(defconstant ,name (if (boundp ',name) (symbol-value ',name) ,value)
+     ,@(when doc (list doc))))
+
 (defun ensure-adjustable (vec)
   (make-array (length vec) :fill-pointer (length vec) :initial-contents vec
               :adjustable t))
