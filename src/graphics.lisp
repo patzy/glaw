@@ -1,60 +1,16 @@
 (in-package :glaw)
 
-;; Framerate utils
-(defstruct frame-counter
-  (sample-size 2.0) ;; seconds
-  (min most-positive-single-float)
-  (max most-negative-single-float)
-  (sum 0.0)
-  (nb-frames 0)
-  (average 0.0)
-  (time-ratio 0.5)
-  (last-render-time 1.0))
-
-(defvar *frame-counter* (make-frame-counter)
-  "Default framerate counter.")
-
-(defun frame-counter-update (counter dt)
-  "Updates framerate informations. DT is the elapsed time since last frame was rendered."
-  (setf (frame-counter-last-render-time counter) (+ (* dt (frame-counter-time-ratio counter))
-                                                    (* (frame-counter-last-render-time counter)
-                                                       (- 1.0 (frame-counter-time-ratio counter)))))
-  (incf (frame-counter-nb-frames counter))
-  (incf (frame-counter-sum counter) dt)
-  (when (>= (frame-counter-sum counter) (frame-counter-sample-size counter))
-    (let ((fps (/ (frame-counter-nb-frames counter) (frame-counter-sum counter))))
-      (when (< fps (frame-counter-min counter))
-        (setf (frame-counter-min counter) fps))
-      (when (> fps (frame-counter-max counter))
-        (setf (frame-counter-max counter) fps))
-      (setf (frame-counter-nb-frames counter) 0
-            (frame-counter-sum counter) 0.0
-            (frame-counter-average counter) fps))))
-
-(defun frame-counter-current (counter)
-  (/ 1.0 (frame-counter-last-render-time counter)))
-
-(let ((last-fps-update (get-internal-real-time)))
-  (defun update-fps ()
-    (let ((dt (/ (- (get-internal-real-time) last-fps-update) internal-time-units-per-second)))
-      (frame-counter-update *frame-counter* dt)
-      (setf last-fps-update (get-internal-real-time)))))
-
-(defun current-fps ()
-  (frame-counter-current *frame-counter*))
-
-(defun min-fps ()
-  (frame-counter-min *frame-counter*))
-
-(defun max-fps ()
-  (frame-counter-max *frame-counter*))
-
-(defun avg-fps ()
-  (frame-counter-average *frame-counter*))
-
 ;;; General rendering
-(defvar *display-width* 0)
-(defvar *display-height* 0)
+(defvar *display-width* 800)
+(defvar *display-height* 600)
+
+(defun begin-draw ()
+  (gl:clear :color-buffer :depth-buffer))
+
+(defun end-draw ()
+  (update-fps)
+  (gl:flush))
+
 
 (defun set-background-color (color)
   (gl:clear-color (color-r color)
@@ -106,13 +62,6 @@
   (gl:load-matrix proj-mtx)
   (gl:matrix-mode :modelview)
   (gl:load-matrix view-mtx))
-
-(defun begin-draw ()
-  (gl:clear :color-buffer :depth-buffer))
-
-(defun end-draw ()
-  (update-fps)
-  (gl:flush))
 
 ;;; Colors helpers
 (defstruct (color (:type (vector float)))
@@ -269,7 +218,7 @@
   "Create a new GL texture. Texture's origin is bottom-left."
   (let ((tex (apply 'make-texture :index (first (gl:gen-textures 1))
                                   :width width :height height
-                                  :bpp bpp :data data
+                                  :bpp bpp ;:data data
                                   args)))
     (select-texture tex)
     (gl:tex-image-2d :texture-2d 0 (texture-internal-format tex)
@@ -430,7 +379,7 @@
                       :colors (make-array 4) :depth nil :stencil nil)))
 
 (defun destroy-framebuffer (fb)
-  (gl:delete-framebuffers-ext 1 (framebuffer-index fb)))
+  (gl:delete-framebuffers-ext (framebuffer-index fb)))
 
 (defvar *selected-framebuffer-index* nil
   "Currently selected framebuffer object index.")
@@ -439,7 +388,144 @@
   (gl:bind-framebuffer-ext :framebuffer-ext (if fb (framebuffer-index fb) 0)))
 
 ;;; Primitive rendering
-;; TODO: use vertex arrays etc
+(defstruct buffer
+  index)
+
+(defun make-vertex-format (&key vertices colors tex-coords normals)
+  (logior (if vertices   #x01 #x00)
+          (if colors     #x02 #x00)
+          (if tex-coords #x04 #x00)
+          (if normals    #x08 #x00)))
+
+(defun vertex-has-vertices (fmt)
+  (logbitp 0 fmt))
+
+(defun vertex-has-colors (fmt)
+  (logbitp 1 fmt))
+
+(defun vertex-has-tex-coords (fmt)
+  (logbitp 2 fmt))
+
+(defun vertex-has-normals (fmt)
+  (logbitp 3 fmt))
+
+(defstruct (vertex-buffer (:include buffer))
+  nb-vertices
+  format)
+
+(defun set-vertex-buffer (vb)
+  (if vb
+      (gl:bind-buffer :array-buffer (vertex-buffer-index vb))
+      (gl:bind-buffer :array-buffer 0)))
+
+(defun %vertex-buffer-setup-arrays (vb)
+  (if vb
+      (progn (%gl:vertex-pointer 3 :float 0 (cffi:null-pointer))
+             (gl:enable-client-state :vertex-array)
+             (let ((offset (* (vertex-buffer-nb-vertices vb) 3))
+                   (elem-size 4))
+               (when (vertex-has-colors (vertex-buffer-format vb))
+                 (%gl:color-pointer 4 :float 0 (cffi:make-pointer (* offset elem-size)))
+                 (gl:enable-client-state :color-array)
+                 (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
+               (when (vertex-has-tex-coords (vertex-buffer-format vb))
+                 (gl:active-texture 0)
+                 (%gl:tex-coord-pointer 2 :float 0 (cffi:make-pointer (* offset elem-size)))
+                 (gl:enable-client-state :texture-coord-array)
+                 (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
+               (when (vertex-has-normals (vertex-buffer-format vb))
+                 (%gl:normal-pointer :float 0 (cffi:make-pointer (* offset elem-size)))
+                 (gl:enable-client-state :normal-array)
+                 (incf offset (* (vertex-buffer-nb-vertices vb) 2)))))
+      (progn (gl:disable-client-state :vertex-array)
+             (gl:disable-client-state :color-array)
+             (gl:disable-client-state :texture-coord-array)
+             (gl:disable-client-state :normal-array))))
+
+
+(defun create-vertex-buffer (vertices &key colors tex-coords normals (usage :stream-draw))
+  (let* ((buff (car (gl:gen-buffers 1)))
+         (float-size 4)
+         (size (+ (* (length vertices) 3 float-size)
+                  (* (length colors) 4 float-size)
+                  (* (length tex-coords) 2 float-size)
+                  (* (length normals) 3 float-size))))
+    (gl:bind-buffer :array-buffer buff)
+    (%gl:buffer-data :array-buffer
+                     size
+                     (cffi:null-pointer) ;; just allocating space
+                     usage)
+    (assert (= (gl::get-buffer-parameter :array-buffer :buffer-size :int)
+               size))
+    (let ((vb (make-vertex-buffer :index buff
+                                  :nb-vertices (/ (length vertices) 3)
+                                  :format (make-vertex-format :vertices vertices
+                                                              :colors colors
+                                                              :tex-coords tex-coords
+                                                              :normals normals))))
+      (vertex-buffer-update vb vertices 0)
+      (let ((offset (* (vertex-buffer-nb-vertices vb) 3)))
+        (when colors
+          (vertex-buffer-update vb colors offset)
+          (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
+        (when tex-coords
+          (vertex-buffer-update vb tex-coords offset)
+          (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
+        (when normals
+          (vertex-buffer-update vb normals offset)
+          (incf offset (* (vertex-buffer-nb-vertices vb) 3))))
+      vb)))
+
+
+(defun vertex-buffer-update (vb array &optional (offset 0))
+  (gl:bind-buffer :array-buffer (vertex-buffer-index vb))
+  (gl:with-mapped-buffer (p :array-buffer :write-only)
+    (loop for i below (length array)
+         do (setf (cffi:mem-aref p :float (+ offset i)) (float (aref array i) 0.0)))))
+
+(defun destroy-vertex-buffer (vb)
+  (gl:delete-buffers (vertex-buffer-index vb)))
+
+(defstruct (index-buffer (:include buffer))
+  nb-indices)
+
+(defun set-index-buffer (ib)
+  (if ib
+      (gl:bind-buffer :element-array-buffer (index-buffer-index ib))
+      (gl:bind-buffer :array-buffer 0)))
+
+(defun %index-buffer-setup-arrays (ib)
+  (if ib
+      (progn (%gl:index-pointer :short 0 (cffi:null-pointer))
+             (gl:enable-client-state :index-array))
+      (gl:disable-client-state :index-array)))
+
+
+(defun create-index-buffer (indices &key (usage :static-draw))
+  (let* ((buff (car (gl:gen-buffers 1))))
+    (dformat "Creating index buffer: ~S~%" (length indices))
+    (gl:bind-buffer :element-array-buffer buff)
+    (%gl:buffer-data :element-array-buffer
+                     (* (length indices) 2) ;; unsigned short
+                     (cffi:null-pointer) ;; just allocating space
+                     usage)
+    (assert (= (gl::get-buffer-parameter :element-array-buffer :buffer-size :int)
+               (* (length indices) 2)))
+    (let ((ib (make-index-buffer :index buff
+                                 :nb-indices (length indices))))
+      (index-buffer-update ib indices 0)
+      ib)))
+
+(defun index-buffer-update (ib array &optional (offset 0))
+  (gl:bind-buffer :element-array-buffer (index-buffer-index ib))
+  (gl:with-mapped-buffer (p :element-array-buffer :write-only)
+    (loop for i below (length array)
+         do (setf (cffi:mem-aref p :short (+ offset i)) (aref array i)))))
+
+
+(defun destroy-index-buffer (ib)
+  (gl:delete-buffers (index-buffer-index ib)))
+
 (defun render-primitive (indices vertices &key (primitive :triangles)
                                                 colors tex-coords normals
                                                 (start 0) (end (length indices)))
@@ -462,6 +548,51 @@
        do (gl:vertex (aref vertices (* i 3))
                      (aref vertices (+ 1 (* i 3)))
                      (aref vertices (+ 2 (* i 3)))))))
+
+(defstruct display-list
+  (index -1)
+  primitive
+  start end
+  vb ib)
+
+(defun load-primitive (indices vertices &key (primitive :triangles)
+                                             colors tex-coords normals
+                                             (start 0) (end (length indices))
+                                             use-buffers)
+  (let ((dl (make-display-list)))
+    (if use-buffers
+        (setf (display-list-vb dl) (create-vertex-buffer vertices
+                                                         :colors colors
+                                                         :tex-coords tex-coords
+                                                         :normals normals
+                                                         :usage :static-draw)
+              (display-list-ib dl) (create-index-buffer indices)
+              (display-list-primitive dl) primitive
+              (display-list-start dl) start
+              (display-list-end dl) end)
+        (progn (setf (display-list-index dl) (gl:gen-lists 1))
+               (gl:new-list (display-list-index dl) :compile)
+               (render-primitive indices vertices :primitive primitive
+                                 :colors colors :tex-coords tex-coords :normals normals
+                                 :start start :end end)
+               (gl:end-list)))
+    dl))
+
+(defun call-primitive (dl)
+  (if (display-list-vb dl)
+      (progn (set-vertex-buffer (display-list-vb dl))
+             (%vertex-buffer-setup-arrays (display-list-vb dl))
+             (set-index-buffer (display-list-ib dl))
+             (%index-buffer-setup-arrays (display-list-ib dl))
+             (%gl:draw-arrays (display-list-primitive dl)
+                              (display-list-start dl)
+                              (- (display-list-end dl) (display-list-start dl)))
+             (set-vertex-buffer nil)
+             (%vertex-buffer-setup-arrays nil)
+             (set-index-buffer nil)
+             (%index-buffer-setup-arrays nil))
+      (gl:call-list (display-list-index dl))))
+
 ;;; Basic material
 (defstruct material
   (ambient #(0.3 0.3 0.3 1.0))
@@ -678,10 +809,3 @@
       (gl:enable :texture-2d)
       (gl:disable :texture-2d)))
 
-;;; Appearance
-(defstruct appearance
-  (material +default-material+)
-  (textures '())
-  (shader nil)
-  (render-state +default-3d-render-state+)
-  (next nil))
