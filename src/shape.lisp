@@ -9,6 +9,51 @@
   tex-coords ;; u,v
   indices)
 
+(defun create-shape (nb-vertices nb-indices &key color texture normals
+                                             (primitive :triangles))
+  (make-shape :primitive primitive
+              :vertices (make-array (* nb-vertices 3)
+                                    :element-type 'float
+                                    ;;:adjustable t
+                                    :fill-pointer 0)
+              :normals (when normals
+                         (make-array (* nb-vertices 3)
+                                     :element-type 'float
+                                     ;;:adjustable t
+                                     :fill-pointer 0))
+              :colors (when color
+                        (make-array (* nb-vertices 4)
+                                    :element-type 'float
+                                    ;;:adjustable t
+                                    :fill-pointer 0))
+              :tex-coords (when texture
+                            (make-array (* nb-vertices 2)
+                                        :element-type 'float
+                                        ;;:adjustable t
+                                        :fill-pointer 0))
+              :indices (make-array nb-indices
+                                   :element-type 'unsigned-byte
+                                   ;;:adjustable t
+                                   :fill-pointer 0)))
+
+(defun create-shape-from-arrays (indices vertices colors tex-coords normals
+                                 &optional (primitive :triangles))
+  (make-shape :primitive primitive
+              :indices indices
+              :vertices vertices
+              :colors colors
+              :tex-coords tex-coords
+              :normals normals))
+
+(defun shape-has-color (shape)
+  (not (null (shape-colors shape))))
+
+(defun shape-has-texture (shape)
+  (not (null (shape-tex-coords shape))))
+
+(defun shape-has-normals (shape)
+  (not (null (shape-normals shape))))
+
 (defun %vertex-data-from-face-data (data indices)
   "Linearize per face data to per vertex mode."
   ;; FIXME: set element-type from DATA
@@ -58,7 +103,13 @@
           (aref (shape-vertices shape) (+ 1 (* index 3)))
           (aref (shape-vertices shape) (+ 2 (* index 3)))))
 
-(defun shape-set-color (shape index r g b &optional (a 0.0))
+(defun shape-set-color (shape index color)
+  (setf (aref (shape-colors shape) (* index 4)) (aref color 0)
+        (aref (shape-colors shape) (+ 1 (* index 4))) (aref color 1)
+        (aref (shape-colors shape) (+ 2 (* index 4))) (aref color 2)
+        (aref (shape-colors shape) (+ 3 (* index 4))) (aref color 3)))
+
+(defun shape-set-color/rgb (shape index r g b &optional (a 0.0))
   (setf (aref (shape-colors shape) (* index 4)) r
         (aref (shape-colors shape) (+ 1 (* index 4))) g
         (aref (shape-colors shape) (+ 2 (* index 4))) b
@@ -137,51 +188,6 @@
                   (+ (vector-3d-y vertex) (vector-3d-y normal))
                   (+ (vector-3d-z vertex) (vector-3d-z normal))))
   (gl:end))
-
-(defun create-shape (nb-vertices nb-indices &key color texture normals
-                                             (primitive :triangles))
-  (make-shape :primitive primitive
-              :vertices (make-array (* nb-vertices 3)
-                                    ;;:element-type 'single-float
-                                    :adjustable t
-                                    :fill-pointer 0)
-              :normals (when normals
-                         (make-array (* nb-vertices 3)
-                                     ;;:element-type 'single-float
-                                     :adjustable t
-                                     :fill-pointer 0))
-              :colors (when color
-                        (make-array (* nb-vertices 4)
-                                    ;;:element-type 'single-float
-                                    :adjustable t
-                                    :fill-pointer 0))
-              :tex-coords (when texture
-                            (make-array (* nb-vertices 2)
-                                        ;;:element-type 'single-float
-                                    :adjustable t
-                                        :fill-pointer 0))
-              :indices (make-array nb-indices
-                                   :element-type 'unsigned-byte
-                                   :adjustable t
-                                   :fill-pointer 0)))
-
-(defun create-shape-from-arrays (indices vertices colors tex-coords normals
-                                 &optional (primitive :triangles))
-  (make-shape :primitive primitive
-              :indices indices
-              :vertices vertices
-              :colors colors
-              :tex-coords tex-coords
-              :normals normals))
-
-(defun shape-has-color (shape)
-  (not (null (shape-colors shape))))
-
-(defun shape-has-texture (shape)
-  (not (null (shape-tex-coords shape))))
-
-(defun shape-has-normals (shape)
-  (not (null (shape-normals shape))))
 
 ;; FIXME: this is sloooooooowww, we can probably optimize this
 (defun shape-compact-vertices (shape &key ignore-colors
@@ -284,18 +290,6 @@
        do (setf (aref (shape-normals shape) i)
                 (vector-3d-scale (aref (shape-normals shape) i) -1.0))))
 
-(defun shape-ensure-adjustable (shape)
-  (when (shape-vertices shape)
-    (setf (shape-vertices shape) (ensure-adjustable (shape-vertices shape))))
-  (when (shape-normals shape)
-    (setf (shape-normals shape) (ensure-adjustable (shape-normals shape))))
-  (when (shape-colors shape)
-    (setf (shape-colors shape) (ensure-adjustable (shape-colors shape))))
-  (when (shape-tex-coords shape)
-    (setf (shape-tex-coords shape) (ensure-adjustable (shape-tex-coords shape))))
-  (when (shape-indices shape)
-    (setf (shape-indices shape) (ensure-adjustable (shape-indices shape)))))
-
 (defun shape-add-vertex (shape x y &optional (z 0.0))
   ;;(declare (type single-float x y z))
   (vector-push-extend x (shape-vertices shape))
@@ -335,19 +329,7 @@
   (shape-add-vertex shape x y z)
   (shape-add-indices shape (fill-pointer (shape-indices shape))))
 
-(defasset :shape '("shape")
-  ;; load
-  (lambda (filename)
-    (with-open-file (in filename :direction :input)
-      ;; FIXME: unable to modify loaded shape (no fill-pointer)
-      (read in)))
-  ;; unload
-  (lambda (shape)
-    ;; nothing to do
-    (declare (ignore shape))
-    (values)))
-
-
+;;; Predefined shapes helpers
 (defun create-grid-shape (width height step-x step-y
                           &key (start-x 0) (start-y 0)
                                (altitude 0.0) color texture)
@@ -410,7 +392,7 @@
     shape))
 
 (defun create-rectangle-shape (left bottom right top &key (filled t)
-                                                          tex-width tex-height)
+                                                          tex-width tex-height color)
   (let ((shape (create-shape 4 5
                              :color nil
                              :texture t
@@ -418,13 +400,17 @@
         (width (- right left))
         (height (- top bottom)))
   (shape-add-vertex/index shape left bottom)
+  (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape 0.0 0.0)
   (shape-add-vertex/index shape right bottom)
+  (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0) 0.0)
   (shape-add-vertex/index shape right top)
+  (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0)
                               (if tex-height (/ height tex-height) 1.0))
   (shape-add-vertex/index shape left top)
+  (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
   (shape-add-indices shape 0)
   shape))
@@ -542,124 +528,3 @@
     (shape-add-indices shape 20 21 22 20 22 23)
 
     shape))
-
-;;; Bounding box
-(defstruct bbox
-  "Axis Aligned Bounding Box."
-  valid
-  x-min y-min z-min
-  x-max y-max z-max)
-
-(defun bbox-invalidate (bbox)
-  (setf (bbox-valid bbox) nil))
-
-(defun render-bbox (bbox)
-  (gl:begin :line-strip)
-  (gl:vertex (bbox-x-min bbox) (bbox-y-max bbox))
-  (gl:vertex (bbox-x-max bbox) (bbox-y-max bbox))
-  (gl:vertex (bbox-x-max bbox) (bbox-y-min bbox))
-  (gl:vertex (bbox-x-min bbox) (bbox-y-min bbox))
-  (gl:vertex (bbox-x-min bbox) (bbox-y-max bbox))
-  (gl:end))
-
-(defun bbox-intersect-p (bbox-1 bbox-2)
-  (and (coords-overlap-p (bbox-x-min bbox-1) (bbox-x-max bbox-1)
-                         (bbox-x-min bbox-2) (bbox-x-max bbox-2))
-       (coords-overlap-p (bbox-y-min bbox-1) (bbox-y-max bbox-1)
-                         (bbox-y-min bbox-2) (bbox-y-max bbox-2))))
-
-(defun bbox-inside-p (bbox x y)
-  (and (< (bbox-x-min bbox) x (bbox-x-max bbox))
-       (< (bbox-y-min bbox) y (bbox-y-max bbox))))
-
-;; TODO: have this for both 2D and 3D views
-(defun bbox-visible-p (bbox view)
-  (let ((view-box (make-bbox :valid t
-                             :z-min 0.0 :z-max 0.0
-                             :x-min (2d-view-left view)
-                             :x-max (2d-view-right view)
-                             :y-min (2d-view-bottom view)
-                             :y-max (2d-view-top view))))
-    (bbox-intersect-p bbox view-box)))
-
-(defun bbox-update (bbox x y &optional (z 0.0))
-  ;;(declare (type single-float x y z))
-  (if (bbox-valid bbox)
-      (progn (when (< x (bbox-x-min bbox))
-               (setf (bbox-x-min bbox) x))
-             (when (< y (bbox-y-min bbox))
-               (setf (bbox-y-min bbox) y))
-             (when (< z (bbox-z-min bbox))
-               (setf (bbox-z-min bbox) z))
-             (when (> x (bbox-x-max bbox))
-               (setf (bbox-x-max bbox) x))
-             (when (> y (bbox-y-max bbox))
-               (setf (bbox-y-max bbox) y))
-             (when (> z (bbox-z-max bbox))
-               (setf (bbox-z-max bbox) z)))
-      (progn (setf (bbox-x-min bbox) x
-                   (bbox-y-min bbox) y
-                   (bbox-z-min bbox) z
-                   (bbox-x-max bbox) x
-                   (bbox-y-max bbox) y
-                   (bbox-z-max bbox) z
-                   (bbox-valid bbox) t))))
-
-(defun bbox-update/shape (bbox shape)
-  (loop for i from 0 below (shape-nb-vertices shape) do
-       (bbox-update bbox (aref (shape-vertices shape) (* i 3))
-                         (aref (shape-vertices shape) (+ (* i 3) 1))
-                         (aref (shape-vertices shape) (+ (* i 3) 2)))))
-
-(defun bbox-overwrite/shape (bbox shape)
-  (bbox-invalidate bbox)
-  (bbox-update/shape bbox shape))
-
-(defun bbox-translate (bbox dx dy &optional (dz 0.0))
-  (incf (bbox-x-min bbox) dx)
-  (incf (bbox-y-min bbox) dy)
-  (incf (bbox-z-min bbox) dz)
-  (incf (bbox-x-max bbox) dx)
-  (incf (bbox-y-max bbox) dy)
-  (incf (bbox-z-max bbox) dz))
-
-
-(defun create-bbox-from-shape (shape)
-  (let ((bbox (make-bbox)))
-    (bbox-update/shape bbox shape)
-    bbox))
-
-;;; Bounding sphere
-(defstruct bsphere
-  valid
-  x y z ;; center
-  radius)
-
-(defun bsphere-invalidate (bsphere)
-  (setf (bsphere-valid bsphere) nil))
-
-(defun bsphere-inside-p (bsphere x y &optional (z 0.0))
-  (point-3d-distance (make-point-3d :x (+ x (bsphere-x bsphere))
-                                    :y (+ y (bsphere-y bsphere))
-                                    :z (+ z (bsphere-z bsphere)))))
-
-(defun bsphere-update (bsphere x y &optional (z 0.0))
-  (let ((dist (point-3d-distance (make-point-3d :x x :y y :z z))))
-    (if (bsphere-valid bsphere)
-        (setf (bsphere-radius bsphere) (max (bsphere-radius bsphere) dist))
-        (setf (bsphere-radius bsphere) dist))))
-
-(defun bsphere-update/shape (bsphere shape)
-  (loop for i from 0 below (shape-nb-vertices shape) do
-       (bsphere-update bsphere (aref (shape-vertices shape) (* i 3))
-                               (aref (shape-vertices shape) (+ (* i 3) 1))
-                               (aref (shape-vertices shape) (+ (* i 3) 2)))))
-
-(defun bsphere-overwrite/shape (bsphere shape)
-  (bsphere-invalidate bsphere)
-  (bsphere-update/shape bsphere shape))
-
-(defun create-bsphere-from-shape (shape)
-  (let ((bsphere (make-bsphere)))
-    (bsphere-update/shape bsphere shape)
-    bsphere))

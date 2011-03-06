@@ -3,7 +3,7 @@
 ;; Use GLOP for input and window/context management
 (push :glaw-examples-glop *features*)
 ;; Or SDL
-;; (push :glaw-examples-sdl *features*)
+;;(push :glaw-examples-sdl *features*)
 
 (asdf:defsystem glaw-examples
   :depends-on (:glaw :glop :glaw-imago)
@@ -12,6 +12,7 @@
   ((:module "examples"
             :serial t
             :components ((:file "examples")
+                         (:file "empty")
                          (:file "views")
                          (:file "gui")
                          (:file "sprites")

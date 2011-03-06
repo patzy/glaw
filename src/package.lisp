@@ -75,7 +75,7 @@
    #:string-width #:string-height #:string-wrap
    #:render-string #:render-wrapped-string #:format-at
    ;; fps
-   #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps
+   #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps #:frame-time
    ;; 2d view
    #:set-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view

@@ -1,6 +1,7 @@
 (defpackage :glaw-examples
   (:use #:cl)
   (:export #:run-example
+           #:empty
            #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
            #:sound #:skeletons #:input #:views
            ;; TODO: those need some work
@@ -38,7 +39,7 @@
 #+glaw-examples-glop
 (defmethod glop:on-key (window pressed keycode keysym string)
   (glaw:dispatch-key-event keysym (if pressed :press :release) keycode string)
-  (when (eql keysym :escape)
+  (when (or (eql keysym :escape) (eql keysym :q))
     (glop:push-close-event window)))
 
 #+glaw-examples-glop
@@ -93,6 +94,7 @@
              (glaw:with-timestep (dt *max-frame-time*)
                (update dt)
                (draw)
+               (format t "frametime: ~S~%" (glaw:frame-time))
                (glop:swap-buffers win))))))
   (glaw:dispose-asset "default-font")
   (glaw:shutdown-content-manager))
