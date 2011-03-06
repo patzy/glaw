@@ -8,10 +8,10 @@
 
 (defun %2d-view-update-matrix (view)
   (matrix-set-ortho (2d-view-mtx view)
-                    (2d-view-left view)
-                    (2d-view-right view)
-                    (2d-view-bottom view)
-                    (2d-view-top view)
+                    (float (2d-view-left view))
+                    (float (2d-view-right view))
+                    (float (2d-view-bottom view))
+                    (float (2d-view-top view))
                     -1.0 1.0))
 
 (defun create-2d-view (x y width height)
@@ -153,7 +153,10 @@
                          :color color
                          :x x :y y :width width :height height
                          :bbox bbox :flip flip
-                         :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
+                         :shape (create-rectangle-shape (- x (* width 0.5))
+                                                        (- y (* height 0.5))
+                                                        (+ x (* width 0.5))
+                                                        (+ y (* height 0.5))))))
     (setf (sprite-flip sp) flip)
     (rotate-sprite sp angle)
     (when bbox (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
@@ -165,8 +168,44 @@
   (select-texture (sprite-texture sp) :env-mode :modulate)
   (render-shape (sprite-shape sp)))
 
+(defstruct sprite-batch
+  primitives
+  textures)
+
+(defun create-sprite-batch ()
+  (make-sprite-batch :primitives (list)
+                     :textures (list)))
+
+(defun destroy-sprite-batch (batch)
+  (loop for p in (sprite-batch-primitives batch)
+       do (destroy-primitive-batch p)))
+
+(defun sprite-batch-append (batch sp)
+  (let* ((tex (sprite-texture sp))
+         (pos (position tex (sprite-batch-textures batch)))
+         (pbatch (if pos (nth pos (sprite-batch-primitives batch))
+                     (create-primitive-batch :quads (make-vertex-format :vertices t
+                                                                        :tex-coords t)))))
+    (unless pos
+      (push tex (sprite-batch-textures batch))
+      (push pbatch (sprite-batch-primitives batch)))
+    (let ((sh (sprite-shape sp)))
+      (primitive-batch-append pbatch (shape-indices sh) (shape-vertices sh)
+                              :tex-coords (shape-tex-coords sh)))))
+
+(defun sprite-batch-clear (batch)
+  (loop for pb in (sprite-batch-primitives batch)
+       do (primitive-batch-clear pb)))
+
+(defun sprite-batch-render (batch)
+  (loop for tex in (sprite-batch-textures batch)
+       for pb in (sprite-batch-primitives batch)
+       do (select-texture tex)
+          (call-primitive pb)))
+
 (define-anim-channels ((it sprite) data)
     (:texture (setf (sprite-texture it) data))
+    (:color (setf (sprite-color it) data))
     (:tex-coords (setf (shape-tex-coords (sprite-shape it)) data))
     (:position  (move-sprite it (first data) (second data)))
     (:orientation (rotate-sprite it data)))
