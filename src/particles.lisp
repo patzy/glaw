@@ -5,7 +5,7 @@
   (color (create-color 1.0 1.0 1.0))
   blend-mode
   (active-p nil)
-  (vx 0.0) (vy 0.0)
+  (vx 0.0) (vy 0.0) (vz 0.0)
   (spin 0.0)
   (age 0.0)
   (lifetime 10.0))
@@ -18,8 +18,7 @@
 ;; This means all particles of a system are subjects to the same set of affectors
 (defstruct particle-system
   max-particles
-  (particles '())              ;; particles pool
-;;  (active-particles '()) ;; indices of active particles
+  (particles '())
   (affectors '())
   (emitters '()))
 
@@ -31,9 +30,6 @@
 
 (defun create-particle-system (&optional (max-particles 10000))
   (let ((syst (make-particle-system :max-particles max-particles)))
-    ;; (setf (particle-system-particles syst) (make-array max-particles
-    ;;                                                    :element-type 'particle
-    ;;                                                    :fill-pointer 0))
     syst))
 
 (defun particle-system-nb-particles (syst)
@@ -60,6 +56,7 @@
 (defun update-particles (s dt)
   ;; remove dead particles
   (map-particles (p s)
+    (incf (particle-age p) dt)
     (when (particle-dead-p p)
       (remove-particle p s)))
   ;; emit new particles
@@ -76,9 +73,8 @@
 ;; This is what creates particles
 (defstruct particle-emitter
   ;; emission management
-  (time 0.0)
-  (rate 1.0)  ;; number of particles to emit
-  (delay 5.0) ;; time to wait between emissions
+  (acc 0.0)
+  (rate 1.0)  ;; number of particles to emit per second
   ;; this may be put elsewhere
   (texture nil)
   (blend-mode '(:src-alpha :one))
@@ -100,11 +96,9 @@
            (if (consp param)
                (random-between (first param) (second param))
                param)))
-    (incf (particle-emitter-time em) dt)
-    (when (> (particle-emitter-time em)
-             (range-or-value (particle-emitter-delay em)))
-      (loop for n from 0 to (range-or-value (particle-emitter-rate em))
-         do (let ((part (make-particle)))
+    (incf (particle-emitter-acc em) (* dt (particle-emitter-rate em)))
+    (loop while (>= (particle-emitter-acc em) 1.0)
+       do (let ((part (make-particle)))
               ;; finish particle creation
               (setf (particle-sprite part)
                     (create-sprite (float (range-or-value (particle-emitter-x em)))
@@ -121,8 +115,8 @@
                     (particle-vx part) (range-or-value (particle-emitter-vx em))
                     (particle-vy part) (range-or-value (particle-emitter-vy em))
                     (particle-spin part)  (range-or-value (particle-emitter-spin em)))
-              (add-particle part s)))
-      (setf (particle-emitter-time em) 0.0))))
+              (add-particle part s))
+         (decf (particle-emitter-acc em)))))
 
 ;; Particles state modification
 (defgeneric affect-particles (affector system dt))
