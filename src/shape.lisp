@@ -412,7 +412,7 @@
   (shape-add-vertex/index shape left top)
   (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
-  (shape-add-indices shape 0)
+  (unless filled (shape-add-indices shape 0))
   shape))
 
 (defun create-line-shape (x0 y0 x1 y1)
