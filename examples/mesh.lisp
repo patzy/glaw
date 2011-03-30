@@ -6,7 +6,7 @@
 
 (defmethod init-example ((it mesh-viewer))
   (glaw:setup-3d-defaults)
-  (glaw:load-asset "gourd.obj" :mesh "mesh")
+  (glaw:load-asset "test.obj" :mesh "mesh")
   (setf (mesh-viewer-camera it) (glaw:make-3d-view :fov (/ pi 3.0)
                                                    :near 1.0
                                                    :far 1000.0))
@@ -25,9 +25,11 @@
   (glaw:select-texture nil)
   (gl:disable :lighting)
   (glaw::draw-origin 1000.0)
-  (gl:enable :lighting)
+  (glaw:set-view-2d (glaw::create-2d-view 0 0 glaw:*display-width* glaw:*display-height*))
   (glaw:with-resources ((fnt "default-font"))
+    (format t "FPS: ~A~%" (glaw:current-fps))
     (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
+  (gl:enable :lighting)
   (glaw:end-draw))
 
 (defmethod update-example ((it mesh-viewer) dt)
