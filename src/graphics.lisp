@@ -11,7 +11,6 @@
   (update-fps)
   (gl:flush))
 
-
 (defun set-background-color (color)
   (gl:clear-color (color-r color)
                   (color-g color)
@@ -20,6 +19,9 @@
 
 (defun set-background-color/rgb (r g b)
   (gl:clear-color r g b 0))
+
+(defun clear-display (&rest buffers)
+  (apply #'clear-framebuffer nil buffers))
 
 (defun setup-3d-defaults ()
   (set-background-color #(0.3 0.3 0.3 0.0))
@@ -387,6 +389,10 @@
 (defun select-framebuffer (fb)
   (gl:bind-framebuffer-ext :framebuffer-ext (if fb (framebuffer-index fb) 0)))
 
+(defun clear-framebuffer (fb &optional (buffers '(:color-buffer)))
+  (select-framebuffer fb)
+  (apply 'gl:clear buffers))
+
 ;;; Vertex Buffer
 (defstruct buffer
   index)
@@ -478,29 +484,38 @@
     vb))
 
 (defun vertex-buffer-update (vb array &optional (offset 0))
-  (assert (< (+ offset (length array)) (vertex-buffer-nb-vertices vb)))
   (gl:bind-buffer :array-buffer (vertex-buffer-index vb))
   (gl:with-mapped-buffer (p :array-buffer :write-only)
     (loop for i below (length array)
          do (setf (cffi:mem-aref p :float (+ offset i)) (float (aref array i) 0.0)))))
 
-(defun vertex-buffer-update-components (vb offset vertices &key colors tex-coords normals)
+(defun dprint-vb (vb start end)
+  (gl:bind-buffer :array-buffer (vertex-buffer-index vb))
+  (format t "VB: ")
+  (gl:with-mapped-buffer (p :array-buffer :read-only)
+    (loop for i from start below end
+         do (format t "~S " (cffi:mem-aref p :float i))))
+  (format t "~%"))
+
+(defun vertex-buffer-update-components (vb vtx-offset vertices &key colors tex-coords normals)
   (assert (= (vertex-buffer-format vb)
              (make-vertex-format :vertices vertices
                                  :colors colors
                                  :tex-coords tex-coords
                                  :normals normals)))
-  (vertex-buffer-update vb vertices offset)
-  (incf offset (* (vertex-buffer-nb-vertices vb) 3))
-  (when colors
-    (vertex-buffer-update vb colors offset)
-    (incf offset (* (vertex-buffer-nb-vertices vb) 4)))
-  (when tex-coords
-    (vertex-buffer-update vb tex-coords offset)
-    (incf offset (* (vertex-buffer-nb-vertices vb) 2)))
-  (when normals
-    (vertex-buffer-update vb normals offset)
-    (incf offset (* (vertex-buffer-nb-vertices vb) 3)))
+  (let ((nb-vertices (vertex-buffer-nb-vertices vb))
+        (offset 0))
+    (vertex-buffer-update vb vertices (+ offset (* vtx-offset 3)))
+    (incf offset (* nb-vertices 3))
+    (when colors
+      (vertex-buffer-update vb colors (+ offset (* vtx-offset 4)))
+      (incf offset (* nb-vertices 4)))
+    (when tex-coords
+      (vertex-buffer-update vb tex-coords (+ offset (* vtx-offset 2)))
+      (incf offset (* nb-vertices 2)))
+    (when normals
+      (vertex-buffer-update vb normals (+ offset (* vtx-offset 3)))
+      (incf offset (* nb-vertices 3))))
   vb)
 
 
@@ -542,13 +557,20 @@
     (index-buffer-update ib indices 0)
     ib))
 
-(defun index-buffer-update (ib array &optional (offset 0))
-  (assert (< (+ offset (length array)) (index-buffer-nb-indices ib)))
+(defun index-buffer-update (ib array &optional (offset 0) add-offset)
   (gl:bind-buffer :element-array-buffer (index-buffer-index ib))
   (gl:with-mapped-buffer (p :element-array-buffer :write-only)
     (loop for i below (length array)
-         do (setf (cffi:mem-aref p :short (+ offset i)) (aref array i)))))
+         do (setf (cffi:mem-aref p :short (+ offset i))
+                  (if add-offset (+ offset (aref array i)) (aref array i))))))
 
+(defun dprint-ib (ib start end)
+  (gl:bind-buffer :element-array-buffer (index-buffer-index ib))
+  (format t "IB: ")
+  (gl:with-mapped-buffer (p :element-array-buffer :read-only)
+    (loop for i from start below end
+         do (format t "~S " (cffi:mem-aref p :short i))))
+  (format t "~%"))
 
 (defun destroy-index-buffer (ib)
   (gl:delete-buffers (list (index-buffer-index ib))))
@@ -629,8 +651,8 @@
 
 ;;; Batching
 (defstruct (primitive-batch (:include display-list))
-  (vb-offset 0)
-  (ib-offset 0)
+  (vb-offset 0) ;; # of vertices so far
+  (ib-offset 0) ;; # of indices so far
   items)
 
 (defun create-primitive-batch (primitive vfmt &key (max-vertices 10000)
@@ -651,15 +673,15 @@
   (vertex-buffer-update-components (primitive-batch-vb batch)
                                     (primitive-batch-vb-offset batch)
                                     vertices :colors colors :tex-coords tex-coords :normals normals)
-  (incf (primitive-batch-vb-offset batch)
-        (* (vertex-size (vertex-buffer-format (primitive-batch-vb batch))) (/ (length vertices) 3)))
-  (index-buffer-update (primitive-batch-ib batch) indices (primitive-batch-ib-offset batch))
+  (incf (primitive-batch-vb-offset batch) (/ (length vertices) 3))
+  (index-buffer-update (primitive-batch-ib batch) indices (primitive-batch-ib-offset batch) t)
   (incf (primitive-batch-ib-offset batch) (length indices))
   (let ((item (cons (primitive-batch-end batch)
                     (length indices))))
     (incf (primitive-batch-end batch) (length indices))
     (setf (primitive-batch-items batch) (append (primitive-batch-items batch)
-                                                (list item)))))
+                                                (list item)))
+            (primitive-batch-end batch)))
 
 (defun primitive-batch-clear (batch)
   (setf (primitive-batch-items batch) (list)
