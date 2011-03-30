@@ -44,7 +44,7 @@
          (glaw:format-at 50 y fnt "~a: ~a"
                          str
                          (glaw:input-processor-valid-p proc))
-         (incf y (glaw::font-line-height fnt)))
+         (incf y (glaw:font-line-height fnt)))
     (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
