@@ -48,18 +48,18 @@
    ;; timing
    #:schedule #:update-timer #:run-timers #:update-scheduler #:cancel-timer
    #:with-timestep
-   ;; resources
+   ;; resources management
    #:use-resource #:get-resource #:drop-resource
    #:use-resources #:drop-resources
    #:create-resource-manager #:destroy-resource-manager
    #:with-resource-manager #:with-resources
-   ;; assets
+   ;; assets management
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
    #:supported-assets
    ;; graphics
-   #:*display-width* #:*display-height*
+   #:*display-width* #:*display-height* #:clear-display
    #:begin-draw #:end-draw #:reshape #:setup-2d-defaults #:setup-3d-defaults
-   #:draw-origin
+   #:draw-origin #:set-background-color
    #:create-color #:mix-colors #:create-color-gradient
    #:color-copy
    #:set-color #:set-color/rgb
@@ -74,10 +74,10 @@
    #:font-set-glyph-data #:font-build-cache #:font-line-height #:char-width
    #:string-width #:string-height #:string-wrap
    #:render-string #:render-wrapped-string #:format-at
-   ;; fps
+   ;; stats
    #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps #:frame-time
    ;; 2d view
-   #:set-view-2d
+   #:set-view-2d #:with-fullscreen-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view
    #:screen-to-view #:view-to-screen #:with-2d-coords-from-screen #:with-2d-coords-to-screen
    #:view-to-view #:with-2d-view-coords #:with-2d-view-deltas #:with-2d-screen-deltas
@@ -114,6 +114,8 @@
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset
    #:tileset-pixel-width #:tileset-pixel-height #:tileset-tiles-width #:tileset-tiles-height
    #:tileset-spacing #:tileset-margin #:tileset-start-index
+   #:create-sprite-batch #:sprite-batch-append #:destroy-sprite-batch #:sprite-batch-clear
+   #:sprite-batch-render
    ;; animation
    #:make-anim-state #:make-keyframe-anim #:animation-apply
    #:anim-state-update #:anim-state-apply
