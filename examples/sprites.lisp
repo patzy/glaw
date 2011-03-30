@@ -9,8 +9,8 @@
                                                :time 0.0
                                                :scale (glaw:random-between 0.5 1.5)))
          (sp (glaw:create-sprite (float (random glaw:*display-width*))
-                                         (float (random glaw:*display-height*))
-                                         (+ 100.0 (random 100.0)) (+ 100.0 (random 100.0))
+                                 (float (random glaw:*display-height*))
+                                 (+ 1.0 (random 10.0)) (+ 1.0 (random 10.0))
                                          (glaw:use-resource "lisplogo")
                                       :flip (glaw:random-nth '(:none :vertical :horizontal :both))))
          (asp (make-animated-sprite
@@ -24,7 +24,8 @@
   animations
   sprites
   batch
-  (method :batch))
+  (animate nil)
+  (method :direct))
 
 (defmethod init-example ((it sprites))
   (glaw:load-asset "lisplogo_alien_256.png" :texture "lisplogo")
@@ -50,10 +51,12 @@
                         do (incf angle angle-step)
                         collect angle))
         (sprites-animations it))
-  (loop for i from 0 to 10000 do
+  (loop for i from 0 to 1000 do
        (push (create-animated-sprite (glaw:random-nth (sprites-animations it)))
              (sprites-sprites it)))
   (setf (sprites-batch it) (glaw::create-sprite-batch))
+  (dolist (asp (sprites-sprites it))
+    (glaw::sprite-batch-append (sprites-batch it) (animated-sprite-sprite asp)))
   (glaw:add-input-handler it))
 
 (defmethod shutdown-example ((it sprites))
@@ -68,20 +71,23 @@
   (glaw:begin-draw)
   (glaw:set-view-2d (sprites-view it))
   (case (sprites-method it)
-    (:batch (glaw::sprite-batch-clear (sprites-batch it))
-            (dolist (asp (sprites-sprites it))
-              (glaw::sprite-batch-append (sprites-batch it) (animated-sprite-sprite asp)))
+    (:batch  (when (sprites-animate it)
+               (glaw::sprite-batch-clear (sprites-batch it))
+               (dolist (asp (sprites-sprites it))
+                 (glaw::sprite-batch-append (sprites-batch it) (animated-sprite-sprite asp))))
             (glaw::sprite-batch-render (sprites-batch it)))
     (:direct (dolist (asp (sprites-sprites it))
                (glaw:render-sprite (animated-sprite-sprite asp)))))
   (glaw:with-resources ((fnt "default-font"))
+    (glaw:format-at 50 80 fnt "mode: ~a" (sprites-method it))
     (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   (glaw:end-draw))
 
 (defmethod update-example ((it sprites) dt)
-  (dolist (sp (sprites-sprites it))
-    (glaw:anim-state-update (animated-sprite-anim-state sp) dt)
-    (glaw:anim-state-apply (animated-sprite-anim-state sp) (animated-sprite-sprite sp))))
+  (when (sprites-animate it)
+    (dolist (sp (sprites-sprites it))
+      (glaw:anim-state-update (animated-sprite-anim-state sp) dt)
+      (glaw:anim-state-apply (animated-sprite-anim-state sp) (animated-sprite-sprite sp)))))
 
 (defmethod reshape-example ((it sprites) w h)
   (glaw:update-2d-view (sprites-view it) 0 0 w h))
@@ -90,3 +96,6 @@
    (case (sprites-method it)
      (:batch (setf (sprites-method it) :direct))
      (:direct (setf (sprites-method it) :batch))))
+
+(glaw:key-handler (it sprites) (:a :press)
+    (setf (sprites-animate it) (not (sprites-animate it))))
