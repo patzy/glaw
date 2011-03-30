@@ -21,6 +21,10 @@
     (%2d-view-update-matrix view)
     view))
 
+(defmacro with-fullscreen-view-2d (&body body)
+  `(progn (set-view-2d (create-2d-view 0 0 *display-width* *display-height*))
+          ,@body))
+
 (defun 2d-view-width (view)
   (- (2d-view-right view) (2d-view-left view)))
 
@@ -180,6 +184,7 @@
   (loop for p in (sprite-batch-primitives batch)
        do (destroy-primitive-batch p)))
 
+;; TODO: allow to respect append order at draw time
 (defun sprite-batch-append (batch sp)
   (let* ((tex (sprite-texture sp))
          (pos (position tex (sprite-batch-textures batch)))
@@ -225,6 +230,7 @@
 (defun rotate-sprite (sp dangle)
   (rotate-shape-2d (sprite-shape sp) dangle (sprite-x sp) (sprite-y sp))
   (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
+
 
 ;;; Tilemap
 (defstruct tileset
