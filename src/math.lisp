@@ -109,7 +109,7 @@
                   :y (+ (* (vector-2d-x v) (sin angle))
                         (* (vector-2d-y v) (cos angle)))))
 
-(defun vector-2d-angle (v1 &optional (v2 (make-vector-2d :x 1.0 :y 0)))
+(defun vector-2d-angle (v1 &optional (v2 (make-vector-2d :x 1.0 :y 0.0)))
   "Returns relative v1 angle relative to v2 in [-PI;+PI]."
   (atan (vector-2d-dot-product (vector-2d-perp v2) v1) (vector-2d-dot-product v2 v1)))
 
