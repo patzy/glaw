@@ -63,6 +63,9 @@ wrapped text."
        (gl:new-list (+ (font-base fnt) i) :compile)
        (font-render-glyph fnt i)
        (when (glyph-id (aref (font-glyphs fnt) i))
+         ;; (let ((basis (make-basis)))
+         ;;   (basis-translate basis (glyph-advance (aref (font-glyphs fnt) i)) 0 0)
+         ;;   (gl:load-matrix basis)))
          (gl:translate (glyph-advance (aref (font-glyphs fnt) i)) 0 0))
        (gl:end-list)))
 
@@ -92,16 +95,19 @@ wrapped text."
 
 (defun render-string (x y fnt str)
   (let ((char-lst (loop for c across str
-                     collect (char-code c))))
+                     collect (char-code c)))
+        (basis (make-basis)))
+    (basis-translate basis x y 0)
     (select-texture (font-texture fnt) :env-mode :modulate)
     (gl:with-pushed-matrix
-        (gl:translate x y 0)
+        (gl:load-matrix basis)
       (if (= (font-base fnt) -1)
-          (loop for c across str do
-               (font-render-glyph fnt (char-code c))
-               (gl:translate (char-width fnt c) 0 0))
-          (progn (gl:list-base (font-base fnt))
-                 (gl:call-lists char-lst))))
+        (loop for c across str do
+             (font-render-glyph fnt (char-code c))
+             (basis-translate basis (char-width fnt c) 0 0)
+             (gl:load-matrix basis))
+        (progn (gl:list-base (font-base fnt))
+               (gl:call-lists char-lst))))
     (select-texture nil)))
 
 (defun render-wrapped-string (x y wdth fnt str &key (justify :left))
