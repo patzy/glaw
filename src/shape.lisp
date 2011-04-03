@@ -361,8 +361,8 @@
     shape))
 
 (defun create-circle-shape (x y radius &key (resolution 20) (filled t))
-  (let ((shape (create-shape (round (/ 360 resolution) 1.0)
-                             (round (/ 360 resolution) 1.0)
+  (let ((shape (create-shape (1+ (round (/ 360 resolution) 1.0))
+                             (1+ (round (/ 360 resolution) 1.0))
                              :primitive (if filled :triangle-fan :line-loop))))
     (loop for angle from 0 to 360 by resolution
        for radian = (deg->rad angle)
