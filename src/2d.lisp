@@ -142,6 +142,12 @@
   color
   (flip :none))
 
+(defun sprite-center-x (sp)
+  (+ (sprite-x sp) (* 0.5 (sprite-width sp))))
+
+(defun sprite-center-y (sp)
+  (+ (sprite-y sp) (* 0.5 (sprite-height sp))))
+
 (defun sprite-set-flip (it value)
   (case value
     (:vertical (setf (shape-tex-coords (sprite-shape it)) #(0.0 1.0 1.0 1.0 1.0 0.0 0.0 0.0)))
@@ -157,10 +163,7 @@
                          :color color
                          :x x :y y :width width :height height
                          :bbox bbox :flip flip
-                         :shape (create-rectangle-shape (- x (* width 0.5))
-                                                        (- y (* height 0.5))
-                                                        (+ x (* width 0.5))
-                                                        (+ y (* height 0.5))))))
+                         :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
     (setf (sprite-flip sp) flip)
     (rotate-sprite sp angle)
     (when bbox (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
@@ -228,7 +231,7 @@
     (translate-sprite sp dx dy)))
 
 (defun rotate-sprite (sp dangle)
-  (rotate-shape-2d (sprite-shape sp) dangle (sprite-x sp) (sprite-y sp))
+  (rotate-shape-2d (sprite-shape sp) dangle (sprite-center-x sp) (sprite-center-y sp))
   (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
 
 
