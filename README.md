@@ -2,13 +2,6 @@ Glaw
 ====
 The goal of GLAW is to provide a collection of basic functionalities to help developping games.
 
-Basic ideas are:
-
- - as few non-lisp dependencies as possible
- - collection of tools that can work together instead of fully integrated engine
- - do *not* force the user to a specific game genre
- - independent of windowing API (i.e. not tied to sdl or glut)
-
 Quickstart
 -----------
 
@@ -26,7 +19,7 @@ If you want the latest git version first clone this repository:
     
 Then change to the new `glaw` directory and issue the `quickload` call from here.
     
-If you want to use the examples just do:
+If you want to try the examples just do:
 
     (ql:quickload "glaw-examples")
 
@@ -86,5 +79,8 @@ Where `example-name` may be one of the following:
  - `console`
  - `input`
  
+In all examples you may use `ESC` or `q` to quit and `alt-s` to toggle render stats display.
+ 
 There's also a simple breakout game using glaw [here](http://github.com/patzy/outbreak),
-and a more polished asteroid clone [here](http://github.com/patzy/kayou).
+a more polished asteroid clone [here](http://github.com/patzy/kayou) and
+an adaptation of the clans board game [here](http://github.com/patzy/clans).
