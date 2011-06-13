@@ -351,9 +351,6 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
      (* (vector-3d-y v1) (vector-3d-y v2))
      (* (vector-3d-z v1) (vector-3d-z v2))))
 
-;; (defun vector-3d-perp-dot-product (v1 v2)
-;;   (vector-3d-dot-product (vector-3d-perp v1) v2))
-
 (defun vector-3d-mag (v)
   (sqrt (vector-3d-dot-product v v)))
 
@@ -792,6 +789,48 @@ Polygons *MUST* be adjacent. Returns NIL if merge is not possible."
           (basis-r22 basis) (* c1 c2))))
 
 (defsetf basis-xyz-orientation basis-set-xyz-orientation)
+
+(defun basis-global-to-local-position (basis pos)
+  (let ((x (- (point-3d-x pos) (basis-tx basis)))
+        (y (- (point-3d-y pos) (basis-ty basis)))
+        (z (- (point-3d-z pos) (basis-tz basis))))
+    (make-point-3d :x (+ (* (basis-r00 basis) x) (* (basis-r10 basis) y) (* (basis-r20 basis) z))
+                   :y (+ (* (basis-r01 basis) x) (* (basis-r11 basis) y) (* (basis-r21 basis) z))
+                   :z (+ (* (basis-r02 basis) x) (* (basis-r12 basis) y) (* (basis-r22 basis) z)))))
+
+(defun basis-local-to-global-position (basis pos)
+  (let ((x (point-3d-x pos))
+        (y (point-3d-y pos))
+        (z (point-3d-z pos)))
+    (make-point-3d :x (+ (* (basis-r00 basis) x) (* (basis-r01 basis) y) (* (basis-r02 basis) z)
+                         (basis-tx basis))
+                   :y (+ (* (basis-r10 basis) x) (* (basis-r11 basis) y) (* (basis-r12 basis) z)
+                         (basis-ty basis))
+                   :z (+ (* (basis-r20 basis) x) (* (basis-r21 basis) y) (* (basis-r22 basis) z)
+                         (basis-tz basis)))))
+
+(defun basis-global-to-local-vector (basis vec)
+  (let ((x (vector-3d-x pos))
+        (y (vector-3d-y pos))
+        (z (vector-3d-z pos)))
+    (make-point-3d :x (+ (* (basis-r00 basis) x) (* (basis-r10 basis) y) (* (basis-r20 basis) z))
+                   :y (+ (* (basis-r01 basis) x) (* (basis-r11 basis) y) (* (basis-r21 basis) z))
+                   :z (+ (* (basis-r02 basis) x) (* (basis-r12 basis) y) (* (basis-r22 basis) z)))))
+
+(defun basis-local-to-global-vector (basis vec)
+  (let ((x (vector-3d-x pos))
+        (y (vector-3d-y pos))
+        (z (vector-3d-z pos)))
+    (make-point-3d :x (+ (* (basis-r00 basis) x) (* (basis-r01 basis) y) (* (basis-r02 basis) z))
+                   :y (+ (* (basis-r10 basis) x) (* (basis-r11 basis) y) (* (basis-r12 basis) z))
+                   :z (+ (* (basis-r20 basis) x) (* (basis-r21 basis) y) (* (basis-r22 basis) z)))))
+
+
+;; ;;; Spatial transform
+;; (defstruct (transform (:include matrix)
+;;                       (:type (vector float)))
+;;   "Transformation matrix."
+;;   (identity t))
 
 ;;; Projection matrices
 (defun matrix-set-ortho (mtx left right bottom top near far)

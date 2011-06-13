@@ -20,7 +20,7 @@
     (setf (matrix-r00 eye-mtx) (- (basis-r01 basis)) ;; -y --> x
           (matrix-r01 eye-mtx) (- (basis-r11 basis))
           (matrix-r02 eye-mtx) (- (basis-r21 basis))
-          (matrix-r10 eye-mtx) (basis-r02 basis)     ;; z --> y
+          (matrix-r10 eye-mtx) (basis-r02 basis)     ;;  z --> y
           (matrix-r11 eye-mtx) (basis-r12 basis)
           (matrix-r12 eye-mtx) (basis-r22 basis)
           (matrix-r20 eye-mtx) (- (basis-r00 basis)) ;; -x --> z
@@ -151,11 +151,13 @@
 (defstruct mesh
   names
   shapes
+  dlists ;; TESTING: rendering performance
   materials)
 
 (defun create-mesh (&optional (nb-parts 0))
   (make-mesh :shapes (make-array nb-parts :adjustable t :fill-pointer t :element-type 'shape)
              :materials (make-array nb-parts :adjustable t :fill-pointer t)
+             :dlists (make-array nb-parts :adjustable t :fill-pointer t :element-type 'display-list)
              :names (make-array nb-parts :adjustable t :fill-pointer t :element-type 'string)))
 
 (defun mesh-nb-parts (mesh)
@@ -181,6 +183,14 @@
 (defun mesh-add-part (mesh &key (shape (create-shape 0 0)) (material +default-material+)
                                 (name (symbol-name (gensym "PART-"))))
   (vector-push-extend shape (mesh-shapes mesh))
+  (vector-push-extend (load-primitive (shape-indices shape)
+                                      (shape-vertices shape)
+                                      :primitive (shape-primitive shape)
+                                      :colors (shape-colors shape)
+                                      :tex-coords (shape-tex-coords shape)
+                                      :normals (shape-normals shape)
+                                      :use-buffers t)
+                      (mesh-dlists mesh))
   (vector-push-extend material (mesh-materials mesh))
   (vector-push-extend name (mesh-names mesh)))
 
@@ -192,9 +202,12 @@
 (defun render-mesh (mesh)
   (loop for i below (mesh-nb-parts mesh)
        for shape = (mesh-shape mesh i)
+       for dl = (aref (mesh-dlists mesh) i)
        for mat = (mesh-material mesh i)
        do (set-material mat)
-          (render-shape shape)))
+       (call-primitive dl)
+       ;;(render-shape shape)
+       ))
 
 ;;; Wavefront OBJ :mesh asset
 ;; http://www.martinreddy.net/gfx/3d/OBJ.spec
