@@ -5,7 +5,6 @@
 ;; we need to make sure received input values are the right ones.
 ;; Use the following translation function for mouse button events.
 ;; Also, make sure to provide :press or :release for key and button states
-
 (defun translate-mouse-button (button)
   (case button
     (1 :left-button)

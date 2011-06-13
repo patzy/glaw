@@ -14,26 +14,21 @@
   (make-shape :primitive primitive
               :vertices (make-array (* nb-vertices 3)
                                     :element-type 'float
-                                    ;;:adjustable t
                                     :fill-pointer 0)
               :normals (when normals
                          (make-array (* nb-vertices 3)
                                      :element-type 'float
-                                     ;;:adjustable t
                                      :fill-pointer 0))
               :colors (when color
                         (make-array (* nb-vertices 4)
                                     :element-type 'float
-                                    ;;:adjustable t
                                     :fill-pointer 0))
               :tex-coords (when texture
                             (make-array (* nb-vertices 2)
                                         :element-type 'float
-                                        ;;:adjustable t
                                         :fill-pointer 0))
               :indices (make-array nb-indices
                                    :element-type 'unsigned-byte
-                                   ;;:adjustable t
                                    :fill-pointer 0)))
 
 (defun create-shape-from-arrays (indices vertices colors tex-coords normals

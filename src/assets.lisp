@@ -44,7 +44,7 @@
 
 (defun defasset (asset-type extensions load &optional unload)
   "Defines an asset loader for ASSET-TYPE. Extension check will be done upon loading
-against unless EXTENSIONS is :ANY."
+unless EXTENSIONS is :ANY."
   (push (make-asset-loader :load load :unload unload
                            :extensions extensions)
         (gethash asset-type *asset-loaders*)))

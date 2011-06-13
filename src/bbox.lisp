@@ -27,7 +27,7 @@
        (coords-overlap-p (bbox-y-min bbox-1) (bbox-y-max bbox-1)
                          (bbox-y-min bbox-2) (bbox-y-max bbox-2))))
 
-(defun bbox-inside-p (bbox x y)
+(defun bbox-inside-p (bbox x y &optional z)
   (and (< (bbox-x-min bbox) x (bbox-x-max bbox))
        (< (bbox-y-min bbox) y (bbox-y-max bbox))))
 
@@ -93,6 +93,9 @@
   valid
   x y z ;; center
   radius)
+
+(defun bsphere-center (bsphere)
+  (make-vector-3d :x (bsphere-x bsphere) :y (bsphere-y bsphere) :z (bsphere-z bsphere)))
 
 (defun bsphere-invalidate (bsphere)
   (setf (bsphere-valid bsphere) nil))
