@@ -1,22 +1,23 @@
 (in-package #:glaw-examples)
 
 (defstruct console
-  (console (glaw::make-graphic-console))
-  (view (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)))
+  console
+  view)
 
 (defmethod init-example ((it console))
+  (setf (console-view it)
+        (glaw:create-2d-view 0 0 glaw:*display-width* glaw:*display-height*)
+        (console-console it)
+        (glaw::make-graphic-console))
   (glaw:add-input-handler (console-console it)))
 
 (defmethod shutdown-example ((it console))
   (glaw:remove-input-handler (console-console it)))
 
 (defmethod render-example ((it console))
-  (glaw:begin-draw)
   (glaw:set-view-2d (console-view it))
   (glaw:with-resources ((fnt "default-font"))
-    (glaw::render-console (console-console it) fnt 10 10 700 200)
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw::render-console (console-console it) fnt 10 10 700 200)))
 
 (defmethod update-example ((it console) dt)
   (declare (ignore it dt)))

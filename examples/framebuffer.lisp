@@ -55,7 +55,7 @@
                                   (glaw::create-renderbuffer 128 128 :depth-component24))
   (let ((framebuffer-status (gl:check-framebuffer-status-ext :framebuffer-ext)))
       (unless (gl::enum= framebuffer-status :framebuffer-complete-ext)
-        (error "3Framebuffer not complete: ~A." framebuffer-status))))
+        (error "Framebuffer not complete: ~A." framebuffer-status))))
 
 
 (defmethod shutdown-example ((it framebuffer))
@@ -74,8 +74,6 @@
   (dolist (sp (framebuffer-sprites it))
     (glaw:render-sprite sp))
   (glaw:render-sprite (framebuffer-animated-sprite it))
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
   ;; render again to screen + sprite with scene texture
   (glaw::select-framebuffer nil)
   (gl:clear-color 0.5 0.5 0.5 1.0)
@@ -85,10 +83,7 @@
   (dolist (sp (framebuffer-sprites it))
     (glaw:render-sprite sp))
   (glaw:render-sprite (framebuffer-animated-sprite it))
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:render-sprite (framebuffer-scene-sprite it))
-  (glaw:end-draw))
+  (glaw:render-sprite (framebuffer-scene-sprite it)))
 
 (defmethod update-example ((it framebuffer) dt)
   (glaw:anim-state-update (framebuffer-anim-state it) dt)

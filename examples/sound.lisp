@@ -22,14 +22,11 @@
   (glaw:shutdown-sound))
 
 (defmethod render-example ((it sound))
-  (glaw:begin-draw)
   (glaw:set-view-2d (sound-view it))
   (glaw:with-resources ((fnt "default-font"))
     (glaw:format-at 50 160 fnt "Press spacebar for PEW PEW !!!")
     (glaw:format-at 50 140 fnt "Free Channels: ~a" (glaw:sound-nb-free-channels))
-    (glaw:format-at 50 120 fnt "Used Channels: ~a" (glaw:sound-nb-used-channels))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw:format-at 50 120 fnt "Used Channels: ~a" (glaw:sound-nb-used-channels))))
 
 (defmethod update-example ((it sound) dt)
   (declare (ignore it dt))

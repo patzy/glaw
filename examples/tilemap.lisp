@@ -33,21 +33,18 @@
   (glaw:dispose-asset "tileset"))
 
 (defmethod render-example ((it tilemap))
-  (glaw:begin-draw)
   (glaw:set-view-2d (tilemap-view it))
   (gl:with-pushed-matrix
     (gl:translate 100 400 0)
     (glaw:render-tilemap (tilemap-tilemap it) (tilemap-tileset it)))
   (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps))
     (glaw:format-at 50 120 fnt "Tileset: ~ax~a:~a:~a -> ~ax~a~%"
                     (glaw:tileset-pixel-width (tilemap-tileset it))
                     (glaw:tileset-pixel-height (tilemap-tileset it))
                     (glaw:tileset-margin (tilemap-tileset it))
                     (glaw:tileset-spacing (tilemap-tileset  it))
                     (glaw:tileset-tiles-width (tilemap-tileset it))
-                    (glaw:tileset-tiles-height (tilemap-tileset it))))
-  (glaw:end-draw))
+                    (glaw:tileset-tiles-height (tilemap-tileset it)))))
 
 (defmethod update-example ((it tilemap) dt)
   (declare (ignore it dt)))

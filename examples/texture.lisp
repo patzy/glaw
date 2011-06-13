@@ -22,13 +22,9 @@
   (declare (ignore it)))
 
 (defmethod render-example ((it texture))
-  (glaw:begin-draw)
   (glaw:set-view-2d (texture-view it))
   (dolist (sp (texture-sprites it))
-    (glaw:render-sprite sp))
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100  fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw:render-sprite sp)))
 
 (defmethod update-example ((it texture) dt)
   (let ((r (texture-start-red it))

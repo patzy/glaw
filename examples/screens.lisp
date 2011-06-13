@@ -66,15 +66,12 @@
   (glaw:remove-input-handler it))
 
 (defmethod render-example ((it screens))
-  (glaw:begin-draw)
   (glaw:set-view-2d (screens-view it))
   (glaw:render-screens (screens-stack it))
   (glaw:with-resources ((fnt "default-font"))
     (glaw:format-at 50 140 fnt
                     "Press R/U/B/N to push a new screen (with render/update/both/none propagation)")
-    (glaw:format-at 50 120 fnt "Press P to pop current screen from stack.")
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw:format-at 50 120 fnt "Press P to pop current screen from stack.")))
 
 (defmethod update-example ((it screens) dt)
   (glaw:update-screens (screens-stack it) dt))

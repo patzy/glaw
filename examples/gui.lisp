@@ -93,9 +93,7 @@
 
 (defmethod render-example ((it gui))
   (declare (ignore it))
-  (glaw:begin-draw)
-  (glaw:render-gui)
-  (glaw:end-draw))
+  (glaw:render-gui))
 
 (defmethod update-example ((it gui) dt)
   (declare (ignore it dt)))

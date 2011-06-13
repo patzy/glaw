@@ -46,7 +46,6 @@
   (glaw:remove-input-handler it))
 
 (defmethod render-example ((it pathfinding))
-  (glaw:begin-draw)
   (glaw:set-view-2d (pathfinding-view it))
   (render-navmesh (pathfinding-navmesh it))
   (glaw:set-color/rgb 0 0 1)
@@ -74,10 +73,7 @@
             (loop for v in (glaw::polygon-vertices
                             (glaw:navmesh-cell-polygon c))
                do (gl:vertex (glaw:point-2d-x v) (glaw:point-2d-y v))))))
-  (glaw:set-color/rgb 1 1 1)
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+  (glaw:set-color/rgb 1 1 1))
 
 (defmethod update-example ((it pathfinding) dt)
   (declare (ignore it dt)))

@@ -30,7 +30,6 @@
   (glaw:dispose-asset "lisplogo"))
 
 (defmethod render-example ((it views))
-  (glaw:begin-draw)
   (case (views-current it)
     (:2d (glaw:set-view-2d (views-2d it)))
     (:3d (glaw:set-view-3d (views-3d it))))
@@ -42,10 +41,7 @@
     (glaw:render-shape (views-cube it)))
   (glaw:select-texture nil)
   (gl:disable :lighting)
-  (glaw::draw-origin 1000.0)
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+  (glaw::draw-origin 1000.0))
 
 (defmethod update-example ((it views) dt)
   (declare (ignore it dt)))

@@ -23,22 +23,15 @@
   (glaw::destroy-shader (shaders-fragment it)))
 
 (defmethod render-example ((it shaders))
-  (glaw:begin-draw)
   (glaw:set-view-2d (shaders-view it))
   (glaw::set-shader-program (shaders-program it))
-
   (gl:color 1 1 1)
   (gl:with-primitive :polygon
     (gl:vertex 250 250 0)
     (gl:vertex 750 250 0)
     (gl:vertex 750 750 0)
     (gl:vertex 250 750 0))
-
-  (glaw::set-shader-program nil)
-
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+  (glaw::set-shader-program nil))
 
 (defmethod update-example ((it shaders) dt)
   (declare (ignore it dt)))

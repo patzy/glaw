@@ -35,7 +35,6 @@
     (glaw:remove-input-handler proc)))
 
 (defmethod render-example ((it input))
-  (glaw:begin-draw)
   (glaw:set-view-2d (input-view it))
   (glaw:with-resources ((fnt "default-font"))
     (loop for str in (input-strings it)
@@ -44,9 +43,7 @@
          (glaw:format-at 50 y fnt "~a: ~a"
                          str
                          (glaw:input-processor-valid-p proc))
-         (incf y (glaw:font-line-height fnt)))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+         (incf y (glaw:font-line-height fnt)))))
 
 (defmethod update-example ((it input) dt)
   (declare (ignore it dt)))

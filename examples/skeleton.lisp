@@ -34,15 +34,11 @@
 (defmethod shutdown-example ((it skeletons)))
 
 (defmethod render-example ((it skeletons))
-  (glaw:begin-draw)
   (glaw:set-view-2d (skeletons-view it))
   (glaw:set-color/rgb 1.0 1.0 1.0)
   (gl:with-pushed-matrix
       (gl:translate 300 300 0)
-    (glaw::render-skeleton (skeletons-skeleton it)))
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw::render-skeleton (skeletons-skeleton it))))
 
 (defmethod update-example ((it skeletons) dt)
   (glaw:anim-state-update (skeletons-anim-state it) dt)

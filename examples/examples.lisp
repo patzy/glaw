@@ -4,13 +4,18 @@
            #:empty
            #:pathfinding #:particles #:sprites #:screens #:text #:texture #:tilemap
            #:sound #:skeletons #:input #:views
-           ;; TODO: those need some work
-           #:shaders #:mesh-viewer #:framebuffer #:gui #:console))
+           #:shaders #:framebuffer #:console
+           ;; TODO: those may be removed
+            #:mesh-viewer  #:gui))
 
 (in-package #:glaw-examples)
 
 (defvar *current-example* nil)
 (defvar *max-frame-time* 0.04) ;; lock at ~25 FPS
+(defvar *render-timer* (glaw:make-frame-timer))
+(defvar *render-stats-grapher* (glaw:make-frame-timer-grapher))
+(defvar *show-render-stats* t)
+(defvar *render-stats-view* (glaw:create-2d-view 0 0 800 600))
 
 (defgeneric init-example (example))
 (defgeneric shutdown-example (example))
@@ -25,11 +30,35 @@
     (setf *current-example* (make-instance expl))
     (init-example *current-example*)))
 
+
 (defun draw ()
-  (glaw:begin-draw)
-  (when *current-example*
-    (render-example *current-example*))
-  (glaw:end-draw))
+  (let ((render-start-time (get-internal-real-time)))
+    (glaw:begin-draw)
+    (when *current-example*
+      (render-example *current-example*))
+    (let ((dt (/ (- (get-internal-real-time) render-start-time)
+                 internal-time-units-per-second)))
+      (glaw:frame-timer-update *render-timer* dt))
+    (glaw:frame-timer-grapher-update *render-stats-grapher* *render-timer*)
+    (when *show-render-stats*
+      (glaw:set-view-2d *render-stats-view*)
+      (glaw:with-resources ((fnt "default-font"))
+        (glaw:with-frame-timer *render-timer*
+          (glaw::render-stats-grapher *render-stats-grapher* :x 100 :y 400)
+          (glaw:set-color/rgb 1.0 1.0 1.0 1.0)
+          (glaw:format-at 50 20 fnt "Instant framerate: ~a" (glaw:instant-fps))
+          (glaw:format-at 50 40 fnt "Instant frametime: ~a" (glaw:instant-frame-time))
+          (glaw:format-at 50 60 fnt "Instant framerate min.: ~a" (glaw:instant-min-fps))
+          (glaw:format-at 50 80 fnt "Instant framerate max.: ~a" (glaw:instant-max-fps))
+          (glaw:format-at 50 100 fnt "Average framerate: ~a" (glaw:avg-fps))
+          (glaw:format-at 50 120 fnt "Average frametime: ~a" (glaw:avg-frame-time))
+          (glaw:format-at 50 140 fnt "Average framerate min.: ~a" (glaw:avg-min-fps))
+          (glaw:format-at 50 160 fnt "Average framerate max.: ~a" (glaw:avg-max-fps))
+          (glaw:format-at 50 180 fnt "All-time framerate: ~a" (glaw:total-fps))
+          (glaw:format-at 50 200 fnt "All-time frametime: ~a" (glaw:total-frame-time))
+          (glaw:format-at 50 220 fnt "Total time: ~a" (glaw:total-timer-time))
+          (glaw:format-at 50 240 fnt "Total # of frames: ~a" (glaw:total-timer-nb-frames)))))
+    (glaw:end-draw)))
 
 (defun update (dt)
   (when *current-example*
@@ -37,10 +66,16 @@
 
 ;; Using GLOP
 #+glaw-examples-glop
-(defmethod glop:on-key (window pressed keycode keysym string)
-  (glaw:dispatch-key-event keysym (if pressed :press :release) keycode string)
-  (when (or (eql keysym :escape) (eql keysym :q))
-    (glop:push-close-event window)))
+(let ((alt-pressed nil))
+  (defmethod glop:on-key (window pressed keycode keysym string)
+    (glaw:dispatch-key-event keysym (if pressed :press :release) keycode string)
+    (when (or (eql keysym :alt-l)
+              (eql keysym :alt-r))
+      (setf alt-pressed pressed))
+    (when (and pressed (eql keysym :s) alt-pressed)
+      (setf *show-render-stats* (not *show-render-stats*)))
+    (when (or (eql keysym :escape) (eql keysym :q))
+      (glop:push-close-event window))))
 
 #+glaw-examples-glop
 (defmethod glop:on-close (window)
@@ -94,7 +129,6 @@
              (glaw:with-timestep (dt *max-frame-time*)
                (update dt)
                (draw)
-               (format t "frametime: ~S~%" (glaw:frame-time))
                (glop:swap-buffers win))))))
   (glaw:dispose-asset "default-font")
   (glaw:shutdown-content-manager))

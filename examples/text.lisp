@@ -21,7 +21,6 @@
   (glaw:remove-input-handler it))
 
 (defmethod render-example ((it text))
-  (glaw:begin-draw)
   (glaw:set-view-2d (text-view it))
   (let ((line 400))
     (glaw:format-at 50 line (text-font1 it) "abcdefghijklmnopqrstuvwxyz")
@@ -55,9 +54,7 @@
     (glaw:format-at 250 line (text-font3 it)
                     "Hello world...This system works, and is quite easy to use. The reason the tool to create font files is a separate program is that this way you won't have to link FreeType with your main program, and loading a font is very fast. If you want your program to be able to load and use arbitrary true type fonts you will have to integrate the functionality of fonttool into your main program."))
 
-  (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+)
 
 (defmethod update-example ((it text) dt)
   (declare (ignore it dt)))

@@ -68,7 +68,6 @@
   (glaw:dispose-asset "lisplogo"))
 
 (defmethod render-example ((it sprites))
-  (glaw:begin-draw)
   (glaw:set-view-2d (sprites-view it))
   (case (sprites-method it)
     (:batch  (when (sprites-animate it)
@@ -79,9 +78,7 @@
     (:direct (dolist (asp (sprites-sprites it))
                (glaw:render-sprite (animated-sprite-sprite asp)))))
   (glaw:with-resources ((fnt "default-font"))
-    (glaw:format-at 50 80 fnt "mode: ~a" (sprites-method it))
-    (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps)))
-  (glaw:end-draw))
+    (glaw:format-at 50 80 fnt "mode: ~a" (sprites-method it))))
 
 (defmethod update-example ((it sprites) dt)
   (when (sprites-animate it)

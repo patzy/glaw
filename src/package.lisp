@@ -75,7 +75,25 @@
    #:string-width #:string-height #:string-wrap
    #:render-string #:render-wrapped-string #:format-at
    ;; stats
-   #:fps-counter #:update-fps #:current-fps #:min-fps #:max-fps #:avg-fps #:frame-time
+   #:make-frame-timer #:frame-timer-update
+   #:frame-timer-avg-min #:frame-timer-avg-max
+   #:frame-timer-avg-framerate #:frame-timer-avg-frame-time
+   #:frame-timer-instant-min #:frame-timer-instant-max
+   #:frame-timer-instant-framerate #:frame-timer-instant-frame-time
+   #:frame-timer-total-framerate #:frame-timer-total-frame-time
+   #:frame-timer-total-time #:frame-timer-total-nb-frames
+   #:with-frame-timer #:update-fps
+   #:instant-min-fps #:instant-max-fps #:instant-fps #:instant-frame-time
+   #:avg-min-fps #:avg-max-fps #:avg-fps #:avg-frame-time
+   #:total-fps #:total-frame-time #:total-timer-time #:total-timer-nb-frames
+   #:render-stats-grapher
+   #:make-frame-timer-grapher #:+frame-timer-grapher-instant-fps+
+   #:+frame-timer-grapher-instant-frame-time+
+   #:+frame-timer-grapher-avg-fps+
+   #:+frame-timer-grapher-avg-frame-time+
+   #:+frame-timer-grapher-all-time-fps+
+   #:+frame-timer-grapher-all-time-frame-time+
+   #:frame-timer-grapher-update
    ;; 2d view
    #:set-view-2d #:with-fullscreen-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view
@@ -120,9 +138,11 @@
    #:make-anim-state #:make-keyframe-anim #:animation-apply
    #:anim-state-update #:anim-state-apply
    ;; pathfinding
+   #:navstruct-node-at
    #:find-path/nodes #:find-path
    #:make-navmesh
    #:navmesh-cells #:make-navmesh-cell #:navmesh-cell-add-vertex #:navmesh-cell-polygon
+   #:navmesh-cell-center
    #:navmesh-remove-cell-at #:navmesh-cell
    #:simplify-navmesh #:render-navmesh #:navmesh-nb-cells
    #:create-grid-navmesh #:connect-grid-navmesh

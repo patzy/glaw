@@ -110,7 +110,6 @@
   (glaw:dispose-asset "fire-particle.png"))
 
 (defmethod render-example ((it particles))
-  (glaw:begin-draw)
   (glaw:set-view-2d (particles-view it))
   (let ((nb-particles 0))
     (dolist (syst (particles-systems it))
@@ -118,9 +117,7 @@
       (incf nb-particles (glaw:particle-system-nb-particles syst)))
     (glaw:set-color/rgb 1.0 1.0 1.0)
     (glaw:with-resources ((fnt "default-font"))
-      (glaw:format-at 50 120 fnt "Particles: ~a" nb-particles)
-      (glaw:format-at 50 100 fnt "FPS: ~a" (glaw:current-fps))))
-  (glaw:end-draw))
+      (glaw:format-at 50 120 fnt "Particles: ~a" nb-particles))))
 
 (defmethod update-example ((it particles) dt)
   (dolist (syst (particles-systems it))

@@ -8,7 +8,6 @@
   (gl:clear :color-buffer :depth-buffer))
 
 (defun end-draw ()
-  (update-fps)
   (gl:flush))
 
 (defun set-background-color (color)
@@ -82,6 +81,12 @@
 
 (defun create-color (r g b &optional (a 1.0))
   (make-color :r r :g g :b b :a a))
+
+(defun make-random-color (&optional (a 1.0))
+  (make-color :r (random-between 0.0 1.0)
+              :g (random-between 0.0 1.0)
+              :b (random-between 0.0 1.0)
+              :a a))
 
 (defun color-copy (src dest)
   (setf (color-r dest) (color-r src)
@@ -286,6 +291,7 @@
                (setf *selected-texture-index* (texture-index tex))))
       (progn (gl:disable :texture-2d)
              (setf *selected-texture-index* nil))))
+
 
 ;;; Renderbuffer
 (defstruct renderbuffer
