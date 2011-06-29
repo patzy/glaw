@@ -97,15 +97,12 @@
 
 #+glaw-examples-glop
 (defmethod glop:on-draw (window)
-  (draw)
-  (glop:swap-buffers window))
+  (declare (ignore window)))
 
 #+glaw-examples-glop
 (defmethod glop:on-resize (window w h)
   (glaw:reshape w h)
-  (reshape-example *current-example* w h)
-  (draw)
-  (glop:swap-buffers window))
+  (reshape-example *current-example* w h))
 
 
 #+glaw-examples-glop
@@ -126,10 +123,10 @@
                   (dt (/ (* elapsed-time 1.0)
                          internal-time-units-per-second)))
              (setf last-update-time (get-internal-real-time))
+             (draw)
+             (glop:swap-buffers win)
              (glaw:with-timestep (dt *max-frame-time*)
-               (update dt)
-               (draw)
-               (glop:swap-buffers win))))))
+               (update dt))))))
   (glaw:dispose-asset "default-font")
   (glaw:shutdown-content-manager))
 
