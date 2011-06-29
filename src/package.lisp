@@ -55,7 +55,7 @@
    #:with-resource-manager #:with-resources
    ;; assets management
    #:init-content-manager #:shutdown-content-manager #:load-asset #:dispose-asset #:defasset
-   #:supported-assets
+   #:supported-assets #:use-asset
    ;; graphics
    #:*display-width* #:*display-height* #:clear-display
    #:begin-draw #:end-draw #:reshape #:setup-2d-defaults #:setup-3d-defaults
