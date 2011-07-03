@@ -173,6 +173,9 @@
 (defun key-value (key lst)
   (cadr (member key lst)))
 
+(defun set-key-value (key lst value)
+  (setf (cadr (member key lst)) value))
+
 ;; Debugging
 (defvar *debug-stream* *standard-output*)
 

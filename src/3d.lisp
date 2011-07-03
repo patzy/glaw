@@ -217,7 +217,7 @@
 ;; then one part per material is created, all parts having the same name (object's name)
 (defasset :mesh '("obj")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (with-open-file (in filename :direction :input)
       (let ((mesh (create-mesh)))
         (loop for line = (read-line in nil)
@@ -348,7 +348,7 @@
 ;; its name prefixed by the library name (e.g. matlib:some_material)
 (defasset :material-lib '("mtl")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (with-open-file (in filename :direction :input)
       (let ((mat nil)
             (name (symbol-name (gensym "MAT-"))))

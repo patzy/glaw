@@ -23,7 +23,7 @@
 ;; image asset
 (defasset :image '("png" "pnm" "tga")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (let ((img (imago:read-image (namestring filename))))
       (make-image :data (translate-image-pixels img)
                   :bpp (imago::pixel-size img)
@@ -36,7 +36,7 @@
 ;; texture asset
 (defasset :texture '("png" "pnm" "tga")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     ;; XXX: textures are bottom-left origin
     (let ((img (imago:flip nil (imago:read-image (namestring filename)) :horizontal)))
       (create-texture (imago:image-width img) (imago:image-height img)
@@ -48,7 +48,7 @@
 ;; font asset
 (defasset :font '("png" "pnm" "tga")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (let ((img (imago:read-image (namestring filename))))
       (let* ((tex (create-texture (imago:image-width img) (imago:image-height img)
                                   (imago::pixel-size img) (translate-image-pixels img)))

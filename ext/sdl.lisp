@@ -58,7 +58,7 @@
 (defasset :image '("png" "jpg" "bmp" "gif" "tga" "pnm" "pbm"
                    "pgm" "ppm" "xpm" "xcf" "pcx" "tif" "lbm")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (sdl:with-init (sdl:sdl-init-video)
       (let ((img-surf (sdl-image:load-image filename)))
         (sdl-base::with-pixel (pix (sdl:fp img-surf))
@@ -77,7 +77,7 @@
 (defasset :texture '("png" "jpg" "bmp" "gif" "tga" "pnm" "pbm"
                      "pgm" "ppm" "xpm" "xcf" "pcx" "tif" "lbm")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (sdl:with-init (sdl:sdl-init-video)
       (let ((img-surf (sdl-image:load-image filename)))
         (sdl-base::with-pixel (pix (sdl:fp img-surf))

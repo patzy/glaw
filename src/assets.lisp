@@ -33,10 +33,10 @@
   "Return list of supported assets types."
   (loop for k being the hash-keys of *asset-loaders* collect k))
 
-(defun %asset-loader (type filename)
+(defun %asset-loader (type extension)
   "Try to find a valid asset loader for the specified TYPE and FILENAME."
   (let ((loader (loop for l in (gethash type *asset-loaders* nil)
-                   when (asset-loader-extension-supported-p l (pathname-type filename))
+                   when (asset-loader-extension-supported-p l extension)
                    return l)))
     (unless loader
       (error "No asset loader defined for loading ~S as a ~S~%" filename type))
@@ -113,21 +113,25 @@ unless EXTENSIONS is :ANY."
   (with-resource-manager *content-manager*
     (existing-resource-p (asset-name asset))))
 
-(defun %load-asset (asset)
-  (assert (key-value :file (asset-properties asset)))
-  (format t "Loading ~S asset ~S~%"
-          (asset-type asset) (asset-name asset) (key-value :file (asset-properties asset)))
-  (with-resource-manager *content-manager*
-    (let* ((filename (key-value :file (asset-properties asset)))
-           (pathname (merge-pathnames filename *content-directory*))
-           (loader (%asset-loader (asset-type asset) pathname))
-           (props (asset-properties asset)))
-      (if loader
-          (use-resource (asset-name asset)
-                        (apply (asset-loader-load loader) pathname props)
-                        (asset-loader-unload loader))
-          (error "No asset loader defined for type ~S (~S)~%"
-                 (asset-type asset) (asset-name asset))))))
+(defun %load-asset (asset &optional (root-path *content-directory*))
+  (assert (or (key-value :file (asset-properties asset))
+              (key-value :format (asset-properties asset))))
+  (format t "Loading ~S asset ~S~%" (asset-type asset) (asset-name asset))
+  (let ((props (asset-properties asset))
+        (format (key-value :format (asset-properties asset))))
+    (when (key-value :file (asset-properties asset))
+      (let ((pathname (merge-pathnames (key-value :file (asset-properties asset))
+                                       root-path)))
+        (setf format (pathname-type pathname))
+        (setf props (append props (list :filename pathname)))))
+    (with-resource-manager *content-manager*
+      (let ((loader (%asset-loader (asset-type asset) format)))
+        (if loader
+            (use-resource (asset-name asset)
+                          (apply (asset-loader-load loader) props)
+                          (asset-loader-unload loader))
+            (error "No asset loader defined for type ~S (~S)~%"
+                   (asset-type asset) (asset-name asset)))))))
 
 
 (defun load-asset (name &optional type (identifier name) properties)

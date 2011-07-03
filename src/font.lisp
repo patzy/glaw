@@ -131,7 +131,7 @@ wrapped text."
 ;; see tools/fonttool.c
 (defasset :font '("fnt")
   ;; load
-  (lambda (filename &rest props)
+  (lambda (&key filename &allow-other-keys)
     (declare (ignore props))
     (with-open-file (in filename :direction :input :element-type '(unsigned-byte 8))
       (unless (and (= (read-byte in) 70) (= (read-byte in) 48))
