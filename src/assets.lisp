@@ -4,7 +4,7 @@
 (setf custom:*merge-pathnames-ansi* t)
 
 ;;; Asset loaders
-;; An asset loader is required to load any resource from disk
+;; An asset loader is required to load an asset resource from disk
 ;; It should provide functions for load and unload as well
 ;; as a list of supported extensions (or :any)
 (defvar *asset-loaders* (make-hash-table))
@@ -58,8 +58,6 @@ unless EXTENSIONS is :ANY."
   "Holds assets meta-data."
   type
   name
-  alias ;; if non-NIL, should contain the real asset name
-  filename
   properties)
 
 (defun find-asset (name)
@@ -70,21 +68,18 @@ unless EXTENSIONS is :ANY."
 (defun %register-asset (asset)
   (push asset *assets*))
 
-(defun declare-asset (type name file props)
-  (dformat "Registering asset ~S of type ~S located at ~S: ~S~%" name type file props)
+(defun declare-asset (type name props)
+  (dformat "Registering asset ~S of type ~S: ~S~%" name type props)
   (%register-asset (make-asset :type type
-                              :name name
-                              :filename file
-                              :alias (key-value :alias props)
-                              :properties props)))
+                               :name name
+                               :properties props)))
 
 (defun content-manager-parse-asset (decl)
   (let ((type (first decl))
         (props (rest decl)))
     (%register-asset (make-asset :type type
-                                 :name (or (key-value :name props) (key-value :file props))
-                                 :filename (key-value :file props)
-                                 :alias (key-value :alias props)
+                                 :name (or (key-value :name props) (key-value :file props)
+                                           (symbol-name (gensym "ASSET-")))
                                  :properties props))))
 
 (defun configure-content-manager (assets-lst)
@@ -114,37 +109,59 @@ unless EXTENSIONS is :ANY."
         *content-manager* nil
         *assets* nil))
 
-(defun load-asset (name &optional type (identifier name))
+(defun %loaded-asset-p (asset)
+  (with-resource-manager *content-manager*
+    (existing-resource-p (asset-name asset))))
+
+(defun %load-asset (asset)
+  (assert (key-value :file (asset-properties asset)))
+  (format t "Loading ~S asset ~S~%"
+          (asset-type asset) (asset-name asset) (key-value :file (asset-properties asset)))
+  (with-resource-manager *content-manager*
+    (let* ((filename (key-value :file (asset-properties asset)))
+           (pathname (merge-pathnames filename *content-directory*))
+           (loader (%asset-loader (asset-type asset) pathname))
+           (props (asset-properties asset)))
+      (if loader
+          (use-resource (asset-name asset)
+                        (apply (asset-loader-load loader) pathname props)
+                        (asset-loader-unload loader))
+          (error "No asset loader defined for type ~S (~S)~%"
+                 (asset-type asset) (asset-name asset))))))
+
+
+(defun load-asset (name &optional type (identifier name) properties)
   "Load the specified asset from disk using whatever valid loader exist.
 If the optional argument TYPE is provided then NAME is used as the filename to load from.
 Otherwise an asset declaration for the provided NAME is searched. If such a declaration
-exists then the corresponding asset is loaded, otherwise an error occurs.
-If load is called directly with a filename, a new ASSET is created and stored in *ASSETS*."
+exists then the corresponding asset is loaded and returned, otherwise an error occurs.
+If load is called directly with a filename, a new ASSET is created and stored in *ASSETS*.
+When no identifier is specified, the filename is used."
   (let ((asset (if type
                    (make-asset :type type :name identifier
-                               :filename name)
+                               :properties (append (list :file name)
+                                                   properties))
                    (find-asset name))))
     (unless asset
       (error "Invalid asset, can't load ~S." name))
-    ;; FIXME: we need a better way to handle aliases, maybe have support for this
-    ;; directly at the resource level
-    (when (asset-alias asset)
-      (let ((alias (find-asset (asset-alias asset))))
-        (when alias
-          (return-from load-asset (load-asset (asset-filename alias)
-                                              (asset-type alias)
-                                              (asset-name asset))))))
-    (format t "Loading ~S asset from ~S as ~S~%" (asset-type asset) (asset-filename asset)
-            (asset-name asset))
-    (with-resource-manager *content-manager*
-      (when (existing-resource-p identifier)
-        (warn "Asset already loaded or identifier conflict for ~A." identifier))
-      (let* ((pathname (merge-pathnames (asset-filename asset) *content-directory*))
-             (loader (%asset-loader (asset-type asset) pathname)))
-        (if loader
-            (use-resource identifier (funcall (asset-loader-load loader) pathname)
-                          (asset-loader-unload loader))
-            (error "No asset loader defined for ~S~%" type))))))
+    ;; Handle alias loading, this only makes sense with declared assets
+    ;; XXX: we only support one alias depth level (i.e. no aliases' aliases)
+    (if (eq :alias (asset-type asset))
+        (let* ((aliased-res-name (key-value :resource (asset-properties asset)))
+               (aliased-asset (find-asset aliased-res-name)))
+          (unless aliased-asset
+            (error "Can't find aliased asset ~S~%" aliased-asset-name))
+          (let ((aliased-res (if (%loaded-asset-p aliased-asset)
+                                 (use-asset (asset-name aliased-asset))
+                                 (%load-asset aliased-asset))))
+            (with-resource-manager *content-manager*
+              (alias-resource (asset-name aliased-asset) (asset-name asset))
+              aliased-res)))
+        (%load-asset asset))))
+
+(defun alias-asset (identifier alias)
+  (with-resource-manager *content-manager*
+    (alias-resource identifier alias)))
 
 (defun use-asset (identifier &optional res)
   (with-resource-manager *content-manager*

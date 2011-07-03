@@ -131,7 +131,8 @@ wrapped text."
 ;; see tools/fonttool.c
 (defasset :font '("fnt")
   ;; load
-  (lambda (filename)
+  (lambda (filename &rest props)
+    (declare (ignore props))
     (with-open-file (in filename :direction :input :element-type '(unsigned-byte 8))
       (unless (and (= (read-byte in) 70) (= (read-byte in) 48))
         (error "Not a valid fonttool file (header mismatch)~%"))

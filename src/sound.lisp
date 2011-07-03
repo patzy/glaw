@@ -135,7 +135,7 @@
 
 (defasset :sound '("wav")
     ;; load
-    (lambda (filename)
+    (lambda (filename &rest props)
       (with-open-file (in filename :direction :input :element-type '(unsigned-byte 8))
         (let ((riff-header (read-integer in 4 t));; big-endian
               (total-length (read-integer in 4)) ;; total data length

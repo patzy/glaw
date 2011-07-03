@@ -50,6 +50,7 @@
    #:with-timestep
    ;; resources management
    #:use-resource #:get-resource #:drop-resource
+   #:alias-resource #:unalias-resource #:drop-alias
    #:use-resources #:drop-resources
    #:create-resource-manager #:destroy-resource-manager
    #:with-resource-manager #:with-resources

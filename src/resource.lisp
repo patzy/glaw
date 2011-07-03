@@ -7,9 +7,12 @@
 ;; Create or retrieve a resource with USE-RESOURCE
 ;; when you don't need the resource anymore call DROP-RESOURCE
 ;; Make resource aliases using ALIAS-RESOURCE
+;; and remove all aliases with UNALIAS-RESOURCE
+;; and remove a specific alias with DROP-ALIAS
 
 (defstruct resource-manager
-  (resources (make-hash-table :test 'equal)))
+  (resources (make-hash-table :test 'equal))
+  (aliases (make-hash-table :test 'equal)))
 
 (defstruct resource-holder
   "Value holder for an actual resource object."
@@ -23,11 +26,36 @@
             (make-resource-holder :data res :finalizer finalizer)))
   res)
 
+(defun add-resource-alias (mgr res-id alias-id)
+  (assert (get-resource-holder mgr res-id)
+          (alias-id res-id)
+          "Resource must exist to create an alias (~S -> ~S)~%" alias-id res-id)
+  (if (gethash alias-id (resource-manager-aliases mgr) nil)
+      (error "Alias ~S for ~S already exists~%" alias-id res-id)
+      (progn (dformat "Adding resource alias ~S -> ~S~%" alias-id res-id)
+             (setf (gethash alias-id (resource-manager-aliases mgr)) res-id))))
+
+(defun get-resource-aliases (mgr res-id)
+  (let ((aliases (list)))
+    (maphash (lambda (key value)
+               (when (string-equal value res-id)
+                 (push key aliases)))
+             (resource-manager-aliases mgr))
+    aliases))
+
+(defun remove-all-resource-aliases (mgr res-id)
+  (dolist (alias (get-resource-aliases mgr res-id))
+    (remove-resource-alias mgr alias)))
+
+(defun remove-resource-alias (mgr alias-id)
+  (remhash alias-id (resource-manager-aliases mgr)))
+
 (defun remove-resource (mgr id)
   "Remove RESOURCE-HOLDER designated by ID from the manager calling associated finalizer if any."
   (let ((holder (gethash id (resource-manager-resources mgr))))
     (if holder
-      (progn (when (resource-holder-finalizer holder)
+      (progn (remove-all-resource-aliases mgr id)
+             (when (resource-holder-finalizer holder)
                (funcall (resource-holder-finalizer holder) (resource-holder-data holder)))
              (remhash id (resource-manager-resources mgr)))
       (error "Can't remove non-existing resource ~S~%" id))))
@@ -39,11 +67,15 @@
                (when (resource-holder-finalizer value)
                  (funcall (resource-holder-finalizer value) (resource-holder-data value))))
              (resource-manager-resources mgr))
+    (setf (resource-manager-resources mgr) (make-hash-table :test 'equal)))
+  (when (resource-manager-aliases mgr)
     (setf (resource-manager-resources mgr) (make-hash-table :test 'equal))))
+
 
 (defun get-resource-holder (mgr id)
   "Returns the actual resource and its associated value-holder as values."
-  (gethash id (resource-manager-resources mgr) nil))
+  (let ((alias (gethash id (resource-manager-aliases mgr) nil)))
+    (gethash (or alias id) (resource-manager-resources mgr) nil)))
 
 ;; Some funcs to help working with a current resource-manager
 (defvar %resource-manager% nil)
@@ -77,6 +109,18 @@
       (decf (resource-holder-users holder))
       (when (zerop (resource-holder-users holder))
         (remove-resource %resource-manager% id)))))
+
+(defun alias-resource (res-id alias-id)
+  (add-resource-alias %resource-manager% res-id alias-id))
+
+(defun resource-aliases (res-id)
+  (get-resource-aliases %resource-manager% res-id))
+
+(defun unalias-resource (res-id)
+  (remove-all-resource-aliases %resource-manager% res-id))
+
+(defun drop-alias (alias-id)
+  (remove-resource-alias %resource-manager% alias-id))
 
 (defun use-resources (&rest res-ids)
   (loop for id in res-ids collect (use-resource id)))

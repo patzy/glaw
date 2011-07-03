@@ -234,7 +234,6 @@
   (rotate-shape-2d (sprite-shape sp) dangle (sprite-center-x sp) (sprite-center-y sp))
   (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
 
-
 ;;; Tilemap
 (defstruct tileset
   (start-index 0)
