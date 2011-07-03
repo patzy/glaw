@@ -129,7 +129,8 @@
    #:bbox-x-min #:bbox-x-max #:bbox-y-min #:bbox-y-max #:render-bbox
    #:create-bbox-from-shape
    ;; sprites
-   #:create-sprite #:render-sprite #:move-sprite #:translate-sprite #:rotate-sprite
+   #:create-sprite #:render-sprite #:move-sprite #:translate-sprite #:rotate-sprite #:scale-sprite
+   #:move-sprite-center
    #:create-tilemap #:render-tilemap #:tilemap-nb-tiles #:make-tileset
    #:tileset-pixel-width #:tileset-pixel-height #:tileset-tiles-width #:tileset-tiles-height
    #:tileset-spacing #:tileset-margin #:tileset-start-index

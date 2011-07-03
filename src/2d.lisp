@@ -158,12 +158,14 @@
 (defsetf sprite-flip sprite-set-flip)
 
 (defun create-sprite (x y width height texture &key (bbox (make-bbox)) (flip :none)
-                                                    (angle 0) color)
-  (let ((sp (make-sprite :texture texture
-                         :color color
-                         :x x :y y :width width :height height
-                         :bbox bbox :flip flip
-                         :shape (create-rectangle-shape x y (+ x width) (+ y height)))))
+                                                    (scale 1.0) (angle 0) color)
+  (let* ((w (* scale width))
+         (h (* scale height))
+         (sp (make-sprite :texture texture
+                          :color color
+                          :x x :y y :width w :height h
+                          :bbox bbox :flip flip
+                          :shape (create-rectangle-shape x y (+ x w) (+ y h)))))
     (setf (sprite-flip sp) flip)
     (rotate-sprite sp angle)
     (when bbox (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp)))
@@ -230,8 +232,21 @@
         (dy (- y (sprite-y sp))))
     (translate-sprite sp dx dy)))
 
+(defun move-sprite-center (sp x y)
+  (let ((dx (- x (sprite-center-x sp)))
+        (dy (- y (sprite-center-y sp))))
+    (translate-sprite sp dx dy)))
+
 (defun rotate-sprite (sp dangle)
   (rotate-shape-2d (sprite-shape sp) dangle (sprite-center-x sp) (sprite-center-y sp))
+  (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
+
+(defun scale-sprite (sp dscale)
+  (let ((sprt-x (sprite-center-x sp))
+        (sprt-y (sprite-center-y sp)))
+    (translate-sprite sp (- sprt-x) (- sprt-y))
+    (scale-shape-2d (sprite-shape sp) dscale dscale)
+    (translate-sprite sp sprt-x sprt-y))
   (when (sprite-bbox sp) (bbox-overwrite/shape (sprite-bbox sp) (sprite-shape sp))))
 
 ;;; Tilemap
