@@ -5,11 +5,13 @@
   (primitive :triangle-strip)
   vertices   ;; x,y,z
   normals    ;; x y z
+  tangents   ;; x y z
+  bitangents ;; x y z
   colors     ;; r,g,b,a
   tex-coords ;; u,v
   indices)
 
-(defun create-shape (nb-vertices nb-indices &key color texture normals
+(defun create-shape (nb-vertices nb-indices &key color texture normals tangents bitangents
                                              (primitive :triangles))
   (make-shape :primitive primitive
               :vertices (make-array (* nb-vertices 3)
@@ -17,6 +19,14 @@
                                     :fill-pointer 0)
               :normals (when normals
                          (make-array (* nb-vertices 3)
+                                     :element-type 'float
+                                     :fill-pointer 0))
+              :tangents (when tangents
+                          (make-array (* nb-vertices 3)
+                                     :element-type 'float
+                                     :fill-pointer 0))
+              :bitangents (when bitangents
+                            (make-array (* nb-vertices 3)
                                      :element-type 'float
                                      :fill-pointer 0))
               :colors (when color
@@ -41,13 +51,24 @@
               :normals normals))
 
 (defun shape-has-color (shape)
+  (declare (inline shape-has-color))
   (not (null (shape-colors shape))))
 
 (defun shape-has-texture (shape)
+  (declare (inline shape-has-color))
   (not (null (shape-tex-coords shape))))
 
 (defun shape-has-normals (shape)
+  (declare (inline shape-has-color))
   (not (null (shape-normals shape))))
+
+(defun shape-has-tangents (shape)
+  (declare (inline shape-has-color))
+  (not (null (shape-tangents shape))))
+
+(defun shape-has-bitangents (shape)
+  (declare (inline shape-has-color))
+  (not (null (shape-bitangents shape))))
 
 (defun %vertex-data-from-face-data (data indices)
   "Linearize per face data to per vertex mode."
@@ -131,9 +152,17 @@
         (aref (shape-normals shape) (+ 2 (* index 3))) (vector-3d-z vec)))
 
 (defun shape-get-normal (shape index)
-  (make-vector-3d :x (aref (shape-normals shape) (* index 3))
-                  :y (aref (shape-normals shape) (+ 1 (* index 3)))
-                  :z (aref (shape-normals shape) (+ 2 (* index 3)))))
+  (subseq (shape-normals shape) (* index 3) (+ 3 (* index 3))))
+
+(defun shape-set-tangent/v (shape index vec)
+  (setf (aref (shape-tangents shape) (* index 3)) (vector-3d-x vec)
+        (aref (shape-tangents shape) (+ 1 (* index 3))) (vector-3d-y vec)
+        (aref (shape-tangents shape) (+ 2 (* index 3))) (vector-3d-z vec)))
+
+(defun shape-set-bitangent/v (shape index vec)
+  (setf (aref (shape-bitangents shape) (* index 3)) (vector-3d-x vec)
+        (aref (shape-bitangents shape) (+ 1 (* index 3))) (vector-3d-y vec)
+        (aref (shape-bitangents shape) (+ 2 (* index 3))) (vector-3d-z vec)))
 
 (defun translate-shape (shape dx dy &optional (dz 0.0))
   (loop for i from 0 below (length (shape-vertices shape)) by 3 do
@@ -161,13 +190,32 @@
          (setf (aref (shape-vertices shape) i) (* x sx)
                (aref (shape-vertices shape) (+ i 1)) (* y sy)))))
 
-(defun render-shape (shape &optional (primitive (shape-primitive shape)))
-  (render-primitive (shape-indices shape)
-                    (shape-vertices shape)
-                    :primitive primitive
-                    :colors (shape-colors shape)
-                    :tex-coords (shape-tex-coords shape)
-                    :normals (shape-normals shape)))
+(defun render-shape (shape &key (primitive (shape-primitive shape))
+                                shader)
+  (let ((attr-indices (list))
+        (attr-sizes (list))
+        (attr-datas (list)))
+    (when shader
+      (when (shape-has-tangents shape)
+        (gl:bind-attrib-location (shader-id shader) 16 "glaw_tangent")
+        (push 16 attr-indices)
+        (push 3 attr-sizes)
+        (push (shape-tangents shape) attr-datas))
+      (when (shape-has-bitangents shape)
+        (gl:bind-attrib-location (shader-id shader) 17 "glaw_bitangent")
+        (push 17 attr-indices)
+        (push 3 attr-sizes)
+        (push (shape-bitangents shape) attr-datas)))
+    (render-primitive (shape-indices shape)
+                      (shape-vertices shape)
+                      :primitive primitive
+                      :colors (shape-colors shape)
+                      :tex-coords (shape-tex-coords shape)
+                      :shader shader
+                      :attrib-indices attr-indices
+                      :attrib-sizes attr-sizes
+                      :attrib-datas attr-datas
+                      :normals (shape-normals shape))))
 
 (defun render-shape-normals (shape)
   (gl:disable :lighting)
@@ -255,35 +303,96 @@
         (make-array (length (shape-vertices shape))))
   (let ((tmp-normals (make-array (shape-nb-indices shape)))    ;; normal for each face
         (used-normals (make-array (shape-nb-vertices shape)))) ;; normals shared by vertices
+    (loop for i below (shape-nb-vertices shape) do (setf (aref used-normals i) (list)))
     (loop for i below (shape-nb-indices shape) by 3
+       for iface = (/ i 3)
        for i0 = (aref (shape-indices shape) i)
        for i1 = (aref (shape-indices shape) (+ 1 i))
        for i2 = (aref (shape-indices shape) (+ 2 i))
        for p0 = (shape-get-vertex shape i0)
        for p1 = (shape-get-vertex shape i1)
        for p2 = (shape-get-vertex shape i2)
-       for normal = (vector-3d-normalize
-                     (vector-3d-cross-product (vector-3d-diff p1 p0)
-                                              (vector-3d-diff p2 p0)))
-       do (replace tmp-normals normal :start1 i) ;; store current face normal
-         (push i (aref used-normals i0)) ;; current normal is used by all face's vertices
-         (push i (aref used-normals i1))
-         (push i (aref used-normals i2)))
+       for v0 = (vector-3d-diff p1 p0)
+       for v1 = (vector-3d-diff p2 p0)
+       for normal = (vector-3d-cross-product v0 v1)
+       do (when normalize
+            (setf normal (vector-3d-normalize normal)))
+         (replace tmp-normals normal :start1 i) ;; store current face normal
+         (push iface(aref used-normals i0)) ;; current normal is used by all face's vertices
+         (push iface (aref used-normals i1))
+         (push iface (aref used-normals i2)))
     ;; compute smoothed per vertex normals
     (loop for i below (shape-nb-vertices shape)
        for normal = (make-vector-3d) do
          ;; average all normals used by ith vertex
          (loop for j below (length (aref used-normals i))
             with face-idx = (nth j (aref used-normals i)) do
-              (vector-3d-add normal (subseq tmp-normals face-idx (+ 3 face-idx)))
-              (when normalize
-                (setf normal (vector-3d-normalize normal))))
+              (vector-3d-add normal (subseq tmp-normals (* face-idx 3) (+ 3 (* face-idx 3))))
+              (setf normal (vector-3d-normalize normal)))
          (shape-set-normal/v shape i normal))))
 
 (defun shape-revert-normals (shape)
   (loop for i below (shape-nb-vertices shape)
        do (setf (aref (shape-normals shape) i)
                 (vector-3d-scale (aref (shape-normals shape) i) -1.0))))
+
+;; http://www.terathon.com/code/tangent.html
+;; http://fabiensanglard.net/bumpMapping/index.php
+(defun shape-compute-tangent-space (shape)
+  (assert (and (eq (shape-primitive shape) :triangles)
+               (shape-has-texture shape)))
+  (when (or (shape-tangents shape) (shape-bitangents shape))
+    (warn "Overwriting existing shape (bi)tangent data."))
+  (setf (shape-tangents shape)    ;; per-vertex tangents
+        (make-array (length (shape-vertices shape)))
+        (shape-bitangents shape)  ;; per-vertex bitangents
+        (make-array (length (shape-vertices shape))))
+  (let ((tmp-tangents (make-array (shape-nb-indices shape)))    ;; tangent for each face
+        (tmp-bitangents (make-array (shape-nb-indices shape)))  ;; bitangent for each face
+        (used-tangents (make-array (shape-nb-vertices shape))))  ;; tangents shared by vertices
+    (loop for i below (shape-nb-vertices shape) do (setf (aref used-tangents i) (list)))
+    (loop for i below (shape-nb-indices shape) by 3
+       for iface = (/ i 3)
+       for i0 = (aref (shape-indices shape) i)
+       for i1 = (aref (shape-indices shape) (+ 1 i))
+       for i2 = (aref (shape-indices shape) (+ 2 i))
+       for p0 = (shape-get-vertex shape i0)
+       for p1 = (shape-get-vertex shape i1)
+       for p2 = (shape-get-vertex shape i2)
+       for t0 = (shape-get-tex-coord shape i0)
+       for t1 = (shape-get-tex-coord shape i1)
+       for t2 = (shape-get-tex-coord shape i2)
+       for v0 = (vector-3d-normalize (vector-3d-diff p1 p0))
+       for v1 = (vector-3d-normalize (vector-3d-diff p2 p0))
+       for st0 = (vector-2d-normalize (vector-2d-diff t1 t0))
+       for st1 = (vector-2d-normalize (vector-2d-diff t2 t0))
+       for normal = (vector-3d-normalize (vector-3d-cross-product v0 v1))
+       for coeff = (/ 1.0 (- (* (vector-2d-x st0) (vector-2d-y st1))
+                             (* (vector-2d-x st1) (vector-2d-y st0))))
+       for tangent = (make-vector-3d :x (* coeff (+ (* (vector-3d-x v0) (vector-2d-y st1))
+                                                    (* (vector-3d-x v1) (- (vector-2d-y st0)))))
+                                     :y (* coeff (+ (* (vector-3d-y v0) (vector-2d-y st1))
+                                                    (* (vector-3d-y v1) (- (vector-2d-y st0)))))
+                                     :z (* coeff (+ (* (vector-3d-z v0) (vector-2d-y st1))
+                                                    (* (vector-3d-z v1) (- (vector-2d-y st0))))))
+       for bitangent = (vector-3d-cross-product normal tangent)
+       do (replace tmp-tangents tangent :start1 i)
+         (replace tmp-bitangents bitangent :start1 i)
+         (push iface (aref used-tangents i0))
+         (push iface (aref used-tangents i1))
+         (push iface (aref used-tangents i2)))
+    ;; smooth over faces
+    (loop for i below (shape-nb-vertices shape)
+         for tangent = (make-vector-3d)
+         for bitangent = (make-vector-3d) do
+         (loop for j below (length (aref used-tangents i))
+            with face-idx = (nth j (aref used-tangents i)) do
+              (vector-3d-add tangent (subseq tmp-tangents (* face-idx 3) (+ 3 (* face-idx 3))))
+              (vector-3d-add bitangent (subseq tmp-bitangents (* face-idx 3) (+ 3 (* face-idx 3))))
+              (setf tangent (vector-3d-normalize tangent)
+                    bitangent (vector-3d-normalize bitangent)))
+         (shape-set-tangent/v shape i tangent)
+         (shape-set-bitangent/v shape i bitangent))))
 
 (defun shape-add-vertex (shape x y &optional (z 0.0))
   ;;(declare (type single-float x y z))
@@ -295,6 +404,16 @@
   (vector-push-extend x (shape-normals shape))
   (vector-push-extend y (shape-normals shape))
   (vector-push-extend z (shape-normals shape)))
+
+(defun shape-add-tangent (shape x y z)
+  (vector-push-extend x (shape-tangents shape))
+  (vector-push-extend y (shape-tangents shape))
+  (vector-push-extend z (shape-tangents shape)))
+
+(defun shape-add-bitangent (shape x y z)
+  (vector-push-extend x (shape-bitangents shape))
+  (vector-push-extend y (shape-bitangents shape))
+  (vector-push-extend z (shape-bitangents shape)))
 
 (defun shape-add-color (shape color)
   ;;(declare (type color color))
@@ -317,7 +436,6 @@
 
 (defun shape-add-indices (shape &rest indices)
   (dolist (i indices)
-    (declare (type unsigned-byte i))
     (vector-push-extend i (shape-indices shape))))
 
 (defun shape-add-vertex/index (shape x y &optional (z 0.0))
@@ -386,28 +504,28 @@
     (shape-add-vertex/index shape x (+ y size))
     shape))
 
-(defun create-rectangle-shape (left bottom right top &key (filled t)
-                                                          tex-width tex-height color)
-  (let ((shape (create-shape 4 5
-                             :color nil
-                             :texture t
-                             :primitive (if filled :quads :line-strip)))
-        (width (- right left))
-        (height (- top bottom)))
-  (shape-add-vertex/index shape left bottom)
+(defun create-rectangle-shape (left bottom right top &key tex-width tex-height color)
+  (let* ((shape (create-shape 4 6
+                              :color color
+                              :texture t
+                              :primitive :triangles))
+         (width (- right left))
+         (height (- top bottom))
+         (tex-right (if tex-width (/ width tex-width) 1.0))
+         (tex-top (if tex-height (/ height tex-height) 1.0)))
+  (shape-add-vertex shape left bottom)
   (when color (shape-add-color shape color))
   (shape-add-tex-vertex shape 0.0 0.0)
-  (shape-add-vertex/index shape right bottom)
+  (shape-add-vertex shape right bottom)
   (when color (shape-add-color shape color))
-  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0) 0.0)
-  (shape-add-vertex/index shape right top)
+  (shape-add-tex-vertex shape tex-right 0.0)
+  (shape-add-vertex shape right top)
   (when color (shape-add-color shape color))
-  (shape-add-tex-vertex shape (if tex-width (/ width tex-width) 1.0)
-                              (if tex-height (/ height tex-height) 1.0))
-  (shape-add-vertex/index shape left top)
+  (shape-add-tex-vertex shape tex-right tex-top)
+  (shape-add-vertex shape left top)
   (when color (shape-add-color shape color))
-  (shape-add-tex-vertex shape 0.0 (if tex-height (/ height tex-height) 1.0))
-  (unless filled (shape-add-indices shape 0))
+  (shape-add-tex-vertex shape 0.0 tex-top)
+  (shape-add-indices shape 0 1 3 1 2 3)
   shape))
 
 (defun create-line-shape (x0 y0 x1 y1)

@@ -210,6 +210,7 @@
 (defstruct texture
   width height bpp data
   index ;; GL texture index
+  (matrix +matrix-identity+)
   ;; GL texture parameters
   (internal-format :rgba)
   (min-filter :linear)
@@ -273,24 +274,34 @@
 (defun destroy-texture (tex)
   (gl:delete-textures (list (texture-index tex))))
 
-(defvar *selected-texture-index* nil
+(defvar %selected-texture-index% nil
   "Current texture in GL context.")
 
+(defun texture-unit (&optional (index 0))
+  (declare (inline texture-unit))
+  (+ (cffi:foreign-enum-value 'cl-opengl-bindings:enum :texture0) index))
+
 (defun select-texture (tex &key (env-mode :replace)
-                                (unit :texture0))
+                                (unit (texture-unit 0))
+                                (matrix +matrix-identity+))
   "Set TEX as the current gl texture if necessary."
   (gl:active-texture unit)
   (if tex
-      (progn (unless *selected-texture-index*
+      (progn (unless %selected-texture-index%
                (gl:enable :texture-2d)
-               (setf *selected-texture-index* -1))
-             (unless (= (texture-index tex) *selected-texture-index*)
+               (setf %selected-texture-index% -1))
+             (unless (= (texture-index tex) %selected-texture-index%)
                (gl:bind-texture :texture-2d (texture-index tex))
                (gl:tex-env :texture-env
                            :texture-env-mode env-mode)
-               (setf *selected-texture-index* (texture-index tex))))
+               (setf %selected-texture-index% (texture-index tex)))
+             (unless (eq matrix +matrix-identity+)
+               (gl:matrix-mode :texture)
+               (gl:load-matrix (texture-matrix tex))
+               (gl:matrix-mode :modelview))
+             )
       (progn (gl:disable :texture-2d)
-             (setf *selected-texture-index* nil))))
+             (setf %selected-texture-index% nil))))
 
 
 ;;; Renderbuffer
@@ -389,7 +400,7 @@
 (defun destroy-framebuffer (fb)
   (gl:delete-framebuffers-ext (framebuffer-index fb)))
 
-(defvar *selected-framebuffer-index* nil
+(defvar %selected-framebuffer-index% nil
   "Currently selected framebuffer object index.")
 
 (defun select-framebuffer (fb)
@@ -441,7 +452,7 @@
       (progn (%gl:vertex-pointer 3 :float 0 (cffi:null-pointer))
              (gl:enable-client-state :vertex-array)
              (let ((offset (* (vertex-buffer-nb-vertices vb) 3))
-                   (elem-size 4))
+                   (elem-size 4)) ;; 32 bits data
                (when (vertex-has-colors (vertex-buffer-format vb))
                  (%gl:color-pointer 4 :float 0 (cffi:make-pointer (* offset elem-size)))
                  (gl:enable-client-state :color-array)
@@ -584,6 +595,10 @@
 ;;; Primitive rendering
 (defun render-primitive (indices vertices &key (primitive :triangles)
                                                 colors tex-coords normals
+                                                shader
+                                                attrib-indices
+                                                attrib-sizes
+                                                attrib-datas
                                                 (start 0) (end (length indices)))
   "Immediate mode rendering."
   (gl:with-primitive primitive
@@ -601,6 +616,19 @@
        do (gl:normal (aref normals (* i 3))
                      (aref normals (+ 1 (* i 3)))
                      (aref normals (+ 2 (* i 3))))
+       when attrib-indices
+       do (loop for attr-index in attrib-indices
+                for attr-size in attrib-sizes
+                for attr-data in attrib-datas
+                do (case attr-size
+                     (1 (gl:vertex-attrib (shader-id shader) attr-index
+                                          (aref attr-data i)))
+                     (2 (gl:vertex-attrib (shader-id shader) attr-index
+                                          (aref attr-data (* i 2))))
+                     (3 (gl:vertex-attrib (shader-id shader) attr-index
+                                          (aref attr-data (* i 3))))
+                     (4 (gl:vertex-attrib (shader-id shader) attr-index
+                                          (aref attr-data (* i 4))))))
        do (gl:vertex (aref vertices (* i 3))
                      (aref vertices (+ 1 (* i 3)))
                      (aref vertices (+ 2 (* i 3)))))))
@@ -795,13 +823,28 @@
 (defun destroy-shader (sh)
   (gl:delete-shader (shader-id sh)))
 
+;; (defstruct shader-data
+;;   (uniforms (list))
+;;   (uniform-values (list)))
+
+;; (defstruct shader-data-bind
+;;   data
+  
+
+;; (defun shader-data-add-uniform (data name &optional (value nil))
+;;   (push name (shader-data-uniforms data))
+;;   (push value (shader-data-uniform-values data)))
+
 (defstruct shader-program
   vertex
   fragment
   id
-  uniforms ;; TODO
-  attribs
+  data
   (needs-link t))
+
+;; (defun shader-program-bind-data (prg prg-data)
+;;   (setf (shader-program-data prg) prg-data)
+  
 
 (defun shader-program-attach-vertex (prg vtx-shader)
   (setf (shader-program-vertex prg) vtx-shader
@@ -832,10 +875,14 @@
   (gl:link-program (shader-program-id prg))
   (dformat "Program info log:~%~S~%" (gl:get-program-info-log (shader-program-id prg))))
 
+
+(defvar %selected-shader-index% nil)
 (defun set-shader-program (prg)
   (if prg
-      (gl:use-program (shader-program-id prg))
-      (gl:use-program 0)))
+      (progn (gl:use-program (shader-program-id prg))
+             (setf %selected-shader-index% (shader-program-id prg)))
+      (progn (gl:use-program 0)
+             (setf %selected-shader-index% nil))))
 
 (setf *print-circle* t)
 
