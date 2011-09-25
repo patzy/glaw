@@ -10,15 +10,13 @@
 (defstruct anim-state
   animation
   (time 0.0)
-  (scale 1.0)
-  (loops 0);;FIXME: we don't even know if we can loop here....
-  )
+  (scale 1.0))
+
+(defun anim-state-reset (state)
+  (setf (anim-state-time state) 0.0))
 
 (defun anim-state-update (state dt)
-  (when (or (= (anim-state-loops state) 0)
-            (< (anim-state-time state) (* (anim-state-loops state)
-                                          (animation-duration (anim-state-animation state)))))
-    (incf (anim-state-time state) (* dt (anim-state-scale state)))))
+  (incf (anim-state-time state) (* dt (anim-state-scale state))))
 
 (defun anim-state-apply (state obj)
   (animation-apply (anim-state-animation state) obj (anim-state-time state)))
