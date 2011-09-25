@@ -34,12 +34,12 @@
   (loop for k being the hash-keys of *asset-loaders* collect k))
 
 (defun %asset-loader (type extension)
-  "Try to find a valid asset loader for the specified TYPE and FILENAME."
+  "Try to find a valid asset loader for the specified TYPE and EXTENSION."
   (let ((loader (loop for l in (gethash type *asset-loaders* nil)
                    when (asset-loader-extension-supported-p l extension)
                    return l)))
     (unless loader
-      (error "No asset loader defined for loading ~S as a ~S~%" filename type))
+      (error "No asset loader defined for loading ~S as a ~S~%" extension type))
     loader))
 
 (defun defasset (asset-type extensions load &optional unload)
