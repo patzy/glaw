@@ -2,7 +2,7 @@
   (:use #:cl)
   (:export
    ;; utils
-   #:random-between #:random-nth #:nshuffle #:shuffle
+   #:random-between #:random-nth #:nshuffle #:shuffle #:key-value
    ;; math
    #:deg->rad #:rad->deg #:coords-overlap-p
    #:make-vector-2d #:make-vector-2d-from-list #:make-vector-2d-from-coords
@@ -70,6 +70,12 @@
    #:make-image #:image-get-pixel #:image-get-pixel/index
    #:create-texture #:create-texture-from-image #:create-texture-from-file
    #:destroy-texture #:select-texture #:update-texture #:update-texture-from-image
+   #:create-framebuffer #:select-framebuffer #:framebuffer-attach-color #:framebuffer-attach-depth
+   #:framebuffer-colors #:framebuffer-depth
+   #:create-renderbuffer
+   #:create-vertex-shader-from-file #:create-fragment-shader-from-file
+   #:create-shader-program
+   #:set-shader-program
    ;; text rendering
    #:create-font #:destroy-font
    #:font-set-glyph-data #:font-build-cache #:font-line-height #:char-width
@@ -95,12 +101,16 @@
    #:+frame-timer-grapher-all-time-fps+
    #:+frame-timer-grapher-all-time-frame-time+
    #:frame-timer-grapher-update
+   ;; general view
+   #:set-view
    ;; 2d view
    #:set-view-2d #:with-fullscreen-view-2d
    #:create-2d-view #:zoom-2d-view #:2d-view-zoom #:move-2d-view #:update-2d-view
    #:screen-to-view #:view-to-screen #:with-2d-coords-from-screen #:with-2d-coords-to-screen
    #:view-to-view #:with-2d-view-coords #:with-2d-view-deltas #:with-2d-screen-deltas
    #:2d-view-left #:2d-view-bottom #:2d-view-right #:2d-view-top #:2d-view-width #:2d-view-height
+   ;; isometric view
+   #:set-view-isometric #:create-isometric-view #:move-isometric-view
    ;; 3d view
    #:set-view-3d
    #:make-3d-view

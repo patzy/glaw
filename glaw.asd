@@ -20,6 +20,7 @@
              (:file "shape")
              (:file "bbox")
              (:file "anim")
+             (:file "view")
              (:file "2d")
              (:file "3d")
              (:file "font")

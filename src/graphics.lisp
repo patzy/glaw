@@ -58,7 +58,7 @@
   (setf *display-width* width)
   (setf *display-height* height))
 
-(defun set-view (proj-mtx view-mtx)
+(defun set-view-matrices (proj-mtx view-mtx)
   (gl:matrix-mode :projection)
   (gl:load-matrix proj-mtx)
   (gl:matrix-mode :modelview)

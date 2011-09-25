@@ -42,6 +42,8 @@
     (glaw:frame-timer-grapher-update *render-stats-grapher* *render-timer*)
     (when *show-render-stats*
       (glaw:set-view-2d *render-stats-view*)
+      (glaw:select-texture nil)
+      (glaw:setup-2d-defaults)
       (glaw:with-resources ((fnt "default-font"))
         (glaw:with-frame-timer *render-timer*
           (glaw::render-stats-grapher *render-stats-grapher* :x 100 :y 400)
