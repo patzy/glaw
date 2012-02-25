@@ -102,8 +102,10 @@ wrapped text."
     (gl:with-pushed-matrix
         (gl:load-matrix basis)
       (if (= (font-base fnt) -1)
-        (loop for c across str do
-             (font-render-glyph fnt (char-code c))
+        (loop for c across str
+             for code = (char-code c)
+             when (< 0 code 255) do
+             (font-render-glyph fnt )
              (basis-translate basis (char-width fnt c) 0 0)
              (gl:load-matrix basis))
         (progn (gl:list-base (font-base fnt))
