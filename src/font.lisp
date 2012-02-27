@@ -105,7 +105,7 @@ wrapped text."
         (loop for c across str
              for code = (char-code c)
              when (< 0 code 255) do
-             (font-render-glyph fnt )
+             (font-render-glyph fnt code)
              (basis-translate basis (char-width fnt c) 0 0)
              (gl:load-matrix basis))
         (progn (gl:list-base (font-base fnt))
