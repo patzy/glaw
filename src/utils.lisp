@@ -188,16 +188,3 @@
 
 (define-condition not-implemented (glaw-error)
   () (:documentation "Unimplemented."))
-
-;; Executable creation
-(defun make-executable (name startup-fun &optional (documentation name))
-  #+clisp
-  (ext:saveinitmem name :init-function startup-fun :executable t
-                   :keep-global-handlers t :norc t :documentation documentation)
-  #+sbcl
-  (sb-ext:save-lisp-and-die name :toplevel startup-fun :executable t)
-  #+ccl
-  (ccl:save-application name :toplevel-function startup-fun
-                        :prepend-kernel t)
-  #-(or clisp sbcl ccl)(error 'not-implemented)
-)
