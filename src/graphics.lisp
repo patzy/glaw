@@ -1,5 +1,7 @@
 (in-package :glaw)
 
+(declaim (optimize (safety 0) (debug 0) (speed 3)))
+
 ;;; General rendering
 (defvar *display-width* 800)
 (defvar *display-height* 600)
