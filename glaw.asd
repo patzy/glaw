@@ -4,6 +4,7 @@
   :license "MIT"
   :version "git"
   :description "Game programming utilities"
+  :author "Morgan Veyret <patzy at oxyde dot org>"
   :depends-on (:cl-opengl :cl-openal :cl-alc)
   :components
   ((:module "src"

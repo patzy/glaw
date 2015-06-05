@@ -7,7 +7,10 @@
 
 (asdf:defsystem glaw-examples
   :depends-on (:glaw :glop :glaw-imago)
-  ;;:depends-on (glaw glaw-sdl)
+  :license "MIT"
+  :version "git"
+  :description "Game programming utilities examples"
+  :author "Morgan Veyret <patzy at oxyde dot org>"
   :components
   ((:module "examples"
             :serial t
