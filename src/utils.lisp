@@ -122,10 +122,12 @@
         while j))
 
 (defun file->strings (path)
-  (with-open-file (s path)
-    (loop for line = (read-line s nil nil)
-         while line
-         collect line)))
+  "Reads the file into a string.  If there is no newline at the end of the file, one is added."
+  (format nil "~{~A~&~}"
+    (with-open-file (s path)
+      (loop for line = (read-line s nil nil)
+           while line
+           collect line))))
 
 ;; pathnames (from PCL: http://gigamonkeys.com/book/practical-a-portable-pathname-library.html)
 (defun component-present-p (value)
